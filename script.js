@@ -6,14 +6,15 @@ const year = document.getElementById("year");
 const editLastQuoteButton = document.getElementById("editLastQuoteBtn");
 const pastWorkScroll = document.querySelector(".past-work-scroll");
 const galleryButtons = Array.from(document.querySelectorAll(".work-card-btn"));
-const lightbox = document.getElementById("galleryLightbox");
+const lightbox = document.getElementById("lightbox");
 const lightboxImage = document.getElementById("lightboxImage");
 const lightboxCaption = document.getElementById("lightboxCaption");
 const lightboxClose = document.getElementById("lightboxClose");
 const lightboxPrev = document.getElementById("lightboxPrev");
 const lightboxNext = document.getElementById("lightboxNext");
-const lightboxZoomIn = document.getElementById("lightboxZoomIn");
-const lightboxZoomOut = document.getElementById("lightboxZoomOut");
+const lightboxZoomIn = document.getElementById("zoomInBtn");
+const lightboxZoomOut = document.getElementById("zoomOutBtn");
+const lightboxZoomReset = document.getElementById("zoomResetBtn");
 const vehicleType = document.getElementById("vehicleType");
 const packageSelect = document.getElementById("package");
 const extrasFieldset = document.getElementById("extrasFieldset");
@@ -143,7 +144,7 @@ if (pastWorkScroll && !window.matchMedia("(prefers-reduced-motion: reduce)").mat
 }
 
 function getGalleryItems() {
-  return galleryButtons
+  return Array.from(document.querySelectorAll(".work-card-btn"))
     .map((button) => {
       const img = button.querySelector("img");
       if (!img) return null;
@@ -157,11 +158,13 @@ function getGalleryItems() {
 
 function renderLightboxImage() {
   const items = getGalleryItems();
-  if (!items.length || !lightboxImage || !lightboxCaption) return;
+  if (!items.length || !lightboxImage) return;
   const item = items[currentGalleryIndex];
   lightboxImage.src = item.src;
   lightboxImage.alt = item.alt;
-  lightboxCaption.textContent = `${item.alt} (${currentGalleryIndex + 1}/${items.length})`;
+  if (lightboxCaption) {
+    lightboxCaption.textContent = `${item.alt} (${currentGalleryIndex + 1}/${items.length})`;
+  }
   lightboxImage.style.transform = `scale(${currentZoom})`;
 }
 
@@ -215,6 +218,12 @@ if (lightboxNext) lightboxNext.addEventListener("click", nextLightbox);
 if (lightboxPrev) lightboxPrev.addEventListener("click", prevLightbox);
 if (lightboxZoomIn) lightboxZoomIn.addEventListener("click", () => updateZoom(0.2));
 if (lightboxZoomOut) lightboxZoomOut.addEventListener("click", () => updateZoom(-0.2));
+if (lightboxZoomReset) {
+  lightboxZoomReset.addEventListener("click", () => {
+    currentZoom = 1;
+    if (lightboxImage) lightboxImage.style.transform = "scale(1)";
+  });
+}
 
 if (lightbox) {
   lightbox.addEventListener("click", (event) => {
@@ -227,6 +236,8 @@ window.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closeLightbox();
   if (event.key === "ArrowRight") nextLightbox();
   if (event.key === "ArrowLeft") prevLightbox();
+  if (event.key === "+" || event.key === "=") updateZoom(0.2);
+  if (event.key === "-") updateZoom(-0.2);
 });
 
 function calculateEstimate() {
