@@ -45,7 +45,13 @@ let stopPastWorkAutoScroll = null;
 
 const LOGO_CANDIDATES = [
   "./logo.png",
+  "./logo.PNG",
   "./logo.webp",
+  "./logo.WEBP",
+  "./logo.jpg",
+  "./logo.JPG",
+  "./logo.jpeg",
+  "./logo.JPEG",
   "./logo-mark.png",
   "./logo-mark.webp",
   "./logo-1.png",
@@ -54,8 +60,14 @@ const LOGO_CANDIDATES = [
   "./logo1.png",
   "./logo2.png",
   "./logo3.png",
+  "./Logo.png",
+  "./LOGO.png",
+  "./ShineNTime.png",
+  "./shine-n-time.png",
   "./shine-n-time-logo.png",
-  "./shine-n-time-logo.webp"
+  "./shine-n-time-logo.webp",
+  "./shinentime-logo.png",
+  "./shinentime-logo.webp"
 ];
 
 function initSiteLogo() {

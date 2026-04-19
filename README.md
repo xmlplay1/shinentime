@@ -20,7 +20,7 @@ Minimal, modern, fast static website for Shine N Time Interior Detailing.
 
 Add a square-ish logo image to the repo root. The site will auto-detect the first file that exists from this list:
 
-- `logo.png` / `logo.webp` (recommended)
+- `logo.png` / `logo.PNG` / `logo.webp` / `logo.jpg` / `logo.jpeg` (recommended)
 - `logo-mark.png` / `logo-mark.webp`
 - `logo-1.png` … `logo-3.png` (or `logo1.png` … `logo3.png`)
 
