@@ -44,10 +44,10 @@ let pastWorkAutoScrollKilled = false;
 let stopPastWorkAutoScroll = null;
 
 const LOGO_CANDIDATES = [
-  "./logo-mark.png",
-  "./logo-mark.webp",
   "./logo.png",
   "./logo.webp",
+  "./logo-mark.png",
+  "./logo-mark.webp",
   "./logo-1.png",
   "./logo-2.png",
   "./logo-3.png",
@@ -60,14 +60,26 @@ const LOGO_CANDIDATES = [
 
 function initSiteLogo() {
   const img = document.getElementById("siteLogo");
+  const fallback = document.getElementById("logoFallback");
+  const mark = document.getElementById("logoMark");
   if (!img) return;
 
+  img.removeAttribute("src");
+  img.style.display = "none";
+  if (fallback) fallback.hidden = false;
+  mark?.classList.remove("has-logo");
+
   const tryNext = (index) => {
-    if (index >= LOGO_CANDIDATES.length) return;
+    if (index >= LOGO_CANDIDATES.length) {
+      return;
+    }
     const candidate = LOGO_CANDIDATES[index];
     const probe = new Image();
     probe.onload = () => {
       img.src = candidate;
+      img.style.display = "block";
+      if (fallback) fallback.hidden = true;
+      mark?.classList.add("has-logo");
     };
     probe.onerror = () => tryNext(index + 1);
     probe.src = candidate;
