@@ -18,13 +18,17 @@ Minimal, modern, fast static website for Shine N Time Interior Detailing.
 
 ## Logo files (optional)
 
-Add a square-ish logo image to the repo root. The site will auto-detect the first file that exists from this list:
+Add a square-ish logo image and commit it to the **same branch Vercel deploys** (usually `main`). The script tries these folders in order: repo root, `assets/`, `images/`, `img/`, `public/`, with names like `logo.png`, `Logo.png`, `shine-n-time-logo.png`, etc.
 
-- `logo.png` / `logo.PNG` / `logo.webp` / `logo.jpg` / `logo.jpeg` (recommended)
-- `logo-mark.png` / `logo-mark.webp`
-- `logo-1.png` … `logo-3.png` (or `logo1.png` … `logo3.png`)
+**Override (any filename):** in `index.html` head, uncomment and set:
 
-If none are found, the header shows a simple **SNT** text mark (no random interior photo).
+```html
+<meta name="site-logo" content="./assets/my-logo.png" />
+```
+
+If nothing loads, the header shows **SNT** (no random interior photo).
+
+**GitHub tip:** If your default branch is not `main`, either merge your changes into the branch Vercel uses or change Vercel’s production branch under **Settings → Git**.
 
 ## How "Edit Last Quote" works
 

@@ -196,9 +196,16 @@ img {
 
 .quote-layout {
   display: grid;
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.35fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
   align-items: start;
+}
+
+.quote-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
 }
 
 .quote-rail {
@@ -207,9 +214,9 @@ img {
 
 @media (min-width: 1200px) {
   .quote-layout {
-    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.25fr) minmax(0, 0.42fr);
-    gap: 1rem 1.1rem;
-    align-items: stretch;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.38fr);
+    gap: 1rem 1.25rem;
+    align-items: start;
   }
 
   .quote-rail {
@@ -315,13 +322,40 @@ img {
   }
 }
 
+.quote-lead {
+  display: grid;
+  gap: 0.75rem;
+}
+
+@media (min-width: 900px) {
+  .quote-lead {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    gap: 0.85rem 1.1rem;
+    align-items: start;
+  }
+
+  .quote-intro {
+    grid-column: 1;
+    grid-row: 1 / -1;
+    align-self: start;
+  }
+
+  .quote-lead .estimate-box {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .quote-lead .what-expect {
+    grid-column: 2;
+    grid-row: 2;
+    margin-top: 0;
+  }
+}
+
 .quote-intro {
   display: grid;
   gap: 0.55rem;
-}
-
-.quote-intro .estimate-box {
-  margin-top: 0.1rem;
 }
 
 .small-note {
@@ -1192,6 +1226,13 @@ h3 {
   font-size: 1.35rem;
   font-weight: 800;
   color: #ffe39a;
+}
+
+.estimate-value--pending {
+  color: #9fb3cf;
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
 }
 
 .estimate-disclaimer {

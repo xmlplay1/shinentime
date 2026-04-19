@@ -43,32 +43,51 @@ let currentZoom = 1;
 let pastWorkAutoScrollKilled = false;
 let stopPastWorkAutoScroll = null;
 
-const LOGO_CANDIDATES = [
-  "./logo.png",
-  "./logo.PNG",
-  "./logo.webp",
-  "./logo.WEBP",
-  "./logo.jpg",
-  "./logo.JPG",
-  "./logo.jpeg",
-  "./logo.JPEG",
-  "./logo-mark.png",
-  "./logo-mark.webp",
-  "./logo-1.png",
-  "./logo-2.png",
-  "./logo-3.png",
-  "./logo1.png",
-  "./logo2.png",
-  "./logo3.png",
-  "./Logo.png",
-  "./LOGO.png",
-  "./ShineNTime.png",
-  "./shine-n-time.png",
-  "./shine-n-time-logo.png",
-  "./shine-n-time-logo.webp",
-  "./shinentime-logo.png",
-  "./shinentime-logo.webp"
-];
+function buildLogoCandidates() {
+  const urls = [];
+  const push = (url) => {
+    const trimmed = String(url || "").trim();
+    if (!trimmed || urls.includes(trimmed)) return;
+    urls.push(trimmed);
+  };
+
+  const meta = document.querySelector('meta[name="site-logo"]');
+  push(meta?.getAttribute("content"));
+
+  const bases = ["./", "./assets/", "./images/", "./img/", "./public/"];
+  const names = [
+    "logo.png",
+    "logo.PNG",
+    "logo.webp",
+    "logo.WEBP",
+    "logo.jpg",
+    "logo.JPG",
+    "logo.jpeg",
+    "logo.JPEG",
+    "Logo.png",
+    "LOGO.png",
+    "logo-mark.png",
+    "logo-mark.webp",
+    "logo-1.png",
+    "logo-2.png",
+    "logo-3.png",
+    "logo1.png",
+    "logo2.png",
+    "logo3.png",
+    "ShineNTime.png",
+    "shine-n-time.png",
+    "shine-n-time-logo.png",
+    "shine-n-time-logo.webp",
+    "shinentime-logo.png",
+    "shinentime-logo.webp"
+  ];
+
+  bases.forEach((base) => {
+    names.forEach((name) => push(`${base}${name}`));
+  });
+
+  return urls;
+}
 
 function initSiteLogo() {
   const img = document.getElementById("siteLogo");
@@ -76,16 +95,18 @@ function initSiteLogo() {
   const mark = document.getElementById("logoMark");
   if (!img) return;
 
+  const candidates = buildLogoCandidates();
+
   img.removeAttribute("src");
   img.style.display = "none";
   if (fallback) fallback.hidden = false;
   mark?.classList.remove("has-logo");
 
   const tryNext = (index) => {
-    if (index >= LOGO_CANDIDATES.length) {
+    if (index >= candidates.length) {
       return;
     }
-    const candidate = LOGO_CANDIDATES[index];
+    const candidate = candidates[index];
     const probe = new Image();
     probe.onload = () => {
       img.src = candidate;
@@ -321,17 +342,31 @@ window.addEventListener("keydown", (event) => {
 function calculateEstimate() {
   if (!vehicleType || !packageSelect || !estimateRange || !estimateHidden) return;
 
-  const vehicle = vehicleType.value;
-  const pkg = packageSelect.value;
+  const rawVehicle = String(vehicleType.value || "").trim().toLowerCase();
+  const vehicle =
+    rawVehicle === "suv" || rawVehicle === "truck" || rawVehicle === "van" || rawVehicle.includes("suv")
+      ? "suv"
+      : rawVehicle === "sedan" || rawVehicle === "coupe"
+        ? "sedan"
+        : rawVehicle;
+  const pkg = String(packageSelect.value || "").trim().toLowerCase();
   const priceKey = vehicle === "suv" ? "suvTruck" : vehicle;
-  if (!vehicle || !pkg || !PACKAGE_PRICING[pkg] || !PACKAGE_PRICING[pkg][priceKey]) {
-    estimateRange.textContent = "$0 - $0";
-    if (estimateBreakdown) {
-      estimateBreakdown.textContent = "Choose vehicle type + package to see estimate.";
-    }
+
+  const setPendingEstimate = (message) => {
+    estimateRange.textContent = "—";
+    estimateRange.classList.add("estimate-value--pending");
+    if (estimateBreakdown) estimateBreakdown.textContent = message;
     estimateHidden.value = "";
+    const emailEstimate = document.getElementById("emailEstimate");
+    if (emailEstimate) emailEstimate.value = "";
+  };
+
+  if (!vehicle || !pkg || !PACKAGE_PRICING[pkg] || !PACKAGE_PRICING[pkg][priceKey]) {
+    setPendingEstimate("Pick vehicle size and package to see a ballpark range.");
     return;
   }
+
+  estimateRange.classList.remove("estimate-value--pending");
 
   let low = PACKAGE_PRICING[pkg][priceKey];
   let high = PACKAGE_PRICING[pkg][priceKey];
@@ -382,7 +417,7 @@ function calculateEstimate() {
 
   estimateRange.textContent = `$${low} - $${high}`;
   const extrasText = extras.length ? ` + extras: ${extras.join(", ")}` : "";
-  const vehicleLabel = vehicle === "sedan" ? "Sedan" : "SUV/Truck";
+  const vehicleLabel = vehicle === "sedan" ? "Sedan / coupe" : "SUV / truck / van";
   const summaryText = `Estimated $${low} - $${high}. Base ${pkg.toUpperCase()} package for ${vehicleLabel}${extrasText}. Final quote confirmed after inspection.`;
   if (estimateBreakdown) {
     estimateBreakdown.textContent = summaryText.replace(/^Estimated \$\d+ - \$\d+\. /, "");
