@@ -3,10 +3,12 @@ const nav = document.getElementById("primaryNav");
 const quoteForm = document.getElementById("quoteForm");
 const formMessage = document.getElementById("formMessage");
 const year = document.getElementById("year");
+const editLastQuoteButton = document.getElementById("editLastQuote");
 const quoteEndpoint =
-  quoteForm?.getAttribute("data-formspree-endpoint") ||
   quoteForm?.getAttribute("action") ||
+  quoteForm?.dataset?.formspreeEndpoint ||
   "";
+const QUOTE_STORAGE_KEY = "shine-n-time-last-quote";
 
 if (year) {
   year.textContent = new Date().getFullYear();
@@ -20,7 +22,7 @@ if (menuToggle && nav) {
 
   nav.querySelectorAll("a").forEach((link) => {
     link.addEventListener("click", () => {
-      nav.classList.remove("open");
+      nav.classList.remove("show");
       menuToggle.setAttribute("aria-expanded", "false");
     });
   });
@@ -37,12 +39,55 @@ if ("IntersectionObserver" in window) {
         }
       });
     },
-    { threshold: 0.15, rootMargin: "0px 0px -40px 0px" }
+    { threshold: 0.2 }
   );
 
   revealItems.forEach((item) => observer.observe(item));
 } else {
   revealItems.forEach((item) => item.classList.add("visible"));
+}
+
+function saveQuoteDraft(data) {
+  try {
+    localStorage.setItem(QUOTE_STORAGE_KEY, JSON.stringify(data));
+  } catch (error) {
+    // Ignore storage errors in private/incognito modes.
+  }
+}
+
+function loadQuoteDraft() {
+  try {
+    const raw = localStorage.getItem(QUOTE_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (error) {
+    return null;
+  }
+}
+
+function fillQuoteForm(values) {
+  if (!quoteForm || !values) return;
+  const fields = ["name", "phone", "email", "vehicle", "service", "notes"];
+  fields.forEach((field) => {
+    const input = quoteForm.elements.namedItem(field);
+    if (input && typeof values[field] === "string") {
+      input.value = values[field];
+    }
+  });
+}
+
+if (editLastQuoteButton) {
+  editLastQuoteButton.addEventListener("click", () => {
+    const draft = loadQuoteDraft();
+    if (!draft) {
+      formMessage.textContent = "No previous quote found yet. Submit one first.";
+      formMessage.style.color = "#b91c1c";
+      return;
+    }
+    fillQuoteForm(draft);
+    formMessage.textContent = "Last quote loaded. You can edit and resend it.";
+    formMessage.style.color = "#0f766e";
+  });
 }
 
 if (quoteForm) {
@@ -72,8 +117,18 @@ if (quoteForm) {
       return;
     }
 
-    if (!quoteEndpoint || quoteEndpoint.includes("REPLACE_WITH_YOUR_FORMSPREE_ID")) {
-      formMessage.textContent = "Form is not connected yet. Add your Formspree URL in index.html to receive quote requests.";
+    const draftValues = {
+      name: String(data.get("name") || "").trim(),
+      phone: phoneValue,
+      email: emailValue,
+      vehicle: String(data.get("vehicle") || "").trim(),
+      service: String(data.get("service") || "").trim(),
+      notes: String(data.get("notes") || "").trim()
+    };
+    saveQuoteDraft(draftValues);
+
+    if (!quoteEndpoint) {
+      formMessage.textContent = "Form not connected. Call 724-419-1846 or DM @shine_n_time.";
       formMessage.style.color = "#b91c1c";
       return;
     }
@@ -94,11 +149,10 @@ if (quoteForm) {
         throw new Error("Request failed");
       }
 
-      formMessage.textContent = "Thanks! Your quote request was sent. We will contact you soon.";
+      formMessage.textContent = "Thanks! Quote sent. We will reach out soon.";
       formMessage.style.color = "#0f766e";
-      quoteForm.reset();
     } catch (error) {
-      formMessage.textContent = "Could not send right now. Please call 724-419-1846 or DM @shine_n_time on Instagram.";
+      formMessage.textContent = "Could not send right now. Call 724-419-1846 or DM @shine_n_time.";
       formMessage.style.color = "#b91c1c";
     }
   });
