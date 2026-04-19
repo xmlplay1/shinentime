@@ -5,11 +5,45 @@ const formMessage = document.getElementById("formMessage");
 const year = document.getElementById("year");
 const editLastQuoteButton = document.getElementById("editLastQuoteBtn");
 const pastWorkScroll = document.querySelector(".past-work-scroll");
+const galleryButtons = Array.from(document.querySelectorAll(".work-card-btn"));
+const lightbox = document.getElementById("lightbox");
+const lightboxImage = document.getElementById("lightboxImage");
+const lightboxCaption = document.getElementById("lightboxCaption");
+const lightboxClose = document.getElementById("lightboxClose");
+const lightboxPrev = document.getElementById("lightboxPrev");
+const lightboxNext = document.getElementById("lightboxNext");
+const lightboxZoomIn = document.getElementById("zoomInBtn");
+const lightboxZoomOut = document.getElementById("zoomOutBtn");
+const lightboxZoomReset = document.getElementById("zoomResetBtn");
+const vehicleType = document.getElementById("vehicleSize");
+const packageSelect = document.getElementById("package");
+const extrasFieldset = document.querySelector(".extras-group");
+const estimateRange = document.getElementById("estimateValue");
+const estimateBreakdown = document.getElementById("estimateBreakdown");
+const estimateHidden = document.getElementById("estimateSummary");
 const quoteEndpoint =
   quoteForm?.getAttribute("action") ||
   quoteForm?.dataset?.formspreeEndpoint ||
   "";
 const QUOTE_STORAGE_KEY = "shine-n-time-last-quote";
+let currentGalleryIndex = 0;
+let currentZoom = 1;
+let pastWorkAutoScrollKilled = false;
+let stopPastWorkAutoScroll = null;
+
+const PACKAGE_PRICING = {
+  silver: { sedan: 49, suvTruck: 59 },
+  gold: { sedan: 125, suvTruck: 140 },
+  platinum: { sedan: 160, suvTruck: 180 }
+};
+
+const EXTRA_PRICING = {
+  petHair: { low: 20, high: 20 },
+  sand: { low: 15, high: 15 },
+  bio: { low: 35, high: 35 },
+  smoke: { low: 25, high: 25 },
+  mold: { low: 60, high: 60 }
+};
 
 if (year) {
   year.textContent = new Date().getFullYear();
@@ -63,7 +97,7 @@ if (pastWorkScroll && !window.matchMedia("(prefers-reduced-motion: reduce)").mat
     const delta = (timestamp - lastTime) / 1000;
     lastTime = timestamp;
 
-    if (!paused) {
+    if (!paused && !pastWorkAutoScrollKilled) {
       pastWorkScroll.scrollLeft += speedPxPerSecond * delta;
       const resetPoint = pastWorkScroll.scrollWidth / 2;
       if (pastWorkScroll.scrollLeft >= resetPoint) {
@@ -80,13 +114,20 @@ if (pastWorkScroll && !window.matchMedia("(prefers-reduced-motion: reduce)").mat
   };
 
   const resume = () => {
+    if (pastWorkAutoScrollKilled) return;
     paused = false;
     pastWorkScroll.classList.remove("is-paused");
   };
 
   const resumeSoon = () => {
+    if (pastWorkAutoScrollKilled) return;
     window.clearTimeout(resumeTimer);
     resumeTimer = window.setTimeout(resume, 1800);
+  };
+
+  stopPastWorkAutoScroll = () => {
+    pastWorkAutoScrollKilled = true;
+    pause();
   };
 
   animationFrame = window.requestAnimationFrame(step);
@@ -100,6 +141,165 @@ if (pastWorkScroll && !window.matchMedia("(prefers-reduced-motion: reduce)").mat
     window.clearTimeout(resumeTimer);
   });
 }
+
+function getGalleryItems() {
+  return Array.from(document.querySelectorAll(".work-card-btn"))
+    .map((button) => {
+      const img = button.querySelector("img");
+      if (!img) return null;
+      return {
+        src: img.currentSrc || img.src,
+        alt: img.alt || "Past work photo"
+      };
+    })
+    .filter(Boolean);
+}
+
+function renderLightboxImage() {
+  const items = getGalleryItems();
+  if (!items.length || !lightboxImage) return;
+  const item = items[currentGalleryIndex];
+  lightboxImage.src = item.src;
+  lightboxImage.alt = item.alt;
+  if (lightboxCaption) {
+    lightboxCaption.textContent = `${item.alt} (${currentGalleryIndex + 1}/${items.length})`;
+  }
+  lightboxImage.style.transform = `scale(${currentZoom})`;
+}
+
+function openLightbox(index) {
+  if (!lightbox) return;
+  currentGalleryIndex = index;
+  currentZoom = 1;
+  renderLightboxImage();
+  lightbox.hidden = false;
+  lightbox.setAttribute("aria-hidden", "false");
+  document.body.classList.add("lightbox-open");
+  if (typeof stopPastWorkAutoScroll === "function") {
+    stopPastWorkAutoScroll();
+  }
+}
+
+function closeLightbox() {
+  if (!lightbox) return;
+  lightbox.hidden = true;
+  lightbox.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("lightbox-open");
+}
+
+function nextLightbox() {
+  const items = getGalleryItems();
+  if (!items.length) return;
+  currentGalleryIndex = (currentGalleryIndex + 1) % items.length;
+  renderLightboxImage();
+}
+
+function prevLightbox() {
+  const items = getGalleryItems();
+  if (!items.length) return;
+  currentGalleryIndex = (currentGalleryIndex - 1 + items.length) % items.length;
+  renderLightboxImage();
+}
+
+function updateZoom(step) {
+  currentZoom = Math.max(1, Math.min(2.6, currentZoom + step));
+  if (lightboxImage) {
+    lightboxImage.style.transform = `scale(${currentZoom})`;
+  }
+}
+
+galleryButtons.forEach((button, index) => {
+  button.addEventListener("click", () => openLightbox(index));
+});
+
+if (lightboxClose) lightboxClose.addEventListener("click", closeLightbox);
+if (lightboxNext) lightboxNext.addEventListener("click", nextLightbox);
+if (lightboxPrev) lightboxPrev.addEventListener("click", prevLightbox);
+if (lightboxZoomIn) lightboxZoomIn.addEventListener("click", () => updateZoom(0.2));
+if (lightboxZoomOut) lightboxZoomOut.addEventListener("click", () => updateZoom(-0.2));
+if (lightboxZoomReset) {
+  lightboxZoomReset.addEventListener("click", () => {
+    currentZoom = 1;
+    if (lightboxImage) lightboxImage.style.transform = "scale(1)";
+  });
+}
+
+if (lightbox) {
+  lightbox.addEventListener("click", (event) => {
+    if (event.target === lightbox) closeLightbox();
+  });
+}
+
+window.addEventListener("keydown", (event) => {
+  if (!lightbox || lightbox.hidden) return;
+  if (event.key === "Escape") closeLightbox();
+  if (event.key === "ArrowRight") nextLightbox();
+  if (event.key === "ArrowLeft") prevLightbox();
+  if (event.key === "+" || event.key === "=") updateZoom(0.2);
+  if (event.key === "-") updateZoom(-0.2);
+});
+
+function calculateEstimate() {
+  if (!vehicleType || !packageSelect || !estimateRange || !estimateBreakdown || !estimateHidden) return;
+
+  const vehicle = vehicleType.value;
+  const pkg = packageSelect.value;
+  if (!vehicle || !pkg || !PACKAGE_PRICING[pkg]) {
+    estimateRange.textContent = "$0 - $0";
+    estimateBreakdown.textContent = "Choose vehicle type + package to see estimate.";
+    estimateHidden.value = "";
+    return;
+  }
+
+  let low = PACKAGE_PRICING[pkg][vehicle];
+  let high = PACKAGE_PRICING[pkg][vehicle];
+  const extras = [];
+  const conditionLevel = String(document.getElementById("conditionLevel")?.value || "");
+  const discountChecked = Boolean(document.getElementById("firstDetailDiscount")?.checked);
+
+  const conditionMultiplier = {
+    light: 1,
+    medium: 1.18,
+    heavy: 1.35
+  };
+  const conditionFactor = conditionMultiplier[conditionLevel] || 1;
+  low = Math.round(low * conditionFactor);
+  high = Math.round(high * conditionFactor);
+
+  if (extrasFieldset) {
+    const checked = Array.from(extrasFieldset.querySelectorAll("input[type='checkbox']:checked"));
+    checked.forEach((input) => {
+      const key = input.value;
+      const pricing = EXTRA_PRICING[key];
+      if (!pricing) return;
+      low += pricing.low;
+      high += pricing.high;
+      extras.push(input.dataset.label || key);
+    });
+  }
+
+  if (discountChecked) {
+    const discountPct = 0.2;
+    low = Math.max(0, Math.round(low * (1 - discountPct)));
+    high = Math.max(0, Math.round(high * (1 - discountPct)));
+  }
+
+  estimateRange.textContent = `$${low} - $${high}`;
+  const extrasText = extras.length ? ` + extras: ${extras.join(", ")}` : "";
+  estimateBreakdown.textContent = `Base ${pkg.toUpperCase()} package for ${vehicle === "sedan" ? "Sedan" : "SUV/Truck"}${extrasText}. Final quote confirmed after inspection.`;
+  estimateHidden.value = `${low}-${high}`;
+}
+
+if (vehicleType) vehicleType.addEventListener("change", calculateEstimate);
+if (packageSelect) packageSelect.addEventListener("change", calculateEstimate);
+const conditionLevelInput = document.getElementById("conditionLevel");
+const firstDetailDiscountInput = document.getElementById("firstDetailDiscount");
+if (conditionLevelInput) conditionLevelInput.addEventListener("change", calculateEstimate);
+if (firstDetailDiscountInput) firstDetailDiscountInput.addEventListener("change", calculateEstimate);
+if (extrasFieldset) {
+  extrasFieldset.addEventListener("change", calculateEstimate);
+}
+calculateEstimate();
 
 function saveQuoteDraft(data) {
   try {
@@ -121,13 +321,33 @@ function loadQuoteDraft() {
 
 function fillQuoteForm(values) {
   if (!quoteForm || !values) return;
-  const fields = ["name", "phone", "email", "vehicle", "service", "notes"];
+  const fields = [
+    "name",
+    "phone",
+    "email",
+    "appointmentDate",
+    "timeWindow",
+    "vehicle",
+    "vehicleSize",
+    "package",
+    "conditionLevel",
+    "notes",
+    "estimateSummary"
+  ];
   fields.forEach((field) => {
     const input = quoteForm.elements.namedItem(field);
     if (input && typeof values[field] === "string") {
       input.value = values[field];
     }
   });
+
+  if (extrasFieldset && Array.isArray(values.extras)) {
+    const checkboxes = Array.from(extrasFieldset.querySelectorAll("input[type='checkbox']"));
+    checkboxes.forEach((checkbox) => {
+      checkbox.checked = values.extras.includes(checkbox.value);
+    });
+  }
+  calculateEstimate();
 }
 
 if (editLastQuoteButton) {
@@ -148,7 +368,7 @@ if (quoteForm) {
   quoteForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const data = new FormData(quoteForm);
-    const requiredFields = ["name", "vehicle", "service"];
+    const requiredFields = ["name", "vehicle", "vehicleSize", "package", "conditionLevel", "appointmentDate"];
     const hasMissing = requiredFields.some((field) => !String(data.get(field) || "").trim());
     const phoneValue = String(data.get("phone") || "").trim();
     const emailValue = String(data.get("email") || "").trim();
@@ -175,9 +395,17 @@ if (quoteForm) {
       name: String(data.get("name") || "").trim(),
       phone: phoneValue,
       email: emailValue,
+      appointmentDate: String(data.get("appointmentDate") || "").trim(),
+      timeWindow: String(data.get("timeWindow") || "").trim(),
       vehicle: String(data.get("vehicle") || "").trim(),
-      service: String(data.get("service") || "").trim(),
-      notes: String(data.get("notes") || "").trim()
+      vehicleSize: String(data.get("vehicleSize") || "").trim(),
+      package: String(data.get("package") || "").trim(),
+      conditionLevel: String(data.get("conditionLevel") || "").trim(),
+      notes: String(data.get("notes") || "").trim(),
+      estimateSummary: String(data.get("estimateSummary") || "").trim(),
+      extras: Array.from(
+        (extrasFieldset ? extrasFieldset.querySelectorAll("input[type='checkbox']:checked") : [])
+      ).map((input) => input.value)
     };
     saveQuoteDraft(draftValues);
 
