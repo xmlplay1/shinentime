@@ -3,7 +3,8 @@ const nav = document.getElementById("primaryNav");
 const quoteForm = document.getElementById("quoteForm");
 const formMessage = document.getElementById("formMessage");
 const year = document.getElementById("year");
-const editLastQuoteButton = document.getElementById("editLastQuote");
+const editLastQuoteButton = document.getElementById("editLastQuoteBtn");
+const pastWorkScroll = document.querySelector(".past-work-scroll");
 const quoteEndpoint =
   quoteForm?.getAttribute("action") ||
   quoteForm?.dataset?.formspreeEndpoint ||
@@ -45,6 +46,47 @@ if ("IntersectionObserver" in window) {
   revealItems.forEach((item) => observer.observe(item));
 } else {
   revealItems.forEach((item) => item.classList.add("visible"));
+}
+
+if (pastWorkScroll) {
+  let autoScrollTimer;
+  let resumeTimer;
+  const scrollStep = 1;
+  const intervalMs = 28;
+
+  const tick = () => {
+    const maxScrollLeft = pastWorkScroll.scrollWidth - pastWorkScroll.clientWidth;
+    if (pastWorkScroll.scrollLeft >= maxScrollLeft - 2) {
+      pastWorkScroll.scrollTo({ left: 0, behavior: "smooth" });
+      return;
+    }
+    pastWorkScroll.scrollLeft += scrollStep;
+  };
+
+  const startAutoScroll = () => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+    clearInterval(autoScrollTimer);
+    autoScrollTimer = setInterval(tick, intervalMs);
+  };
+
+  const pauseAutoScroll = () => {
+    clearInterval(autoScrollTimer);
+  };
+
+  const scheduleResume = () => {
+    clearTimeout(resumeTimer);
+    resumeTimer = setTimeout(startAutoScroll, 2200);
+  };
+
+  startAutoScroll();
+
+  pastWorkScroll.addEventListener("mouseenter", pauseAutoScroll);
+  pastWorkScroll.addEventListener("mouseleave", startAutoScroll);
+  pastWorkScroll.addEventListener("touchstart", pauseAutoScroll, { passive: true });
+  pastWorkScroll.addEventListener("touchend", scheduleResume, { passive: true });
+  pastWorkScroll.addEventListener("wheel", scheduleResume, { passive: true });
 }
 
 function saveQuoteDraft(data) {
