@@ -15,7 +15,9 @@ const lightboxNext = document.getElementById("lightboxNext");
 const lightboxZoomIn = document.getElementById("zoomInBtn");
 const lightboxZoomOut = document.getElementById("zoomOutBtn");
 const lightboxZoomReset = document.getElementById("zoomResetBtn");
-const vehicleType = document.getElementById("vehicleSize");
+const vehicleType =
+  document.getElementById("vehicleType") ||
+  document.getElementById("vehicleSize");
 const packageSelect = document.getElementById("package");
 const extrasFieldset = document.querySelector(".extras-group");
 const estimateRange = document.getElementById("estimateValue");
@@ -39,10 +41,10 @@ const PACKAGE_PRICING = {
 
 const EXTRA_PRICING = {
   petHair: { low: 20, high: 20 },
-  sand: { low: 15, high: 15 },
-  bio: { low: 35, high: 35 },
-  smoke: { low: 25, high: 25 },
-  mold: { low: 60, high: 60 }
+  sandSalt: { low: 15, high: 15 },
+  bioClean: { low: 35, high: 35 },
+  smokeOdor: { low: 25, high: 25 },
+  moldRisk: { low: 60, high: 60 }
 };
 
 if (year) {
@@ -333,6 +335,7 @@ function fillQuoteForm(values) {
     "appointmentDate",
     "timeWindow",
     "vehicle",
+    "vehicleType",
     "vehicleSize",
     "package",
     "conditionLevel",
@@ -373,7 +376,7 @@ if (quoteForm) {
   quoteForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const data = new FormData(quoteForm);
-    const requiredFields = ["name", "vehicle", "vehicleSize", "package", "conditionLevel", "appointmentDate"];
+    const requiredFields = ["name", "vehicle", "vehicleType", "package", "conditionLevel", "appointmentDate"];
     const hasMissing = requiredFields.some((field) => !String(data.get(field) || "").trim());
     const phoneValue = String(data.get("phone") || "").trim();
     const emailValue = String(data.get("email") || "").trim();
@@ -403,7 +406,7 @@ if (quoteForm) {
       appointmentDate: String(data.get("appointmentDate") || "").trim(),
       timeWindow: String(data.get("timeWindow") || "").trim(),
       vehicle: String(data.get("vehicle") || "").trim(),
-      vehicleSize: String(data.get("vehicleSize") || "").trim(),
+      vehicleType: String(data.get("vehicleType") || "").trim(),
       package: String(data.get("package") || "").trim(),
       conditionLevel: String(data.get("conditionLevel") || "").trim(),
       notes: String(data.get("notes") || "").trim(),
