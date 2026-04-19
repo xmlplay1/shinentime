@@ -240,13 +240,15 @@ window.addEventListener("keydown", (event) => {
 });
 
 function calculateEstimate() {
-  if (!vehicleType || !packageSelect || !estimateRange || !estimateBreakdown || !estimateHidden) return;
+  if (!vehicleType || !packageSelect || !estimateRange || !estimateHidden) return;
 
   const vehicle = vehicleType.value;
   const pkg = packageSelect.value;
   if (!vehicle || !pkg || !PACKAGE_PRICING[pkg]) {
     estimateRange.textContent = "$0 - $0";
-    estimateBreakdown.textContent = "Choose vehicle type + package to see estimate.";
+    if (estimateBreakdown) {
+      estimateBreakdown.textContent = "Choose vehicle type + package to see estimate.";
+    }
     estimateHidden.value = "";
     return;
   }
@@ -286,8 +288,11 @@ function calculateEstimate() {
 
   estimateRange.textContent = `$${low} - $${high}`;
   const extrasText = extras.length ? ` + extras: ${extras.join(", ")}` : "";
-  estimateBreakdown.textContent = `Base ${pkg.toUpperCase()} package for ${vehicle === "sedan" ? "Sedan" : "SUV/Truck"}${extrasText}. Final quote confirmed after inspection.`;
-  estimateHidden.value = `${low}-${high}`;
+  const summaryText = `Estimated $${low} - $${high}. Base ${pkg.toUpperCase()} package for ${vehicle === "sedan" ? "Sedan" : "SUV/Truck"}${extrasText}. Final quote confirmed after inspection.`;
+  if (estimateBreakdown) {
+    estimateBreakdown.textContent = summaryText.replace(/^Estimated \$\d+ - \$\d+\. /, "");
+  }
+  estimateHidden.value = summaryText;
 }
 
 if (vehicleType) vehicleType.addEventListener("change", calculateEstimate);
