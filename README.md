@@ -16,6 +16,16 @@ Minimal, modern, fast static website for Shine N Time Interior Detailing.
 - Instagram: `@shine_n_time`
 - Form endpoint: `https://formspree.io/f/mgorzwbw`
 
+## Logo files (optional)
+
+Add a square-ish logo image to the repo root. The site will auto-detect the first file that exists from this list:
+
+- `logo-mark.png` / `logo-mark.webp` (recommended)
+- `logo.png` / `logo.webp`
+- `logo-1.png` … `logo-3.png` (or `logo1.png` … `logo3.png`)
+
+If none are found, it falls back to `IMG_2868.PNG` in the header mark.
+
 ## How "Edit Last Quote" works
 
 When someone sends a quote request, their data is saved in their browser.

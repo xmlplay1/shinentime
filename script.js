@@ -43,6 +43,41 @@ let currentZoom = 1;
 let pastWorkAutoScrollKilled = false;
 let stopPastWorkAutoScroll = null;
 
+const LOGO_CANDIDATES = [
+  "./logo-mark.png",
+  "./logo-mark.webp",
+  "./logo.png",
+  "./logo.webp",
+  "./logo-1.png",
+  "./logo-2.png",
+  "./logo-3.png",
+  "./logo1.png",
+  "./logo2.png",
+  "./logo3.png",
+  "./shine-n-time-logo.png",
+  "./shine-n-time-logo.webp"
+];
+
+function initSiteLogo() {
+  const img = document.getElementById("siteLogo");
+  if (!img) return;
+
+  const tryNext = (index) => {
+    if (index >= LOGO_CANDIDATES.length) return;
+    const candidate = LOGO_CANDIDATES[index];
+    const probe = new Image();
+    probe.onload = () => {
+      img.src = candidate;
+    };
+    probe.onerror = () => tryNext(index + 1);
+    probe.src = candidate;
+  };
+
+  tryNext(0);
+}
+
+initSiteLogo();
+
 const PACKAGE_PRICING = {
   silver: { sedan: 49, suvTruck: 59 },
   gold: { sedan: 125, suvTruck: 140 },

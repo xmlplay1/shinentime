@@ -20,7 +20,7 @@
     <div class="container nav-wrap">
       <a class="logo" href="#home">
         <span class="logo-mark" aria-hidden="true">
-          <img src="./IMG_2868.PNG" alt="" width="40" height="40" decoding="async" />
+          <img id="siteLogo" src="./IMG_2868.PNG" alt="" width="40" height="40" decoding="async" />
         </span>
         <span class="logo-text">Shine N Time</span>
       </a>
@@ -377,119 +377,177 @@
           novalidate
           data-formspree-endpoint="https://formspree.io/f/mgorzwbw"
         >
-          <label for="name">Full Name *</label>
-          <input id="name" name="name" type="text" required />
-
-          <label for="phone">Phone (optional if email is provided)</label>
-          <input id="phone" name="phone" type="tel" placeholder="734-419-1846" />
-
-          <label for="email">Email (optional if phone is provided)</label>
-          <input id="email" name="email" type="email" placeholder="you@example.com" />
-
-          <label for="vehicle">Vehicle *</label>
-          <input id="vehicle" name="vehicle" type="text" required placeholder="Example: 2021 Honda Accord" />
-
-          <label for="zipCode">Zip code (for travel check) *</label>
-          <input id="zipCode" name="zipCode" type="text" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" required placeholder="48187" />
-
-          <label for="vehicleType">Vehicle Size *</label>
-          <select id="vehicleType" name="vehicleType" required>
-            <option value="">Select size</option>
-            <option value="sedan">Sedan / Coupe</option>
-            <option value="suv">SUV / Truck / Van</option>
-          </select>
-
-          <label for="package">Package *</label>
-          <select id="package" name="package" required>
-            <option value="">Select package</option>
-            <option value="silver">Silver Package</option>
-            <option value="gold">Gold Package</option>
-            <option value="platinum">Platinum Package</option>
-          </select>
-
-          <label for="conditionLevel">Interior Condition *</label>
-          <select id="conditionLevel" name="conditionLevel" required>
-            <option value="">Select condition</option>
-            <option value="light">Light dirt / maintenance</option>
-            <option value="medium">Moderate dirt / some stains</option>
-            <option value="heavy">Heavy dirt / deep stain recovery</option>
-          </select>
-
-          <fieldset class="extras-group" id="extrasFieldset">
-            <legend>Extras (if needed)</legend>
-            <div class="extra-row">
-              <label class="extra-check"><input type="checkbox" name="extras" value="petHair" data-label="Pet hair removal" data-base="20" /> Pet hair removal (from +$20)</label>
-              <label class="extra-sub" for="petHairLevel">Severity</label>
-              <select id="petHairLevel" name="petHairLevel">
-                <option value="light">Light</option>
-                <option value="medium" selected>Medium</option>
-                <option value="heavy">Heavy</option>
-              </select>
+          <div class="quote-grid">
+            <div class="quote-section quote-span-2">
+              <h3 class="quote-section-title">Contact</h3>
+              <div class="quote-row-3">
+                <div class="field">
+                  <label for="name">Full Name *</label>
+                  <input id="name" name="name" type="text" required />
+                </div>
+                <div class="field">
+                  <label for="phone">Phone</label>
+                  <input id="phone" name="phone" type="tel" placeholder="734-419-1846" />
+                </div>
+                <div class="field">
+                  <label for="email">Email</label>
+                  <input id="email" name="email" type="email" placeholder="you@example.com" />
+                </div>
+              </div>
+              <p class="field-hint">Leave at least phone or email so we can reply.</p>
             </div>
-            <div class="extra-row">
-              <label class="extra-check"><input type="checkbox" name="extras" value="sandSalt" data-label="Sand/mud heavy cleanup" data-base="15" /> Sand/mud heavy cleanup (from +$15)</label>
-              <label class="extra-sub" for="sandLevel">Severity</label>
-              <select id="sandLevel" name="sandLevel">
-                <option value="light">Light</option>
-                <option value="medium" selected>Medium</option>
-                <option value="heavy">Heavy</option>
-              </select>
+
+            <div class="quote-section quote-span-2">
+              <h3 class="quote-section-title">Vehicle</h3>
+              <div class="quote-row-3">
+                <div class="field">
+                  <label for="vehicle">Vehicle *</label>
+                  <input id="vehicle" name="vehicle" type="text" required placeholder="2021 Honda Accord" />
+                </div>
+                <div class="field">
+                  <label for="zipCode">Zip *</label>
+                  <input id="zipCode" name="zipCode" type="text" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" required placeholder="48187" />
+                </div>
+                <div class="field">
+                  <label for="vehicleType">Size *</label>
+                  <select id="vehicleType" name="vehicleType" required>
+                    <option value="">Select</option>
+                    <option value="sedan">Sedan / Coupe</option>
+                    <option value="suv">SUV / Truck / Van</option>
+                  </select>
+                </div>
+              </div>
             </div>
-            <div class="extra-row">
-              <label class="extra-check"><input type="checkbox" name="extras" value="bioClean" data-label="Vomit/biological cleanup" data-base="35" /> Vomit/biological cleanup (from +$35)</label>
-              <label class="extra-sub" for="bioLevel">Severity</label>
-              <select id="bioLevel" name="bioLevel">
-                <option value="light">Light</option>
-                <option value="medium" selected>Medium</option>
-                <option value="heavy">Heavy</option>
-              </select>
+
+            <div class="quote-section">
+              <h3 class="quote-section-title">Package *</h3>
+              <div class="field">
+                <label class="visually-hidden" for="package">Package</label>
+                <select id="package" name="package" required>
+                  <option value="">Select package</option>
+                  <option value="silver">Silver</option>
+                  <option value="gold">Gold</option>
+                  <option value="platinum">Platinum</option>
+                </select>
+              </div>
             </div>
-            <label><input type="checkbox" name="extras" value="smokeOdor" data-label="Smoke odor treatment" data-base="25" /> Smoke odor treatment (+$25)</label>
-            <label><input type="checkbox" name="extras" value="moldRisk" data-label="Surface mold treatment" data-base="60" /> Surface mold treatment (+$60)</label>
-          </fieldset>
 
-          <label><input id="firstDetailDiscount" name="firstDetailDiscount" type="checkbox" checked /> First-time customer discount (20% off package)</label>
-
-          <label for="appointmentDate">Preferred Date *</label>
-          <input id="appointmentDate" name="appointmentDate" type="date" required />
-
-          <label for="timeWindow">Preferred Time Window</label>
-          <select id="timeWindow" name="timeWindow">
-            <option value="">No preference</option>
-            <option>Morning (8am - 12pm)</option>
-            <option>Afternoon (12pm - 4pm)</option>
-            <option>Evening (4pm - 7pm)</option>
-          </select>
-
-          <label for="notes">Extra Details</label>
-          <textarea id="notes" name="notes" rows="4" placeholder="Pet situation, stain locations, smell issues, kid spills, etc..."></textarea>
-
-          <fieldset class="prep-fieldset" id="prepFieldset">
-            <legend>Pre-visit checklist</legend>
-            <p class="quote-helper">Check what applies so we show up ready.</p>
-            <div class="check-grid">
-              <label><input type="checkbox" name="prep" value="garage_access" /> Garage or driveway access</label>
-              <label><input type="checkbox" name="prep" value="pets_removed" /> Pets removed from vehicle</label>
-              <label><input type="checkbox" name="prep" value="items_removed" /> Personal items removed</label>
-              <label><input type="checkbox" name="prep" value="keys_available" /> Keys available</label>
-              <label><input type="checkbox" name="prep" value="hose_spigot" /> Hose spigot within ~50 ft</label>
+            <div class="quote-section">
+              <h3 class="quote-section-title">Condition *</h3>
+              <div class="field">
+                <label class="visually-hidden" for="conditionLevel">Interior condition</label>
+                <select id="conditionLevel" name="conditionLevel" required>
+                  <option value="">Select</option>
+                  <option value="light">Light</option>
+                  <option value="medium">Medium</option>
+                  <option value="heavy">Heavy</option>
+                </select>
+              </div>
             </div>
-            <input type="hidden" id="prepSummary" name="prepSummary" value="" />
-          </fieldset>
 
-          <fieldset class="photo-upload">
-            <legend>Photos (optional, up to 3)</legend>
-            <p class="quote-helper">
-              Best photos: wide shot of whole interior, close-up of worst seat/carpet area, trunk if messy. If upload does not work on your plan, DM photos to
-              <a href="https://instagram.com/shine_n_time" target="_blank" rel="noopener">@shine_n_time</a>.
-            </p>
-            <label for="photo1">Photo 1</label>
-            <input id="photo1" name="photo1" type="file" accept="image/*" />
-            <label for="photo2">Photo 2</label>
-            <input id="photo2" name="photo2" type="file" accept="image/*" />
-            <label for="photo3">Photo 3</label>
-            <input id="photo3" name="photo3" type="file" accept="image/*" />
-          </fieldset>
+            <fieldset class="extras-group quote-section quote-span-2" id="extrasFieldset">
+              <legend>Extras (if needed)</legend>
+              <div class="extra-row">
+                <label class="extra-check"><input type="checkbox" name="extras" value="petHair" data-label="Pet hair removal" data-base="20" /> Pet hair (+$20)</label>
+                <label class="extra-sub" for="petHairLevel">Severity</label>
+                <select id="petHairLevel" name="petHairLevel">
+                  <option value="light">Light</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="heavy">Heavy</option>
+                </select>
+              </div>
+              <div class="extra-row">
+                <label class="extra-check"><input type="checkbox" name="extras" value="sandSalt" data-label="Sand/mud heavy cleanup" data-base="15" /> Sand/mud (+$15)</label>
+                <label class="extra-sub" for="sandLevel">Severity</label>
+                <select id="sandLevel" name="sandLevel">
+                  <option value="light">Light</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="heavy">Heavy</option>
+                </select>
+              </div>
+              <div class="extra-row">
+                <label class="extra-check"><input type="checkbox" name="extras" value="bioClean" data-label="Vomit/biological cleanup" data-base="35" /> Bio cleanup (+$35)</label>
+                <label class="extra-sub" for="bioLevel">Severity</label>
+                <select id="bioLevel" name="bioLevel">
+                  <option value="light">Light</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="heavy">Heavy</option>
+                </select>
+              </div>
+              <div class="extras-inline">
+                <label><input type="checkbox" name="extras" value="smokeOdor" data-label="Smoke odor treatment" data-base="25" /> Smoke (+$25)</label>
+                <label><input type="checkbox" name="extras" value="moldRisk" data-label="Surface mold treatment" data-base="60" /> Mold (+$60)</label>
+              </div>
+            </fieldset>
+
+            <div class="quote-section quote-span-2 discount-row">
+              <label class="discount-label"><input id="firstDetailDiscount" name="firstDetailDiscount" type="checkbox" checked /> First-time 20% off package</label>
+            </div>
+
+            <div class="quote-section">
+              <h3 class="quote-section-title">Date *</h3>
+              <div class="field">
+                <label class="visually-hidden" for="appointmentDate">Preferred date</label>
+                <input id="appointmentDate" name="appointmentDate" type="date" required />
+              </div>
+            </div>
+
+            <div class="quote-section">
+              <h3 class="quote-section-title">Time</h3>
+              <div class="field">
+                <label class="visually-hidden" for="timeWindow">Preferred time window</label>
+                <select id="timeWindow" name="timeWindow">
+                  <option value="">Any</option>
+                  <option>Morning (8am - 12pm)</option>
+                  <option>Afternoon (12pm - 4pm)</option>
+                  <option>Evening (4pm - 7pm)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="quote-section quote-span-2">
+              <h3 class="quote-section-title">Notes</h3>
+              <div class="field">
+                <label class="visually-hidden" for="notes">Extra details</label>
+                <textarea id="notes" name="notes" rows="3" placeholder="Pet situation, stain spots, smells, kid spills, etc."></textarea>
+              </div>
+            </div>
+
+            <fieldset class="prep-fieldset quote-section quote-span-2" id="prepFieldset">
+              <legend>Pre-visit checklist</legend>
+              <p class="quote-helper">Check what applies so we show up ready.</p>
+              <div class="check-grid">
+                <label><input type="checkbox" name="prep" value="garage_access" /> Driveway access</label>
+                <label><input type="checkbox" name="prep" value="pets_removed" /> Pets removed</label>
+                <label><input type="checkbox" name="prep" value="items_removed" /> Items removed</label>
+                <label><input type="checkbox" name="prep" value="keys_available" /> Keys ready</label>
+                <label><input type="checkbox" name="prep" value="hose_spigot" /> Hose ~50 ft</label>
+              </div>
+              <input type="hidden" id="prepSummary" name="prepSummary" value="" />
+            </fieldset>
+
+            <fieldset class="photo-upload quote-section quote-span-2">
+              <legend>Photos (optional, up to 3)</legend>
+              <p class="quote-helper">
+                Wide interior, worst spot close-up, trunk if messy. If upload fails on your plan, DM
+                <a href="https://instagram.com/shine_n_time" target="_blank" rel="noopener">@shine_n_time</a>.
+              </p>
+              <div class="photo-row">
+                <div class="field">
+                  <label for="photo1">1</label>
+                  <input id="photo1" name="photo1" type="file" accept="image/*" />
+                </div>
+                <div class="field">
+                  <label for="photo2">2</label>
+                  <input id="photo2" name="photo2" type="file" accept="image/*" />
+                </div>
+                <div class="field">
+                  <label for="photo3">3</label>
+                  <input id="photo3" name="photo3" type="file" accept="image/*" />
+                </div>
+              </div>
+            </fieldset>
+          </div>
 
           <input type="hidden" id="estimateSummary" name="estimateSummary" value="$0 - $0" />
           <input type="hidden" id="emailEstimate" name="emailEstimate" value="" />
