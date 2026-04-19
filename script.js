@@ -3,7 +3,7 @@ const nav = document.getElementById("primaryNav");
 const quoteForm = document.getElementById("quoteForm");
 const formMessage = document.getElementById("formMessage");
 const year = document.getElementById("year");
-const editLastQuoteButton = document.getElementById("editLastQuote");
+const editLastQuoteButton = document.getElementById("editLastQuoteBtn");
 const quoteEndpoint =
   quoteForm?.getAttribute("action") ||
   quoteForm?.dataset?.formspreeEndpoint ||
