@@ -265,6 +265,121 @@ h2 {
   font-weight: 700;
 }
 
+.hero-main.card,
+.hero-side.card {
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.014));
+  box-shadow: var(--shadow);
+  padding: 1.15rem;
+}
+
+.hero-side.card {
+  display: grid;
+  gap: 0.75rem;
+  align-content: start;
+}
+
+.hero-reply-note {
+  margin: 0.35rem 0 0;
+  color: #c7d7ee;
+  font-size: 0.92rem;
+}
+
+.mini-list {
+  margin: 0.6rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
+}
+
+.mini-list li + li {
+  margin-top: 0.25rem;
+}
+
+.pricing-grid {
+  margin-top: 1rem;
+}
+
+.price-tag {
+  margin: 0.75rem 0 0;
+  font-weight: 800;
+  color: #ffe7b2;
+}
+
+.area-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin-top: 1rem;
+}
+
+.map-embed {
+  border: 1px solid var(--line);
+  border-radius: 0.85rem;
+  overflow: hidden;
+  background: #070e19;
+  min-height: 220px;
+}
+
+.map-embed iframe {
+  width: 100%;
+  height: 240px;
+  border: 0;
+}
+
+.what-expect {
+  margin-top: 0.9rem;
+}
+
+.extra-row {
+  display: grid;
+  grid-template-columns: 1.2fr 0.55fr 1fr;
+  gap: 0.45rem 0.6rem;
+  align-items: center;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.extra-row:last-child {
+  border-bottom: 0;
+}
+
+.extra-check {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 600;
+  color: #e7f0ff;
+}
+
+.extra-sub {
+  font-size: 0.82rem;
+  color: #9fb3cf;
+}
+
+.photo-upload {
+  margin: 0.15rem 0 0.25rem;
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  padding: 0.75rem;
+  background: rgba(8, 14, 24, 0.55);
+}
+
+.photo-upload legend {
+  padding: 0 0.45rem;
+  color: #d8e5f7;
+  font-weight: 700;
+}
+
+.photo-upload input[type="file"] {
+  width: 100%;
+  padding: 0.45rem;
+  border-radius: 0.6rem;
+  border: 1px dashed rgba(255, 255, 255, 0.22);
+  background: rgba(5, 10, 18, 0.55);
+  color: #d7e4f6;
+}
+
 .section {
   padding: clamp(2.7rem, 5vw, 4rem) 0;
 }
@@ -674,6 +789,10 @@ body.lightbox-open {
     grid-template-columns: 1fr;
   }
 
+  .area-grid {
+    grid-template-columns: 1fr;
+  }
+
   .cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -783,6 +902,15 @@ body.lightbox-open {
 
   .btn-row .btn {
     width: 100%;
+  }
+
+  .extra-row {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .extra-sub {
+    margin-top: 0.15rem;
   }
 
   .lightbox {

@@ -6,15 +6,23 @@ const year = document.getElementById("year");
 const editLastQuoteButton = document.getElementById("editLastQuoteBtn");
 const pastWorkScroll = document.querySelector(".past-work-scroll");
 const galleryButtons = Array.from(document.querySelectorAll(".work-card-btn"));
-const lightbox = document.getElementById("lightbox");
+const lightbox =
+  document.getElementById("galleryLightbox") ||
+  document.getElementById("lightbox");
 const lightboxImage = document.getElementById("lightboxImage");
 const lightboxCaption = document.getElementById("lightboxCaption");
 const lightboxClose = document.getElementById("lightboxClose");
 const lightboxPrev = document.getElementById("lightboxPrev");
 const lightboxNext = document.getElementById("lightboxNext");
-const lightboxZoomIn = document.getElementById("zoomInBtn");
-const lightboxZoomOut = document.getElementById("zoomOutBtn");
-const lightboxZoomReset = document.getElementById("zoomResetBtn");
+const lightboxZoomIn =
+  document.getElementById("lightboxZoomIn") ||
+  document.getElementById("zoomInBtn");
+const lightboxZoomOut =
+  document.getElementById("lightboxZoomOut") ||
+  document.getElementById("zoomOutBtn");
+const lightboxZoomReset =
+  document.getElementById("lightboxZoomReset") ||
+  document.getElementById("zoomResetBtn");
 const vehicleType =
   document.getElementById("vehicleType") ||
   document.getElementById("vehicleSize");
@@ -45,6 +53,12 @@ const EXTRA_PRICING = {
   bioClean: { low: 35, high: 35 },
   smokeOdor: { low: 25, high: 25 },
   moldRisk: { low: 60, high: 60 }
+};
+
+const SEVERITY_MULTIPLIER = {
+  light: 1,
+  medium: 1.35,
+  heavy: 1.75
 };
 
 if (year) {
@@ -230,6 +244,8 @@ if (lightbox) {
   lightbox.addEventListener("click", (event) => {
     if (event.target === lightbox) closeLightbox();
   });
+  const stopInnerClose = (event) => event.stopPropagation();
+  lightbox.querySelector(".lightbox-content")?.addEventListener("click", stopInnerClose);
 }
 
 window.addEventListener("keydown", (event) => {
@@ -246,7 +262,8 @@ function calculateEstimate() {
 
   const vehicle = vehicleType.value;
   const pkg = packageSelect.value;
-  if (!vehicle || !pkg || !PACKAGE_PRICING[pkg]) {
+  const priceKey = vehicle === "suv" ? "suvTruck" : vehicle;
+  if (!vehicle || !pkg || !PACKAGE_PRICING[pkg] || !PACKAGE_PRICING[pkg][priceKey]) {
     estimateRange.textContent = "$0 - $0";
     if (estimateBreakdown) {
       estimateBreakdown.textContent = "Choose vehicle type + package to see estimate.";
@@ -255,8 +272,8 @@ function calculateEstimate() {
     return;
   }
 
-  let low = PACKAGE_PRICING[pkg][vehicle];
-  let high = PACKAGE_PRICING[pkg][vehicle];
+  let low = PACKAGE_PRICING[pkg][priceKey];
+  let high = PACKAGE_PRICING[pkg][priceKey];
   const extras = [];
   const conditionLevel = String(document.getElementById("conditionLevel")?.value || "");
   const discountChecked = Boolean(document.getElementById("firstDetailDiscount")?.checked);
@@ -276,9 +293,23 @@ function calculateEstimate() {
       const key = input.value;
       const pricing = EXTRA_PRICING[key];
       if (!pricing) return;
-      low += pricing.low;
-      high += pricing.high;
-      extras.push(input.dataset.label || key);
+      let mult = 1;
+      if (key === "petHair") {
+        mult = SEVERITY_MULTIPLIER[String(document.getElementById("petHairLevel")?.value || "medium")] || 1;
+      } else if (key === "sandSalt") {
+        mult = SEVERITY_MULTIPLIER[String(document.getElementById("sandLevel")?.value || "medium")] || 1;
+      } else if (key === "bioClean") {
+        mult = SEVERITY_MULTIPLIER[String(document.getElementById("bioLevel")?.value || "medium")] || 1;
+      }
+      const addLow = Math.round(pricing.low * mult);
+      const addHigh = Math.round(pricing.high * mult);
+      low += addLow;
+      high += addHigh;
+      const label = input.dataset.label || key;
+      let severityLabel = "medium";
+      if (mult <= SEVERITY_MULTIPLIER.light + 0.001) severityLabel = "light";
+      else if (mult >= SEVERITY_MULTIPLIER.heavy - 0.001) severityLabel = "heavy";
+      extras.push(`${label} (${severityLabel} severity)`);
     });
   }
 
@@ -290,19 +321,28 @@ function calculateEstimate() {
 
   estimateRange.textContent = `$${low} - $${high}`;
   const extrasText = extras.length ? ` + extras: ${extras.join(", ")}` : "";
-  const summaryText = `Estimated $${low} - $${high}. Base ${pkg.toUpperCase()} package for ${vehicle === "sedan" ? "Sedan" : "SUV/Truck"}${extrasText}. Final quote confirmed after inspection.`;
+  const vehicleLabel = vehicle === "sedan" ? "Sedan" : "SUV/Truck";
+  const summaryText = `Estimated $${low} - $${high}. Base ${pkg.toUpperCase()} package for ${vehicleLabel}${extrasText}. Final quote confirmed after inspection.`;
   if (estimateBreakdown) {
     estimateBreakdown.textContent = summaryText.replace(/^Estimated \$\d+ - \$\d+\. /, "");
   }
   estimateHidden.value = summaryText;
+  const emailEstimate = document.getElementById("emailEstimate");
+  if (emailEstimate) emailEstimate.value = summaryText;
 }
 
 if (vehicleType) vehicleType.addEventListener("change", calculateEstimate);
 if (packageSelect) packageSelect.addEventListener("change", calculateEstimate);
 const conditionLevelInput = document.getElementById("conditionLevel");
 const firstDetailDiscountInput = document.getElementById("firstDetailDiscount");
+const petHairLevelInput = document.getElementById("petHairLevel");
+const sandLevelInput = document.getElementById("sandLevel");
+const bioLevelInput = document.getElementById("bioLevel");
 if (conditionLevelInput) conditionLevelInput.addEventListener("change", calculateEstimate);
 if (firstDetailDiscountInput) firstDetailDiscountInput.addEventListener("change", calculateEstimate);
+if (petHairLevelInput) petHairLevelInput.addEventListener("change", calculateEstimate);
+if (sandLevelInput) sandLevelInput.addEventListener("change", calculateEstimate);
+if (bioLevelInput) bioLevelInput.addEventListener("change", calculateEstimate);
 if (extrasFieldset) {
   extrasFieldset.addEventListener("change", calculateEstimate);
 }
@@ -339,6 +379,9 @@ function fillQuoteForm(values) {
     "vehicleSize",
     "package",
     "conditionLevel",
+    "petHairLevel",
+    "sandLevel",
+    "bioLevel",
     "notes",
     "estimateSummary"
   ];
@@ -348,6 +391,11 @@ function fillQuoteForm(values) {
       input.value = values[field];
     }
   });
+
+  const discountInput = document.getElementById("firstDetailDiscount");
+  if (discountInput && typeof values.firstDetailDiscount === "boolean") {
+    discountInput.checked = values.firstDetailDiscount;
+  }
 
   if (extrasFieldset && Array.isArray(values.extras)) {
     const checkboxes = Array.from(extrasFieldset.querySelectorAll("input[type='checkbox']"));
@@ -409,8 +457,12 @@ if (quoteForm) {
       vehicleType: String(data.get("vehicleType") || "").trim(),
       package: String(data.get("package") || "").trim(),
       conditionLevel: String(data.get("conditionLevel") || "").trim(),
+      petHairLevel: String(data.get("petHairLevel") || "").trim(),
+      sandLevel: String(data.get("sandLevel") || "").trim(),
+      bioLevel: String(data.get("bioLevel") || "").trim(),
       notes: String(data.get("notes") || "").trim(),
       estimateSummary: String(data.get("estimateSummary") || "").trim(),
+      firstDetailDiscount: Boolean(document.getElementById("firstDetailDiscount")?.checked),
       extras: Array.from(
         (extrasFieldset ? extrasFieldset.querySelectorAll("input[type='checkbox']:checked") : [])
       ).map((input) => input.value)

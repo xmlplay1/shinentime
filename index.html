@@ -16,6 +16,7 @@
       <nav id="primaryNav" class="nav">
         <a href="#services">Services</a>
         <a href="#pricing">Pricing</a>
+        <a href="#service-area">Area</a>
         <a href="#past-work">Past Work</a>
         <a href="#reviews">Reviews</a>
         <a href="#quote">Quote</a>
@@ -31,6 +32,7 @@
           <p class="eyebrow">Shine N Time</p>
           <h1>Interior detailing that looks clean and feels fresh.</h1>
           <p>We are young, hungry, and focused on quality work. No extra hype, just real results and fast replies.</p>
+          <p class="hero-reply-note">We usually reply within a few hours (same day most days).</p>
           <div class="hero-actions">
             <a class="btn btn-primary" href="#quote">Get a Quote</a>
             <a class="btn btn-secondary" href="tel:+17244191846">Call 724-419-1846</a>
@@ -45,6 +47,7 @@
             <li>Respectful service</li>
           </ul>
           <a class="btn btn-ghost" href="https://instagram.com/shine_n_time" target="_blank" rel="noopener">DM @shine_n_time</a>
+          <a class="btn btn-secondary" id="bookGoogleBtn" href="REPLACE_WITH_YOUR_GOOGLE_APPOINTMENT_LINK" target="_blank" rel="noopener">Book on Google Calendar</a>
         </article>
       </div>
     </section>
@@ -64,6 +67,51 @@
           <article class="card">
             <h3>Full Interior Restore</h3>
             <p>Deep multi-step clean for interiors needing serious recovery.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="service-area" class="section section-alt">
+      <div class="container">
+        <h2 class="section-title">Service Area (Canton, MI)</h2>
+        <p class="section-copy">
+          We are based around Canton, Michigan. If you are close by, we can usually make it work. Not sure? Text us your zip code.
+        </p>
+        <div class="area-grid">
+          <article class="card">
+            <h3>Core area</h3>
+            <ul class="mini-list">
+              <li>Canton</li>
+              <li>Plymouth</li>
+              <li>Westland</li>
+              <li>Livonia</li>
+              <li>Northville</li>
+              <li>Novi</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>Often available</h3>
+            <ul class="mini-list">
+              <li>Ann Arbor</li>
+              <li>Ypsilanti</li>
+              <li>Belleville</li>
+              <li>Van Buren Township</li>
+              <li>Romulus</li>
+              <li>Taylor</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>Map</h3>
+            <p class="section-copy" style="margin-bottom: 0.75rem">Quick reference map (Canton area).</p>
+            <div class="map-embed">
+              <iframe
+                title="Canton Michigan map"
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                src="https://www.google.com/maps?q=Canton%2C%20MI&output=embed"
+              ></iframe>
+            </div>
           </article>
         </div>
       </div>
@@ -181,8 +229,24 @@
             <p id="estimateBreakdown" class="estimate-disclaimer">Choose vehicle size + package to see your estimate.</p>
             <small>*Estimated only. Final price may change after actual inspection.</small>
           </div>
+          <article class="card what-expect">
+            <h3>What to expect</h3>
+            <ul class="mini-list">
+              <li>Most details take about 1.5 to 4 hours depending on package + condition.</li>
+              <li>Mobile jobs need access to water and electricity when possible.</li>
+              <li>Bad weather can move the appointment for safety and quality.</li>
+              <li>Need to reschedule? Message us at least 24 hours ahead when you can.</li>
+            </ul>
+          </article>
         </div>
-        <form class="quote-form" id="quoteForm" novalidate data-formspree-endpoint="https://formspree.io/f/mgorzwbw">
+        <form
+          class="quote-form"
+          id="quoteForm"
+          method="post"
+          enctype="multipart/form-data"
+          novalidate
+          data-formspree-endpoint="https://formspree.io/f/mgorzwbw"
+        >
           <label for="name">Full Name *</label>
           <input id="name" name="name" type="text" required />
 
@@ -220,11 +284,35 @@
 
           <fieldset class="extras-group" id="extrasFieldset">
             <legend>Extras (if needed)</legend>
-            <label><input type="checkbox" name="extras" value="petHair" data-label="Pet hair removal" /> Pet hair removal (+$20)</label>
-            <label><input type="checkbox" name="extras" value="sandSalt" data-label="Sand/mud heavy cleanup" /> Sand/mud heavy cleanup (+$15)</label>
-            <label><input type="checkbox" name="extras" value="bioClean" data-label="Vomit/biological cleanup" /> Vomit/biological cleanup (+$35)</label>
-            <label><input type="checkbox" name="extras" value="smokeOdor" data-label="Smoke odor treatment" /> Smoke odor treatment (+$25)</label>
-            <label><input type="checkbox" name="extras" value="moldRisk" data-label="Surface mold treatment" /> Surface mold treatment (+$60)</label>
+            <div class="extra-row">
+              <label class="extra-check"><input type="checkbox" name="extras" value="petHair" data-label="Pet hair removal" data-base="20" /> Pet hair removal (from +$20)</label>
+              <label class="extra-sub" for="petHairLevel">Severity</label>
+              <select id="petHairLevel" name="petHairLevel">
+                <option value="light">Light</option>
+                <option value="medium" selected>Medium</option>
+                <option value="heavy">Heavy</option>
+              </select>
+            </div>
+            <div class="extra-row">
+              <label class="extra-check"><input type="checkbox" name="extras" value="sandSalt" data-label="Sand/mud heavy cleanup" data-base="15" /> Sand/mud heavy cleanup (from +$15)</label>
+              <label class="extra-sub" for="sandLevel">Severity</label>
+              <select id="sandLevel" name="sandLevel">
+                <option value="light">Light</option>
+                <option value="medium" selected>Medium</option>
+                <option value="heavy">Heavy</option>
+              </select>
+            </div>
+            <div class="extra-row">
+              <label class="extra-check"><input type="checkbox" name="extras" value="bioClean" data-label="Vomit/biological cleanup" data-base="35" /> Vomit/biological cleanup (from +$35)</label>
+              <label class="extra-sub" for="bioLevel">Severity</label>
+              <select id="bioLevel" name="bioLevel">
+                <option value="light">Light</option>
+                <option value="medium" selected>Medium</option>
+                <option value="heavy">Heavy</option>
+              </select>
+            </div>
+            <label><input type="checkbox" name="extras" value="smokeOdor" data-label="Smoke odor treatment" data-base="25" /> Smoke odor treatment (+$25)</label>
+            <label><input type="checkbox" name="extras" value="moldRisk" data-label="Surface mold treatment" data-base="60" /> Surface mold treatment (+$60)</label>
           </fieldset>
 
           <label><input id="firstDetailDiscount" name="firstDetailDiscount" type="checkbox" checked /> First-time customer discount (20% off package)</label>
@@ -243,7 +331,22 @@
           <label for="notes">Extra Details</label>
           <textarea id="notes" name="notes" rows="4" placeholder="Pet situation, stain locations, smell issues, kid spills, etc..."></textarea>
 
+          <fieldset class="photo-upload">
+            <legend>Photos (optional, up to 3)</legend>
+            <p class="quote-helper">
+              Best photos: wide shot of whole interior, close-up of worst seat/carpet area, trunk if messy. If upload does not work on your plan, DM photos to
+              <a href="https://instagram.com/shine_n_time" target="_blank" rel="noopener">@shine_n_time</a>.
+            </p>
+            <label for="photo1">Photo 1</label>
+            <input id="photo1" name="photo1" type="file" accept="image/*" />
+            <label for="photo2">Photo 2</label>
+            <input id="photo2" name="photo2" type="file" accept="image/*" />
+            <label for="photo3">Photo 3</label>
+            <input id="photo3" name="photo3" type="file" accept="image/*" />
+          </fieldset>
+
           <input type="hidden" id="estimateSummary" name="estimateSummary" value="$0 - $0" />
+          <input type="hidden" id="emailEstimate" name="emailEstimate" value="" />
 
           <div class="btn-row">
             <button type="submit" class="btn btn-primary" id="submitBtn">Send Quote Request</button>
