@@ -194,8 +194,8 @@
           <label for="vehicle">Vehicle *</label>
           <input id="vehicle" name="vehicle" type="text" required placeholder="Example: 2021 Honda Accord" />
 
-          <label for="vehicleSize">Vehicle Size *</label>
-          <select id="vehicleSize" name="vehicleSize" required>
+          <label for="vehicleType">Vehicle Size *</label>
+          <select id="vehicleType" name="vehicleType" required>
             <option value="">Select size</option>
             <option value="sedan">Sedan / Coupe</option>
             <option value="suv">SUV / Truck / Van</option>
@@ -217,13 +217,13 @@
             <option value="heavy">Heavy dirt / deep stain recovery</option>
           </select>
 
-          <fieldset class="extras-group">
+          <fieldset class="extras-group" id="extrasFieldset">
             <legend>Extras (if needed)</legend>
-            <label><input type="checkbox" name="extras" value="petHair" /> Pet hair removal (+$20)</label>
-            <label><input type="checkbox" name="extras" value="sand" /> Sand/mud heavy cleanup (+$15)</label>
-            <label><input type="checkbox" name="extras" value="bio" /> Vomit/biological cleanup (+$35)</label>
-            <label><input type="checkbox" name="extras" value="smoke" /> Smoke odor treatment (+$25)</label>
-            <label><input type="checkbox" name="extras" value="mold" /> Surface mold treatment (+$60)</label>
+            <label><input type="checkbox" name="extras" value="petHair" data-label="Pet hair removal" /> Pet hair removal (+$20)</label>
+            <label><input type="checkbox" name="extras" value="sandSalt" data-label="Sand/mud heavy cleanup" /> Sand/mud heavy cleanup (+$15)</label>
+            <label><input type="checkbox" name="extras" value="bioClean" data-label="Vomit/biological cleanup" /> Vomit/biological cleanup (+$35)</label>
+            <label><input type="checkbox" name="extras" value="smokeOdor" data-label="Smoke odor treatment" /> Smoke odor treatment (+$25)</label>
+            <label><input type="checkbox" name="extras" value="moldRisk" data-label="Surface mold treatment" /> Surface mold treatment (+$60)</label>
           </fieldset>
 
           <label><input id="firstDetailDiscount" name="firstDetailDiscount" type="checkbox" checked /> First-time customer discount (20% off package)</label>

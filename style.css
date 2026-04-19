@@ -376,6 +376,19 @@ h2 {
   cursor: zoom-in;
 }
 
+.work-card-btn {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  color: inherit;
+  min-width: min(82vw, 340px);
+  flex: 0 0 auto;
+  border-radius: 0.85rem;
+  cursor: zoom-in;
+}
+
 .work-shot img,
 .work-card img {
   width: 100%;
@@ -388,6 +401,11 @@ h2 {
 .work-shot:hover img,
 .work-card:hover img {
   transform: scale(1.03);
+}
+
+.work-card-btn:focus-visible {
+  outline: 2px solid rgba(242, 192, 75, 0.8);
+  outline-offset: 3px;
 }
 
 .reviews-grid {

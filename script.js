@@ -15,12 +15,12 @@ const lightboxNext = document.getElementById("lightboxNext");
 const lightboxZoomIn = document.getElementById("zoomInBtn");
 const lightboxZoomOut = document.getElementById("zoomOutBtn");
 const lightboxZoomReset = document.getElementById("zoomResetBtn");
-const vehicleType = document.getElementById("vehicleType");
+const vehicleType = document.getElementById("vehicleSize");
 const packageSelect = document.getElementById("package");
-const extrasFieldset = document.getElementById("extrasFieldset");
-const estimateRange = document.getElementById("estimateRange");
+const extrasFieldset = document.querySelector(".extras-group");
+const estimateRange = document.getElementById("estimateValue");
 const estimateBreakdown = document.getElementById("estimateBreakdown");
-const estimateHidden = document.getElementById("estimateValue");
+const estimateHidden = document.getElementById("estimateSummary");
 const quoteEndpoint =
   quoteForm?.getAttribute("action") ||
   quoteForm?.dataset?.formspreeEndpoint ||
@@ -38,12 +38,11 @@ const PACKAGE_PRICING = {
 };
 
 const EXTRA_PRICING = {
-  petHair: { low: 20, high: 45 },
-  heavyStains: { low: 25, high: 60 },
-  bioClean: { low: 30, high: 85 },
-  smokeOdor: { low: 25, high: 70 },
-  sandSalt: { low: 15, high: 35 },
-  moldRisk: { low: 45, high: 140 }
+  petHair: { low: 20, high: 20 },
+  sand: { low: 15, high: 15 },
+  bio: { low: 35, high: 35 },
+  smoke: { low: 25, high: 25 },
+  mold: { low: 60, high: 60 }
 };
 
 if (year) {
@@ -255,6 +254,17 @@ function calculateEstimate() {
   let low = PACKAGE_PRICING[pkg][vehicle];
   let high = PACKAGE_PRICING[pkg][vehicle];
   const extras = [];
+  const conditionLevel = String(document.getElementById("conditionLevel")?.value || "");
+  const discountChecked = Boolean(document.getElementById("firstDetailDiscount")?.checked);
+
+  const conditionMultiplier = {
+    light: 1,
+    medium: 1.18,
+    heavy: 1.35
+  };
+  const conditionFactor = conditionMultiplier[conditionLevel] || 1;
+  low = Math.round(low * conditionFactor);
+  high = Math.round(high * conditionFactor);
 
   if (extrasFieldset) {
     const checked = Array.from(extrasFieldset.querySelectorAll("input[type='checkbox']:checked"));
@@ -268,6 +278,12 @@ function calculateEstimate() {
     });
   }
 
+  if (discountChecked) {
+    const discountPct = 0.2;
+    low = Math.max(0, Math.round(low * (1 - discountPct)));
+    high = Math.max(0, Math.round(high * (1 - discountPct)));
+  }
+
   estimateRange.textContent = `$${low} - $${high}`;
   const extrasText = extras.length ? ` + extras: ${extras.join(", ")}` : "";
   estimateBreakdown.textContent = `Base ${pkg.toUpperCase()} package for ${vehicle === "sedan" ? "Sedan" : "SUV/Truck"}${extrasText}. Final quote confirmed after inspection.`;
@@ -276,6 +292,10 @@ function calculateEstimate() {
 
 if (vehicleType) vehicleType.addEventListener("change", calculateEstimate);
 if (packageSelect) packageSelect.addEventListener("change", calculateEstimate);
+const conditionLevelInput = document.getElementById("conditionLevel");
+const firstDetailDiscountInput = document.getElementById("firstDetailDiscount");
+if (conditionLevelInput) conditionLevelInput.addEventListener("change", calculateEstimate);
+if (firstDetailDiscountInput) firstDetailDiscountInput.addEventListener("change", calculateEstimate);
 if (extrasFieldset) {
   extrasFieldset.addEventListener("change", calculateEstimate);
 }
@@ -305,13 +325,14 @@ function fillQuoteForm(values) {
     "name",
     "phone",
     "email",
-    "preferredDate",
+    "appointmentDate",
+    "timeWindow",
     "vehicle",
-    "vehicleType",
+    "vehicleSize",
     "package",
-    "service",
+    "conditionLevel",
     "notes",
-    "estimateValue"
+    "estimateSummary"
   ];
   fields.forEach((field) => {
     const input = quoteForm.elements.namedItem(field);
@@ -347,7 +368,7 @@ if (quoteForm) {
   quoteForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const data = new FormData(quoteForm);
-    const requiredFields = ["name", "vehicle", "vehicleType", "package", "service"];
+    const requiredFields = ["name", "vehicle", "vehicleSize", "package", "conditionLevel", "appointmentDate"];
     const hasMissing = requiredFields.some((field) => !String(data.get(field) || "").trim());
     const phoneValue = String(data.get("phone") || "").trim();
     const emailValue = String(data.get("email") || "").trim();
@@ -374,13 +395,14 @@ if (quoteForm) {
       name: String(data.get("name") || "").trim(),
       phone: phoneValue,
       email: emailValue,
-      preferredDate: String(data.get("preferredDate") || "").trim(),
+      appointmentDate: String(data.get("appointmentDate") || "").trim(),
+      timeWindow: String(data.get("timeWindow") || "").trim(),
       vehicle: String(data.get("vehicle") || "").trim(),
-      vehicleType: String(data.get("vehicleType") || "").trim(),
+      vehicleSize: String(data.get("vehicleSize") || "").trim(),
       package: String(data.get("package") || "").trim(),
-      service: String(data.get("service") || "").trim(),
+      conditionLevel: String(data.get("conditionLevel") || "").trim(),
       notes: String(data.get("notes") || "").trim(),
-      estimateValue: String(data.get("estimateValue") || "").trim(),
+      estimateSummary: String(data.get("estimateSummary") || "").trim(),
       extras: Array.from(
         (extrasFieldset ? extrasFieldset.querySelectorAll("input[type='checkbox']:checked") : [])
       ).map((input) => input.value)
