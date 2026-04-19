@@ -15,6 +15,7 @@
       <button id="menuToggle" class="menu-toggle" aria-expanded="false" aria-controls="primaryNav">Menu</button>
       <nav id="primaryNav" class="nav">
         <a href="#services">Services</a>
+        <a href="#how-pricing">How pricing</a>
         <a href="#pricing">Pricing</a>
         <a href="#service-area">Area</a>
         <a href="#past-work">Past Work</a>
@@ -159,6 +160,75 @@
               <li>Ceramic sealant</li>
             </ul>
             <p class="price-tag">Sedan: $160 | SUV/Truck: $180</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="how-pricing" class="section">
+      <div class="container">
+        <h2 class="section-title">How pricing works</h2>
+        <ul class="mini-list pricing-steps">
+          <li><strong>Estimate from the form</strong> — based on your package pick, vehicle size, condition, and selected extras.</li>
+          <li><strong>Final price after we see the car</strong> — we confirm the real scope on site before you pay.</li>
+          <li><strong>Travel fee if far</strong> — depends on distance from Canton (see table below).</li>
+          <li><strong>Extras only if needed</strong> — you only pay for what actually applies.</li>
+        </ul>
+
+        <div class="info-grid">
+          <article class="card">
+            <h3>Travel fee (example)</h3>
+            <p class="section-copy" style="margin-top: 0">
+              Miles are approximate from Canton, MI. Edit the dollar amounts anytime in <code>index.html</code> to match what you want to charge.
+            </p>
+            <div class="table-wrap">
+              <table class="fee-table">
+                <thead>
+                  <tr>
+                    <th>Distance</th>
+                    <th>Fee</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>0–10 miles</td>
+                    <td>$0</td>
+                  </tr>
+                  <tr>
+                    <td>10–20 miles</td>
+                    <td>$15</td>
+                  </tr>
+                  <tr>
+                    <td>20+ miles</td>
+                    <td>$30+</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="quote-helper">We will confirm travel fee before the appointment. Zip code in the quote form helps us check this fast.</p>
+          </article>
+
+          <article class="card">
+            <h3>Weather + reschedule</h3>
+            <p class="section-copy" style="margin-top: 0">
+              For mobile work, heavy rain/snow or unsafe conditions can push the start time or move the appointment to the next open slot. If that happens, we message you ASAP and keep you updated.
+            </p>
+          </article>
+
+          <article class="card">
+            <h3>Deposits (optional)</h3>
+            <p class="section-copy" style="margin-top: 0">
+              For long interior jobs or longer travel, we may request a small deposit to hold the spot. If we ever ask, we will explain the amount and refund rules before you agree.
+            </p>
+          </article>
+
+          <article class="card">
+            <h3>Aftercare (first 24 hours)</h3>
+            <ul class="mini-list">
+              <li>If seats/carpets were shampooed, keep windows cracked a little when safe.</li>
+              <li>Avoid slamming heavy floor mats back in until fully dry.</li>
+              <li>Light smells right after cleaning can be normal and usually fade quickly.</li>
+            </ul>
           </article>
         </div>
       </div>
@@ -341,6 +411,19 @@
 
           <label for="notes">Extra Details</label>
           <textarea id="notes" name="notes" rows="4" placeholder="Pet situation, stain locations, smell issues, kid spills, etc..."></textarea>
+
+          <fieldset class="prep-fieldset" id="prepFieldset">
+            <legend>Pre-visit checklist</legend>
+            <p class="quote-helper">Check what applies so we show up ready.</p>
+            <div class="check-grid">
+              <label><input type="checkbox" name="prep" value="garage_access" /> Garage or driveway access</label>
+              <label><input type="checkbox" name="prep" value="pets_removed" /> Pets removed from vehicle</label>
+              <label><input type="checkbox" name="prep" value="items_removed" /> Personal items removed</label>
+              <label><input type="checkbox" name="prep" value="keys_available" /> Keys available</label>
+              <label><input type="checkbox" name="prep" value="hose_spigot" /> Hose spigot within ~50 ft</label>
+            </div>
+            <input type="hidden" id="prepSummary" name="prepSummary" value="" />
+          </fieldset>
 
           <fieldset class="photo-upload">
             <legend>Photos (optional, up to 3)</legend>

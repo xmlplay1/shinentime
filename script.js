@@ -28,6 +28,8 @@ const vehicleType =
   document.getElementById("vehicleSize");
 const packageSelect = document.getElementById("package");
 const extrasFieldset = document.querySelector(".extras-group");
+const prepFieldset = document.getElementById("prepFieldset");
+const prepSummaryInput = document.getElementById("prepSummary");
 const estimateRange = document.getElementById("estimateValue");
 const estimateBreakdown = document.getElementById("estimateBreakdown");
 const estimateHidden = document.getElementById("estimateSummary");
@@ -348,6 +350,21 @@ if (extrasFieldset) {
 }
 calculateEstimate();
 
+function updatePrepSummary() {
+  if (!prepFieldset || !prepSummaryInput) return;
+  const checked = Array.from(prepFieldset.querySelectorAll("input[type='checkbox']:checked"));
+  const lines = checked.map((input) => {
+    const label = input.closest("label");
+    return label ? label.textContent.trim() : input.value;
+  });
+  prepSummaryInput.value = lines.length ? lines.join(" | ") : "";
+}
+
+if (prepFieldset) {
+  prepFieldset.addEventListener("change", updatePrepSummary);
+  updatePrepSummary();
+}
+
 function saveQuoteDraft(data) {
   try {
     localStorage.setItem(QUOTE_STORAGE_KEY, JSON.stringify(data));
@@ -384,7 +401,8 @@ function fillQuoteForm(values) {
     "sandLevel",
     "bioLevel",
     "notes",
-    "estimateSummary"
+    "estimateSummary",
+    "prepSummary"
   ];
   fields.forEach((field) => {
     const input = quoteForm.elements.namedItem(field);
@@ -404,6 +422,14 @@ function fillQuoteForm(values) {
       checkbox.checked = values.extras.includes(checkbox.value);
     });
   }
+
+  if (prepFieldset && Array.isArray(values.prep)) {
+    const prepBoxes = Array.from(prepFieldset.querySelectorAll("input[type='checkbox']"));
+    prepBoxes.forEach((checkbox) => {
+      checkbox.checked = values.prep.includes(checkbox.value);
+    });
+  }
+  updatePrepSummary();
   calculateEstimate();
 }
 
@@ -448,6 +474,8 @@ if (quoteForm) {
       return;
     }
 
+    updatePrepSummary();
+
     const draftValues = {
       name: String(data.get("name") || "").trim(),
       phone: phoneValue,
@@ -464,9 +492,13 @@ if (quoteForm) {
       bioLevel: String(data.get("bioLevel") || "").trim(),
       notes: String(data.get("notes") || "").trim(),
       estimateSummary: String(data.get("estimateSummary") || "").trim(),
+      prepSummary: String(data.get("prepSummary") || "").trim(),
       firstDetailDiscount: Boolean(document.getElementById("firstDetailDiscount")?.checked),
       extras: Array.from(
         (extrasFieldset ? extrasFieldset.querySelectorAll("input[type='checkbox']:checked") : [])
+      ).map((input) => input.value),
+      prep: Array.from(
+        (prepFieldset ? prepFieldset.querySelectorAll("input[type='checkbox']:checked") : [])
       ).map((input) => input.value)
     };
     saveQuoteDraft(draftValues);
