@@ -3,7 +3,10 @@ const nav = document.getElementById("primaryNav");
 const quoteForm = document.getElementById("quoteForm");
 const formMessage = document.getElementById("formMessage");
 const year = document.getElementById("year");
-const quoteEndpoint = quoteForm?.getAttribute("action") || "";
+const quoteEndpoint =
+  quoteForm?.getAttribute("data-formspree-endpoint") ||
+  quoteForm?.getAttribute("action") ||
+  "";
 
 if (year) {
   year.textContent = new Date().getFullYear();
