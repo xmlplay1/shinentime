@@ -1,1 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Shine N Time interior detailing. Clean, honest service by a young local team. Quick quotes and easy booking." />
+  <title>Shine N Time | Interior Detailing</title>
+  <link rel="preload" as="image" href="./IMG_2868.PNG" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a class="logo" href="#home"><span class="logo-dot" aria-hidden="true"></span>Shine N Time</a>
+      <button id="menuToggle" class="menu-toggle" aria-expanded="false" aria-controls="primaryNav">Menu</button>
+      <nav id="primaryNav" class="nav">
+        <a href="#services">Services</a>
+        <a href="#quote">Quote</a>
+        <a href="#contact">Contact</a>
+      </nav>
+    </div>
+  </header>
 
+  <main id="main">
+    <section class="hero" id="home">
+      <img class="hero-image" src="./IMG_2868.PNG" alt="Shine N Time flyer style branding" width="1200" height="900" loading="eager" decoding="async" />
+      <div class="hero-overlay"></div>
+      <div class="container hero-content">
+        <p class="eyebrow">Local Interior Detailing</p>
+        <h1>Real work. Real results. Clean interiors that feel new again.</h1>
+        <p>We are a young detailing team focused on quality, honest service, and quick response times.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#quote">Get a Quote</a>
+          <a class="btn btn-secondary" href="tel:+17244191846">Call 724-419-1846</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="services" class="section">
+      <div class="container">
+        <h2>Services</h2>
+        <div class="cards">
+          <article class="card">
+            <h3>Interior Refresh</h3>
+            <p>Vacuum, wipe-down, windows, and quick interior reset.</p>
+          </article>
+          <article class="card">
+            <h3>Deep Interior Detail</h3>
+            <p>Steam cleaning, stain treatment, and odor-focused care.</p>
+          </article>
+          <article class="card">
+            <h3>Full Interior Restore</h3>
+            <p>Deep multi-step clean for interiors needing serious recovery.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="quote" class="section section-alt">
+      <div class="container split">
+        <div>
+          <h2>Get Your Quote</h2>
+          <p>Leave at least one contact method (phone or email). We will reach out quickly.</p>
+          <p class="small-note">You can also DM us on Instagram: <a href="https://instagram.com/shine_n_time" target="_blank" rel="noopener">@shine_n_time</a></p>
+        </div>
+        <form class="quote-form" id="quoteForm" novalidate data-formspree-endpoint="https://formspree.io/f/mgorzwbw">
+          <label for="name">Full Name *</label>
+          <input id="name" name="name" type="text" required />
+
+          <label for="phone">Phone (optional if email is provided)</label>
+          <input id="phone" name="phone" type="tel" placeholder="724-419-1846" />
+
+          <label for="email">Email (optional if phone is provided)</label>
+          <input id="email" name="email" type="email" placeholder="you@example.com" />
+
+          <label for="vehicle">Vehicle *</label>
+          <input id="vehicle" name="vehicle" type="text" required placeholder="Example: 2021 Honda Accord" />
+
+          <label for="service">Service Needed *</label>
+          <select id="service" name="service" required>
+            <option value="">Select service</option>
+            <option>Interior Refresh</option>
+            <option>Deep Interior Detail</option>
+            <option>Full Interior Restore</option>
+            <option>Need Recommendation</option>
+          </select>
+
+          <label for="notes">Extra Details</label>
+          <textarea id="notes" name="notes" rows="4" placeholder="Stains, odors, timing, anything else..."></textarea>
+
+          <div class="btn-row">
+            <button type="submit" class="btn btn-primary" id="submitBtn">Send Quote Request</button>
+            <button type="button" class="btn btn-secondary" id="editLastQuoteBtn">Edit Last Quote</button>
+          </div>
+          <p id="formMessage" class="form-message" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer section" id="contact">
+    <div class="container footer-grid">
+      <div>
+        <h2>Shine N Time</h2>
+        <p>Interior detailing built on effort, consistency, and honest pricing.</p>
+      </div>
+      <div>
+        <h3>Contact</h3>
+        <p><a href="tel:+17244191846">724-419-1846</a></p>
+        <p><a href="mailto:shine.n.time.detailing@gmail.com">shine.n.time.detailing@gmail.com</a></p>
+        <p><a href="https://instagram.com/shine_n_time" target="_blank" rel="noopener">@shine_n_time</a></p>
+      </div>
+      <div>
+        <h3>Hours</h3>
+        <p>Mon-Sat</p>
+        <p>By appointment</p>
+      </div>
+    </div>
+    <div class="container footer-bottom">
+      <p>&copy; <span id="year"></span> Shine N Time. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="./script.js" defer></script>
+</body>
+</html>
