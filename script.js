@@ -375,6 +375,7 @@ function fillQuoteForm(values) {
     "appointmentDate",
     "timeWindow",
     "vehicle",
+    "zipCode",
     "vehicleType",
     "vehicleSize",
     "package",
@@ -424,7 +425,7 @@ if (quoteForm) {
   quoteForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const data = new FormData(quoteForm);
-    const requiredFields = ["name", "vehicle", "vehicleType", "package", "conditionLevel", "appointmentDate"];
+    const requiredFields = ["name", "vehicle", "zipCode", "vehicleType", "package", "conditionLevel", "appointmentDate"];
     const hasMissing = requiredFields.some((field) => !String(data.get(field) || "").trim());
     const phoneValue = String(data.get("phone") || "").trim();
     const emailValue = String(data.get("email") || "").trim();
@@ -454,6 +455,7 @@ if (quoteForm) {
       appointmentDate: String(data.get("appointmentDate") || "").trim(),
       timeWindow: String(data.get("timeWindow") || "").trim(),
       vehicle: String(data.get("vehicle") || "").trim(),
+      zipCode: String(data.get("zipCode") || "").trim(),
       vehicleType: String(data.get("vehicleType") || "").trim(),
       package: String(data.get("package") || "").trim(),
       conditionLevel: String(data.get("conditionLevel") || "").trim(),

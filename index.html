@@ -47,7 +47,7 @@
             <li>Respectful service</li>
           </ul>
           <a class="btn btn-ghost" href="https://instagram.com/shine_n_time" target="_blank" rel="noopener">DM @shine_n_time</a>
-          <a class="btn btn-secondary" id="bookGoogleBtn" href="REPLACE_WITH_YOUR_GOOGLE_APPOINTMENT_LINK" target="_blank" rel="noopener">Book on Google Calendar</a>
+          <a class="btn btn-secondary" id="bookGoogleBtn" href="https://calendar.app.google/BJtrqAT2SDPsZAUi6" target="_blank" rel="noopener">Book on Google Calendar</a>
         </article>
       </div>
     </section>
@@ -78,6 +78,14 @@
         <p class="section-copy">
           We are based around Canton, Michigan. If you are close by, we can usually make it work. Not sure? Text us your zip code.
         </p>
+        <article class="card travel-note">
+          <h3>Mobile visits (important)</h3>
+          <ul class="mini-list">
+            <li>We may need access to <strong>water</strong> and <strong>electricity</strong> at your location for the best results.</li>
+            <li>If you are farther away, we may add a <strong>small travel fee</strong> (we will confirm before you pay anything).</li>
+            <li>Send your <strong>zip code</strong> in the quote form so we can check distance and scheduling.</li>
+          </ul>
+        </article>
         <div class="area-grid">
           <article class="card">
             <h3>Core area</h3>
@@ -258,6 +266,9 @@
 
           <label for="vehicle">Vehicle *</label>
           <input id="vehicle" name="vehicle" type="text" required placeholder="Example: 2021 Honda Accord" />
+
+          <label for="zipCode">Zip code (for travel check) *</label>
+          <input id="zipCode" name="zipCode" type="text" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" required placeholder="48187" />
 
           <label for="vehicleType">Vehicle Size *</label>
           <select id="vehicleType" name="vehicleType" required>
