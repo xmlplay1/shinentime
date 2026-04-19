@@ -5,13 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Shine N Time interior detailing. Clean results, fair pricing, and easy quote booking." />
   <title>Shine N Time | Interior Detailing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=Outfit:wght@500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="preload" as="image" href="./IMG_2868.PNG" />
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
   <header class="site-header">
     <div class="container nav-wrap">
-      <a class="logo" href="#home"><span class="logo-dot" aria-hidden="true"></span>Shine N Time</a>
+      <a class="logo" href="#home">
+        <span class="logo-mark" aria-hidden="true">
+          <img src="./IMG_2868.PNG" alt="" width="40" height="40" decoding="async" />
+        </span>
+        <span class="logo-text">Shine N Time</span>
+      </a>
       <button id="menuToggle" class="menu-toggle" aria-expanded="false" aria-controls="primaryNav">Menu</button>
       <nav id="primaryNav" class="nav">
         <a href="#services">Services</a>
@@ -28,47 +40,87 @@
 
   <main id="main">
     <section class="hero" id="home">
-      <div class="container hero-grid">
-        <article class="hero-main card">
-          <p class="eyebrow">Shine N Time</p>
+      <div class="hero-bg" aria-hidden="true"></div>
+      <div class="container hero-layout">
+        <div class="hero-copy">
+          <p class="eyebrow">Mobile interior detailing · Canton area</p>
           <h1>Interior detailing that looks clean and feels fresh.</h1>
-          <p>We are young, hungry, and focused on quality work. No extra hype, just real results and fast replies.</p>
+          <p class="hero-lead">We are young, hungry, and focused on quality work. Straight answers, fair estimates, and results you can see.</p>
           <p class="hero-reply-note">We usually reply within a few hours (same day most days).</p>
           <div class="hero-actions">
             <a class="btn btn-primary" href="#quote">Get a Quote</a>
-            <a class="btn btn-secondary" href="tel:+17244191846">Call 724-419-1846</a>
+            <a class="btn btn-secondary" href="tel:+17344191846">Call 734-419-1846</a>
+            <a class="btn btn-ghost" href="sms:+17344191846">Text us</a>
           </div>
-        </article>
-        <article class="hero-side card">
-          <h2>Why people book us</h2>
+        </div>
+        <div class="hero-visual card">
+          <div class="hero-collage" aria-hidden="true">
+            <div class="collage-main">
+              <img src="./IMG_2866.PNG" alt="" loading="eager" decoding="async" />
+            </div>
+            <div class="collage-small top">
+              <img src="./IMG_2867.PNG" alt="" loading="lazy" decoding="async" />
+            </div>
+            <div class="collage-small bottom">
+              <img src="./IMG_2869.PNG" alt="" loading="lazy" decoding="async" />
+            </div>
+          </div>
+          <div class="hero-visual-footer">
+            <p>Real photos from our work. Tap <a href="#past-work">Past Work</a> to see more.</p>
+          </div>
+        </div>
+        <aside class="hero-aside card">
+          <h2>Book fast</h2>
           <ul class="mini-list">
             <li>Simple booking</li>
-            <li>Fair prices</li>
+            <li>Fair package pricing</li>
             <li>Quick response</li>
             <li>Respectful service</li>
           </ul>
-          <a class="btn btn-ghost" href="https://instagram.com/shine_n_time" target="_blank" rel="noopener">DM @shine_n_time</a>
-          <a class="btn btn-secondary" id="bookGoogleBtn" href="https://calendar.app.google/BJtrqAT2SDPsZAUi6" target="_blank" rel="noopener">Book on Google Calendar</a>
-        </article>
+          <div class="stack-btns">
+            <a class="btn btn-secondary" id="bookGoogleBtn" href="https://calendar.app.google/BJtrqAT2SDPsZAUi6" target="_blank" rel="noopener">Book on Google Calendar</a>
+            <a class="btn btn-ghost" href="https://instagram.com/shine_n_time" target="_blank" rel="noopener">DM @shine_n_time</a>
+          </div>
+        </aside>
       </div>
     </section>
 
     <section id="services" class="section">
       <div class="container">
         <h2>Services</h2>
-        <div class="cards">
-          <article class="card">
+        <div class="cards service-cards">
+          <article class="card service-card has-thumb thumb-a">
             <h3>Interior Refresh</h3>
             <p>Vacuum, wipe-down, windows, and quick interior reset.</p>
           </article>
-          <article class="card">
+          <article class="card service-card has-thumb thumb-b">
             <h3>Deep Interior Detail</h3>
             <p>Steam cleaning, stain treatment, and odor-focused care.</p>
           </article>
-          <article class="card">
+          <article class="card service-card has-thumb thumb-c">
             <h3>Full Interior Restore</h3>
             <p>Deep multi-step clean for interiors needing serious recovery.</p>
           </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tight" aria-label="Work samples">
+      <div class="container">
+        <div class="strip-head">
+          <h2 class="strip-title">Real interiors</h2>
+          <p class="strip-sub">A few quick looks at the kind of results we chase on every job.</p>
+        </div>
+        <div class="photo-strip">
+          <figure class="strip-card">
+            <img src="./IMG_2866.PNG" alt="Interior detailing result sample" loading="lazy" decoding="async" />
+          </figure>
+          <figure class="strip-card">
+            <img src="./IMG_2867.PNG" alt="Interior detailing result sample" loading="lazy" decoding="async" />
+          </figure>
+          <figure class="strip-card">
+            <img src="./IMG_2869.PNG" alt="Interior detailing result sample" loading="lazy" decoding="async" />
+          </figure>
         </div>
       </div>
     </section>
@@ -256,7 +308,7 @@
           </button>
           <button class="work-card-btn" type="button" aria-label="Open past work photo 4">
             <figure class="work-card">
-              <img src="./IMG_2866.PNG" alt="Past detailing work sample 4" loading="lazy" decoding="async" />
+              <img src="./IMG_2864.PNG" alt="Past detailing work sample 4" loading="lazy" decoding="async" />
             </figure>
           </button>
         </div>
@@ -329,7 +381,7 @@
           <input id="name" name="name" type="text" required />
 
           <label for="phone">Phone (optional if email is provided)</label>
-          <input id="phone" name="phone" type="tel" placeholder="724-419-1846" />
+          <input id="phone" name="phone" type="tel" placeholder="734-419-1846" />
 
           <label for="email">Email (optional if phone is provided)</label>
           <input id="email" name="email" type="email" placeholder="you@example.com" />
@@ -460,7 +512,7 @@
       </div>
       <div>
         <h3>Contact</h3>
-        <p><a href="tel:+17244191846">724-419-1846</a></p>
+        <p><a href="tel:+17344191846">734-419-1846</a></p>
         <p><a href="mailto:shine.n.time.detailing@gmail.com">shine.n.time.detailing@gmail.com</a></p>
         <p><a href="https://instagram.com/shine_n_time" target="_blank" rel="noopener">@shine_n_time</a></p>
       </div>

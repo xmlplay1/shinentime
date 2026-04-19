@@ -12,7 +12,7 @@ Minimal, modern, fast static website for Shine N Time Interior Detailing.
 
 ## Business details currently set
 
-- Phone: `724-419-1846`
+- Phone: `734-419-1846`
 - Instagram: `@shine_n_time`
 - Form endpoint: `https://formspree.io/f/mgorzwbw`
 

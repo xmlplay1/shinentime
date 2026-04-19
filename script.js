@@ -504,7 +504,7 @@ if (quoteForm) {
     saveQuoteDraft(draftValues);
 
     if (!quoteEndpoint) {
-      formMessage.textContent = "Form not connected. Call 724-419-1846 or DM @shine_n_time.";
+      formMessage.textContent = "Form not connected. Call 734-419-1846 or DM @shine_n_time.";
       formMessage.style.color = "#b91c1c";
       return;
     }
@@ -528,7 +528,7 @@ if (quoteForm) {
       formMessage.textContent = "Thanks! Quote sent. We will reach out soon.";
       formMessage.style.color = "#0f766e";
     } catch (error) {
-      formMessage.textContent = "Could not send right now. Call 724-419-1846 or DM @shine_n_time.";
+      formMessage.textContent = "Could not send right now. Call 734-419-1846 or DM @shine_n_time.";
       formMessage.style.color = "#b91c1c";
     }
   });
