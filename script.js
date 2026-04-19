@@ -45,8 +45,10 @@ if (quoteForm) {
   quoteForm.addEventListener("submit", (event) => {
     event.preventDefault();
     const data = new FormData(quoteForm);
-    const requiredFields = ["name", "phone", "email", "vehicle", "service"];
+    const requiredFields = ["name", "vehicle", "service"];
     const hasMissing = requiredFields.some((field) => !String(data.get(field) || "").trim());
+    const phoneValue = String(data.get("phone") || "").trim();
+    const emailValue = String(data.get("email") || "").trim();
 
     if (hasMissing) {
       formMessage.textContent = "Please fill out all required fields first.";
@@ -54,9 +56,21 @@ if (quoteForm) {
       return;
     }
 
+    if (!phoneValue && !emailValue) {
+      formMessage.textContent = "Please add at least a phone number or email so we can reach you.";
+      formMessage.style.color = "#b91c1c";
+      return;
+    }
+
+    if (emailValue && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)) {
+      formMessage.textContent = "Please enter a valid email address.";
+      formMessage.style.color = "#b91c1c";
+      return;
+    }
+
     const name = encodeURIComponent(String(data.get("name") || "").trim());
-    const phone = encodeURIComponent(String(data.get("phone") || "").trim());
-    const email = encodeURIComponent(String(data.get("email") || "").trim());
+    const phone = encodeURIComponent(phoneValue || "Not provided");
+    const email = encodeURIComponent(emailValue || "Not provided");
     const vehicle = encodeURIComponent(String(data.get("vehicle") || "").trim());
     const service = encodeURIComponent(String(data.get("service") || "").trim());
     const notes = encodeURIComponent(String(data.get("notes") || "").trim());
