@@ -16,10 +16,24 @@ Fast, mobile-first GitHub Pages website for Shine N Time Interior Detailing.
 
 Update these values in `index.html`:
 
-- Phone number: search for `(555) 555-1234`
-- Email: search for `quotes@shinentime.com`
+- Phone number: search for `724-419-1846`
+- Email: search for `quotes@shinentime.com` (or your preferred email)
+- Instagram: search for `shine_n_time`
 - Service area: search for `Your City, State`
 - Scheduling link: search for `https://calendly.com/shine-n-time`
+
+## Make the quote form actually deliver leads (recommended)
+
+`mailto:` forms can fail on many phones/browsers. This site is ready for Formspree so leads reliably go to your inbox.
+
+1. Create a free account at [formspree.io](https://formspree.io).
+2. Create a new form and copy your endpoint URL (looks like `https://formspree.io/f/xxxxxx`).
+3. In `script.js`, replace:
+   - `const FORMSPREE_ENDPOINT = "https://formspree.io/f/your-form-id";`
+   with your real endpoint.
+4. Deploy again.
+
+After this, quote requests submit directly from the website to your email inbox.
 
 ## Run locally
 

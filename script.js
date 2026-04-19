@@ -3,6 +3,7 @@ const nav = document.getElementById("primaryNav");
 const quoteForm = document.getElementById("quoteForm");
 const formMessage = document.getElementById("formMessage");
 const year = document.getElementById("year");
+const quoteEndpoint = quoteForm?.getAttribute("action") || "";
 
 if (year) {
   year.textContent = new Date().getFullYear();
@@ -42,7 +43,7 @@ if ("IntersectionObserver" in window) {
 }
 
 if (quoteForm) {
-  quoteForm.addEventListener("submit", (event) => {
+  quoteForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const data = new FormData(quoteForm);
     const requiredFields = ["name", "vehicle", "service"];
@@ -68,20 +69,34 @@ if (quoteForm) {
       return;
     }
 
-    const name = encodeURIComponent(String(data.get("name") || "").trim());
-    const phone = encodeURIComponent(phoneValue || "Not provided");
-    const email = encodeURIComponent(emailValue || "Not provided");
-    const vehicle = encodeURIComponent(String(data.get("vehicle") || "").trim());
-    const service = encodeURIComponent(String(data.get("service") || "").trim());
-    const notes = encodeURIComponent(String(data.get("notes") || "").trim());
+    if (!quoteEndpoint || quoteEndpoint.includes("REPLACE_WITH_YOUR_FORMSPREE_ID")) {
+      formMessage.textContent = "Form is not connected yet. Add your Formspree URL in index.html to receive quote requests.";
+      formMessage.style.color = "#b91c1c";
+      return;
+    }
 
-    const subject = encodeURIComponent("New Shine N Time Quote Request");
-    const body = `Name: ${name}%0APhone: ${phone}%0AEmail: ${email}%0AVehicle: ${vehicle}%0AService: ${service}%0A%0ANotes:%0A${notes}`;
-    const mailto = `mailto:quotes@shinentime.com?subject=${subject}&body=${body}`;
-
-    formMessage.textContent = "Opening your email app to send the request...";
+    formMessage.textContent = "Sending your request...";
     formMessage.style.color = "#0f766e";
-    window.location.href = mailto;
-    quoteForm.reset();
+
+    try {
+      const response = await fetch(quoteEndpoint, {
+        method: "POST",
+        body: data,
+        headers: {
+          Accept: "application/json"
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error("Request failed");
+      }
+
+      formMessage.textContent = "Thanks! Your quote request was sent. We will contact you soon.";
+      formMessage.style.color = "#0f766e";
+      quoteForm.reset();
+    } catch (error) {
+      formMessage.textContent = "Could not send right now. Please call 724-419-1846 or DM @shine_n_time on Instagram.";
+      formMessage.style.color = "#b91c1c";
+    }
   });
 }
