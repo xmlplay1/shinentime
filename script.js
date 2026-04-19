@@ -5,11 +5,45 @@ const formMessage = document.getElementById("formMessage");
 const year = document.getElementById("year");
 const editLastQuoteButton = document.getElementById("editLastQuoteBtn");
 const pastWorkScroll = document.querySelector(".past-work-scroll");
+const galleryButtons = Array.from(document.querySelectorAll(".work-card-btn"));
+const lightbox = document.getElementById("galleryLightbox");
+const lightboxImage = document.getElementById("lightboxImage");
+const lightboxCaption = document.getElementById("lightboxCaption");
+const lightboxClose = document.getElementById("lightboxClose");
+const lightboxPrev = document.getElementById("lightboxPrev");
+const lightboxNext = document.getElementById("lightboxNext");
+const lightboxZoomIn = document.getElementById("lightboxZoomIn");
+const lightboxZoomOut = document.getElementById("lightboxZoomOut");
+const vehicleType = document.getElementById("vehicleType");
+const packageSelect = document.getElementById("package");
+const extrasFieldset = document.getElementById("extrasFieldset");
+const estimateRange = document.getElementById("estimateRange");
+const estimateBreakdown = document.getElementById("estimateBreakdown");
+const estimateHidden = document.getElementById("estimateValue");
 const quoteEndpoint =
   quoteForm?.getAttribute("action") ||
   quoteForm?.dataset?.formspreeEndpoint ||
   "";
 const QUOTE_STORAGE_KEY = "shine-n-time-last-quote";
+let currentGalleryIndex = 0;
+let currentZoom = 1;
+let pastWorkAutoScrollKilled = false;
+let stopPastWorkAutoScroll = null;
+
+const PACKAGE_PRICING = {
+  silver: { sedan: 49, suvTruck: 59 },
+  gold: { sedan: 125, suvTruck: 140 },
+  platinum: { sedan: 160, suvTruck: 180 }
+};
+
+const EXTRA_PRICING = {
+  petHair: { low: 20, high: 45 },
+  heavyStains: { low: 25, high: 60 },
+  bioClean: { low: 30, high: 85 },
+  smokeOdor: { low: 25, high: 70 },
+  sandSalt: { low: 15, high: 35 },
+  moldRisk: { low: 45, high: 140 }
+};
 
 if (year) {
   year.textContent = new Date().getFullYear();
@@ -63,7 +97,7 @@ if (pastWorkScroll && !window.matchMedia("(prefers-reduced-motion: reduce)").mat
     const delta = (timestamp - lastTime) / 1000;
     lastTime = timestamp;
 
-    if (!paused) {
+    if (!paused && !pastWorkAutoScrollKilled) {
       pastWorkScroll.scrollLeft += speedPxPerSecond * delta;
       const resetPoint = pastWorkScroll.scrollWidth / 2;
       if (pastWorkScroll.scrollLeft >= resetPoint) {
@@ -80,13 +114,20 @@ if (pastWorkScroll && !window.matchMedia("(prefers-reduced-motion: reduce)").mat
   };
 
   const resume = () => {
+    if (pastWorkAutoScrollKilled) return;
     paused = false;
     pastWorkScroll.classList.remove("is-paused");
   };
 
   const resumeSoon = () => {
+    if (pastWorkAutoScrollKilled) return;
     window.clearTimeout(resumeTimer);
     resumeTimer = window.setTimeout(resume, 1800);
+  };
+
+  stopPastWorkAutoScroll = () => {
+    pastWorkAutoScrollKilled = true;
+    pause();
   };
 
   animationFrame = window.requestAnimationFrame(step);
@@ -100,6 +141,134 @@ if (pastWorkScroll && !window.matchMedia("(prefers-reduced-motion: reduce)").mat
     window.clearTimeout(resumeTimer);
   });
 }
+
+function getGalleryItems() {
+  return galleryButtons
+    .map((button) => {
+      const img = button.querySelector("img");
+      if (!img) return null;
+      return {
+        src: img.currentSrc || img.src,
+        alt: img.alt || "Past work photo"
+      };
+    })
+    .filter(Boolean);
+}
+
+function renderLightboxImage() {
+  const items = getGalleryItems();
+  if (!items.length || !lightboxImage || !lightboxCaption) return;
+  const item = items[currentGalleryIndex];
+  lightboxImage.src = item.src;
+  lightboxImage.alt = item.alt;
+  lightboxCaption.textContent = `${item.alt} (${currentGalleryIndex + 1}/${items.length})`;
+  lightboxImage.style.transform = `scale(${currentZoom})`;
+}
+
+function openLightbox(index) {
+  if (!lightbox) return;
+  currentGalleryIndex = index;
+  currentZoom = 1;
+  renderLightboxImage();
+  lightbox.hidden = false;
+  lightbox.setAttribute("aria-hidden", "false");
+  document.body.classList.add("lightbox-open");
+  if (typeof stopPastWorkAutoScroll === "function") {
+    stopPastWorkAutoScroll();
+  }
+}
+
+function closeLightbox() {
+  if (!lightbox) return;
+  lightbox.hidden = true;
+  lightbox.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("lightbox-open");
+}
+
+function nextLightbox() {
+  const items = getGalleryItems();
+  if (!items.length) return;
+  currentGalleryIndex = (currentGalleryIndex + 1) % items.length;
+  renderLightboxImage();
+}
+
+function prevLightbox() {
+  const items = getGalleryItems();
+  if (!items.length) return;
+  currentGalleryIndex = (currentGalleryIndex - 1 + items.length) % items.length;
+  renderLightboxImage();
+}
+
+function updateZoom(step) {
+  currentZoom = Math.max(1, Math.min(2.6, currentZoom + step));
+  if (lightboxImage) {
+    lightboxImage.style.transform = `scale(${currentZoom})`;
+  }
+}
+
+galleryButtons.forEach((button, index) => {
+  button.addEventListener("click", () => openLightbox(index));
+});
+
+if (lightboxClose) lightboxClose.addEventListener("click", closeLightbox);
+if (lightboxNext) lightboxNext.addEventListener("click", nextLightbox);
+if (lightboxPrev) lightboxPrev.addEventListener("click", prevLightbox);
+if (lightboxZoomIn) lightboxZoomIn.addEventListener("click", () => updateZoom(0.2));
+if (lightboxZoomOut) lightboxZoomOut.addEventListener("click", () => updateZoom(-0.2));
+
+if (lightbox) {
+  lightbox.addEventListener("click", (event) => {
+    if (event.target === lightbox) closeLightbox();
+  });
+}
+
+window.addEventListener("keydown", (event) => {
+  if (!lightbox || lightbox.hidden) return;
+  if (event.key === "Escape") closeLightbox();
+  if (event.key === "ArrowRight") nextLightbox();
+  if (event.key === "ArrowLeft") prevLightbox();
+});
+
+function calculateEstimate() {
+  if (!vehicleType || !packageSelect || !estimateRange || !estimateBreakdown || !estimateHidden) return;
+
+  const vehicle = vehicleType.value;
+  const pkg = packageSelect.value;
+  if (!vehicle || !pkg || !PACKAGE_PRICING[pkg]) {
+    estimateRange.textContent = "$0 - $0";
+    estimateBreakdown.textContent = "Choose vehicle type + package to see estimate.";
+    estimateHidden.value = "";
+    return;
+  }
+
+  let low = PACKAGE_PRICING[pkg][vehicle];
+  let high = PACKAGE_PRICING[pkg][vehicle];
+  const extras = [];
+
+  if (extrasFieldset) {
+    const checked = Array.from(extrasFieldset.querySelectorAll("input[type='checkbox']:checked"));
+    checked.forEach((input) => {
+      const key = input.value;
+      const pricing = EXTRA_PRICING[key];
+      if (!pricing) return;
+      low += pricing.low;
+      high += pricing.high;
+      extras.push(input.dataset.label || key);
+    });
+  }
+
+  estimateRange.textContent = `$${low} - $${high}`;
+  const extrasText = extras.length ? ` + extras: ${extras.join(", ")}` : "";
+  estimateBreakdown.textContent = `Base ${pkg.toUpperCase()} package for ${vehicle === "sedan" ? "Sedan" : "SUV/Truck"}${extrasText}. Final quote confirmed after inspection.`;
+  estimateHidden.value = `${low}-${high}`;
+}
+
+if (vehicleType) vehicleType.addEventListener("change", calculateEstimate);
+if (packageSelect) packageSelect.addEventListener("change", calculateEstimate);
+if (extrasFieldset) {
+  extrasFieldset.addEventListener("change", calculateEstimate);
+}
+calculateEstimate();
 
 function saveQuoteDraft(data) {
   try {
@@ -121,13 +290,32 @@ function loadQuoteDraft() {
 
 function fillQuoteForm(values) {
   if (!quoteForm || !values) return;
-  const fields = ["name", "phone", "email", "vehicle", "service", "notes"];
+  const fields = [
+    "name",
+    "phone",
+    "email",
+    "preferredDate",
+    "vehicle",
+    "vehicleType",
+    "package",
+    "service",
+    "notes",
+    "estimateValue"
+  ];
   fields.forEach((field) => {
     const input = quoteForm.elements.namedItem(field);
     if (input && typeof values[field] === "string") {
       input.value = values[field];
     }
   });
+
+  if (extrasFieldset && Array.isArray(values.extras)) {
+    const checkboxes = Array.from(extrasFieldset.querySelectorAll("input[type='checkbox']"));
+    checkboxes.forEach((checkbox) => {
+      checkbox.checked = values.extras.includes(checkbox.value);
+    });
+  }
+  calculateEstimate();
 }
 
 if (editLastQuoteButton) {
@@ -148,7 +336,7 @@ if (quoteForm) {
   quoteForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const data = new FormData(quoteForm);
-    const requiredFields = ["name", "vehicle", "service"];
+    const requiredFields = ["name", "vehicle", "vehicleType", "package", "service"];
     const hasMissing = requiredFields.some((field) => !String(data.get(field) || "").trim());
     const phoneValue = String(data.get("phone") || "").trim();
     const emailValue = String(data.get("email") || "").trim();
@@ -175,9 +363,16 @@ if (quoteForm) {
       name: String(data.get("name") || "").trim(),
       phone: phoneValue,
       email: emailValue,
+      preferredDate: String(data.get("preferredDate") || "").trim(),
       vehicle: String(data.get("vehicle") || "").trim(),
+      vehicleType: String(data.get("vehicleType") || "").trim(),
+      package: String(data.get("package") || "").trim(),
       service: String(data.get("service") || "").trim(),
-      notes: String(data.get("notes") || "").trim()
+      notes: String(data.get("notes") || "").trim(),
+      estimateValue: String(data.get("estimateValue") || "").trim(),
+      extras: Array.from(
+        (extrasFieldset ? extrasFieldset.querySelectorAll("input[type='checkbox']:checked") : [])
+      ).map((input) => input.value)
     };
     saveQuoteDraft(draftValues);
 

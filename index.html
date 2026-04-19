@@ -15,6 +15,7 @@
       <button id="menuToggle" class="menu-toggle" aria-expanded="false" aria-controls="primaryNav">Menu</button>
       <nav id="primaryNav" class="nav">
         <a href="#services">Services</a>
+        <a href="#pricing">Pricing</a>
         <a href="#past-work">Past Work</a>
         <a href="#reviews">Reviews</a>
         <a href="#quote">Quote</a>
@@ -63,6 +64,45 @@
           <article class="card">
             <h3>Full Interior Restore</h3>
             <p>Deep multi-step clean for interiors needing serious recovery.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="pricing" class="section section-alt">
+      <div class="container">
+        <h2 class="section-title">Estimated Package Pricing</h2>
+        <p class="section-copy">Based on your flyer. Final price may change after in-person inspection and vehicle condition check.</p>
+        <div class="cards pricing-grid">
+          <article class="card">
+            <h3>Silver Package</h3>
+            <ul class="mini-list">
+              <li>Exterior hand wash</li>
+              <li>Clean windows</li>
+              <li>Tire and rim shine</li>
+              <li>Door jamb cleaning</li>
+            </ul>
+            <p class="price-tag">Sedan: $49 | SUV/Truck: $59</p>
+          </article>
+          <article class="card">
+            <h3>Gold Package</h3>
+            <ul class="mini-list">
+              <li>Silver package plus</li>
+              <li>Full interior vacuum</li>
+              <li>Seat and carpet shampoo</li>
+              <li>Odor removal</li>
+            </ul>
+            <p class="price-tag">Sedan: $125 | SUV/Truck: $140</p>
+          </article>
+          <article class="card">
+            <h3>Platinum Package</h3>
+            <ul class="mini-list">
+              <li>Silver + Gold package plus</li>
+              <li>Steam cleaning</li>
+              <li>Clay bar treatment</li>
+              <li>Ceramic sealant</li>
+            </ul>
+            <p class="price-tag">Sedan: $160 | SUV/Truck: $180</p>
           </article>
         </div>
       </div>
@@ -125,8 +165,13 @@
       <div class="container split">
         <div>
           <h2>Get Your Quote</h2>
-          <p>Leave at least one contact method (phone or email). We will reach out quickly.</p>
+          <p>Fill this out for an estimated quote. We use package pricing from your flyer plus condition/extras. This estimate is not the final price.</p>
           <p class="small-note">You can also DM us on Instagram: <a href="https://instagram.com/shine_n_time" target="_blank" rel="noopener">@shine_n_time</a></p>
+          <div class="estimate-box" id="estimateBox" aria-live="polite">
+            <h3>Estimated Quote</h3>
+            <p id="estimateValue">$0 - $0</p>
+            <small>*Estimated only. Final price may change after actual inspection.</small>
+          </div>
         </div>
         <form class="quote-form" id="quoteForm" novalidate data-formspree-endpoint="https://formspree.io/f/mgorzwbw">
           <label for="name">Full Name *</label>
@@ -141,17 +186,55 @@
           <label for="vehicle">Vehicle *</label>
           <input id="vehicle" name="vehicle" type="text" required placeholder="Example: 2021 Honda Accord" />
 
-          <label for="service">Service Needed *</label>
-          <select id="service" name="service" required>
-            <option value="">Select service</option>
-            <option>Interior Refresh</option>
-            <option>Deep Interior Detail</option>
-            <option>Full Interior Restore</option>
-            <option>Need Recommendation</option>
+          <label for="vehicleSize">Vehicle Size *</label>
+          <select id="vehicleSize" name="vehicleSize" required>
+            <option value="">Select size</option>
+            <option value="sedan">Sedan / Coupe</option>
+            <option value="suv">SUV / Truck / Van</option>
+          </select>
+
+          <label for="package">Package *</label>
+          <select id="package" name="package" required>
+            <option value="">Select package</option>
+            <option value="silver">Silver Package</option>
+            <option value="gold">Gold Package</option>
+            <option value="platinum">Platinum Package</option>
+          </select>
+
+          <label for="conditionLevel">Interior Condition *</label>
+          <select id="conditionLevel" name="conditionLevel" required>
+            <option value="">Select condition</option>
+            <option value="light">Light dirt / maintenance</option>
+            <option value="medium">Moderate dirt / some stains</option>
+            <option value="heavy">Heavy dirt / deep stain recovery</option>
+          </select>
+
+          <fieldset class="extras-group">
+            <legend>Extras (if needed)</legend>
+            <label><input type="checkbox" name="extras" value="petHair" /> Pet hair removal (+$20)</label>
+            <label><input type="checkbox" name="extras" value="sand" /> Sand/mud heavy cleanup (+$15)</label>
+            <label><input type="checkbox" name="extras" value="bio" /> Vomit/biological cleanup (+$35)</label>
+            <label><input type="checkbox" name="extras" value="smoke" /> Smoke odor treatment (+$25)</label>
+            <label><input type="checkbox" name="extras" value="mold" /> Surface mold treatment (+$60)</label>
+          </fieldset>
+
+          <label><input id="firstDetailDiscount" name="firstDetailDiscount" type="checkbox" checked /> First-time customer discount (20% off package)</label>
+
+          <label for="appointmentDate">Preferred Date *</label>
+          <input id="appointmentDate" name="appointmentDate" type="date" required />
+
+          <label for="timeWindow">Preferred Time Window</label>
+          <select id="timeWindow" name="timeWindow">
+            <option value="">No preference</option>
+            <option>Morning (8am - 12pm)</option>
+            <option>Afternoon (12pm - 4pm)</option>
+            <option>Evening (4pm - 7pm)</option>
           </select>
 
           <label for="notes">Extra Details</label>
-          <textarea id="notes" name="notes" rows="4" placeholder="Stains, odors, timing, anything else..."></textarea>
+          <textarea id="notes" name="notes" rows="4" placeholder="Pet situation, stain locations, smell issues, kid spills, etc..."></textarea>
+
+          <input type="hidden" id="estimateSummary" name="estimateSummary" />
 
           <div class="btn-row">
             <button type="submit" class="btn btn-primary" id="submitBtn">Send Quote Request</button>
@@ -185,6 +268,18 @@
       <p>&copy; <span id="year"></span> Shine N Time. All rights reserved.</p>
     </div>
   </footer>
+
+  <div class="lightbox" id="lightbox" hidden>
+    <button class="lightbox-close" id="lightboxClose" aria-label="Close expanded image">&times;</button>
+    <button class="lightbox-nav prev" id="lightboxPrev" aria-label="Previous photo">&#10094;</button>
+    <img id="lightboxImage" alt="Expanded past work photo" />
+    <button class="lightbox-nav next" id="lightboxNext" aria-label="Next photo">&#10095;</button>
+    <div class="lightbox-zoom-controls">
+      <button id="zoomOutBtn" aria-label="Zoom out">-</button>
+      <button id="zoomInBtn" aria-label="Zoom in">+</button>
+      <button id="zoomResetBtn" aria-label="Reset zoom">Reset</button>
+    </div>
+  </div>
 
   <script src="./script.js" defer></script>
 </body>
