@@ -48,45 +48,57 @@ if ("IntersectionObserver" in window) {
   revealItems.forEach((item) => item.classList.add("visible"));
 }
 
-if (pastWorkScroll) {
-  let autoScrollTimer;
-  let resumeTimer;
-  const scrollStep = 1;
-  const intervalMs = 28;
+if (pastWorkScroll && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  const originalCards = Array.from(pastWorkScroll.children);
+  originalCards.forEach((card) => pastWorkScroll.appendChild(card.cloneNode(true)));
 
-  const tick = () => {
-    const maxScrollLeft = pastWorkScroll.scrollWidth - pastWorkScroll.clientWidth;
-    if (pastWorkScroll.scrollLeft >= maxScrollLeft - 2) {
-      pastWorkScroll.scrollTo({ left: 0, behavior: "smooth" });
-      return;
+  let animationFrame = null;
+  let resumeTimer = null;
+  let lastTime = 0;
+  let paused = false;
+  const speedPxPerSecond = window.matchMedia("(max-width: 760px)").matches ? 16 : 22;
+
+  const step = (timestamp) => {
+    if (!lastTime) lastTime = timestamp;
+    const delta = (timestamp - lastTime) / 1000;
+    lastTime = timestamp;
+
+    if (!paused) {
+      pastWorkScroll.scrollLeft += speedPxPerSecond * delta;
+      const resetPoint = pastWorkScroll.scrollWidth / 2;
+      if (pastWorkScroll.scrollLeft >= resetPoint) {
+        pastWorkScroll.scrollLeft -= resetPoint;
+      }
     }
-    pastWorkScroll.scrollLeft += scrollStep;
+
+    animationFrame = window.requestAnimationFrame(step);
   };
 
-  const startAutoScroll = () => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return;
-    }
-    clearInterval(autoScrollTimer);
-    autoScrollTimer = setInterval(tick, intervalMs);
+  const pause = () => {
+    paused = true;
+    pastWorkScroll.classList.add("is-paused");
   };
 
-  const pauseAutoScroll = () => {
-    clearInterval(autoScrollTimer);
+  const resume = () => {
+    paused = false;
+    pastWorkScroll.classList.remove("is-paused");
   };
 
-  const scheduleResume = () => {
-    clearTimeout(resumeTimer);
-    resumeTimer = setTimeout(startAutoScroll, 2200);
+  const resumeSoon = () => {
+    window.clearTimeout(resumeTimer);
+    resumeTimer = window.setTimeout(resume, 1800);
   };
 
-  startAutoScroll();
-
-  pastWorkScroll.addEventListener("mouseenter", pauseAutoScroll);
-  pastWorkScroll.addEventListener("mouseleave", startAutoScroll);
-  pastWorkScroll.addEventListener("touchstart", pauseAutoScroll, { passive: true });
-  pastWorkScroll.addEventListener("touchend", scheduleResume, { passive: true });
-  pastWorkScroll.addEventListener("wheel", scheduleResume, { passive: true });
+  animationFrame = window.requestAnimationFrame(step);
+  pastWorkScroll.addEventListener("mouseenter", pause);
+  pastWorkScroll.addEventListener("mouseleave", resume);
+  pastWorkScroll.addEventListener("touchstart", pause, { passive: true });
+  pastWorkScroll.addEventListener("touchend", resumeSoon, { passive: true });
+  pastWorkScroll.addEventListener("wheel", resumeSoon, { passive: true });
+  window.addEventListener("pagehide", () => {
+    if (animationFrame) window.cancelAnimationFrame(animationFrame);
+    window.clearTimeout(resumeTimer);
+  });
 }
 
 function saveQuoteDraft(data) {
