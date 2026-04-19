@@ -10,7 +10,7 @@ if (year) {
 
 if (menuToggle && nav) {
   menuToggle.addEventListener("click", () => {
-    const isOpen = nav.classList.toggle("open");
+    const isOpen = nav.classList.toggle("show");
     menuToggle.setAttribute("aria-expanded", String(isOpen));
   });
 
@@ -75,7 +75,7 @@ if (quoteForm) {
     const service = encodeURIComponent(String(data.get("service") || "").trim());
     const notes = encodeURIComponent(String(data.get("notes") || "").trim());
 
-    const subject = encodeURIComponent("New Interior Detailing Quote Request");
+    const subject = encodeURIComponent("New Shine N Time Quote Request");
     const body = `Name: ${name}%0APhone: ${phone}%0AEmail: ${email}%0AVehicle: ${vehicle}%0AService: ${service}%0A%0ANotes:%0A${notes}`;
     const mailto = `mailto:quotes@shinentime.com?subject=${subject}&body=${body}`;
 

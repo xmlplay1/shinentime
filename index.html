@@ -3,11 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta
-    name="description"
-    content="Shine N Time Interior Detailing - professional interior detailing with easy quote requests, clear contact details, and fast booking."
-  />
-  <title>Shine N Time Interior Detailing</title>
+  <meta name="description" content="Shine N Time Interior Detailing - premium interior detailing, mobile and shop service, transparent packages, and fast quote booking." />
+  <title>Shine N Time | Premium Interior Detailing</title>
   <link rel="preload" as="image" href="./IMG_2868.PNG" />
   <link rel="stylesheet" href="./style.css" />
 </head>
@@ -15,18 +12,13 @@
   <a class="skip-link" href="#main">Skip to content</a>
   <header class="site-header">
     <div class="container nav-wrap">
-      <a class="logo" href="#home">
-        <span class="logo-dot" aria-hidden="true"></span>
-        <span>Shine N Time</span>
-      </a>
-      <button class="menu-toggle" id="menuToggle" aria-expanded="false" aria-controls="primaryNav">
-        Menu
-      </button>
+      <a class="logo" href="#home"><span class="logo-dot"></span>Shine N Time</a>
+      <button id="menuToggle" class="menu-toggle" aria-expanded="false" aria-controls="primaryNav">Menu</button>
       <nav id="primaryNav" class="nav">
         <a href="#services">Services</a>
-        <a href="#gallery">Results</a>
+        <a href="#packages">Packages</a>
+        <a href="#process">Process</a>
         <a href="#quote">Get Quote</a>
-        <a href="#schedule">Schedule</a>
         <a href="#contact">Contact</a>
       </nav>
     </div>
@@ -34,129 +26,153 @@
 
   <main id="main">
     <section class="hero" id="home">
+      <img class="hero-image" src="./IMG_2868.PNG" width="1200" height="900" alt="Shine N Time branded auto detailing visuals" loading="eager" decoding="async" />
       <div class="hero-overlay"></div>
-      <img
-        src="./IMG_2868.PNG"
-        alt="Interior detailing flyer and branding"
-        class="hero-image"
-        width="1200"
-        height="900"
-        loading="eager"
-        decoding="async"
-      />
-      <div class="container hero-content reveal">
-        <p class="eyebrow">Interior Detailing That Feels Brand New</p>
-        <h1>Deep clean, restore, and protect your vehicle interior.</h1>
-        <p>
-          We help your interior look and feel fresh with professional detailing,
-          transparent pricing, and personalized recommendations.
-        </p>
-        <div class="hero-actions">
-          <a class="btn btn-primary" href="#quote">Get Your Quote</a>
-          <a class="btn btn-secondary" href="#schedule">Schedule a Call</a>
+      <div class="container hero-grid">
+        <div class="hero-content reveal">
+          <p class="eyebrow">5-Star Interior Detailing</p>
+          <h1>We Make Your Interior Look Better Than New.</h1>
+          <p class="lead">Deep stain removal, odor treatment, steam cleaning, and premium interior protection. Mobile service or drop-off appointments.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#quote">Get Free Quote</a>
+            <a class="btn btn-secondary" href="tel:+15555551234">Call (555) 555-1234</a>
+          </div>
+          <div class="trust-row">
+            <span>Licensed & Insured</span>
+            <span>Mobile + Shop Service</span>
+            <span>Satisfaction Focused</span>
+          </div>
+        </div>
+        <aside class="hero-card reveal">
+          <h2>Book Fast</h2>
+          <p>Tell us your vehicle and issue. We respond fast with estimate + next steps for true quote.</p>
+          <a class="btn btn-primary" href="#quote">Start My Quote</a>
+          <a class="btn btn-ghost" href="https://calendly.com/shine-n-time" target="_blank" rel="noopener">Schedule Meeting</a>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section strip">
+      <div class="container stat-grid">
+        <article class="stat reveal"><strong>10+</strong><span>Years Experience</span></article>
+        <article class="stat reveal"><strong>1 Day</strong><span>Avg Quote Response</span></article>
+        <article class="stat reveal"><strong>Mobile</strong><span>At Home/Office Service</span></article>
+        <article class="stat reveal"><strong>5-Star</strong><span>Detailing Standard</span></article>
+      </div>
+    </section>
+
+    <section id="services" class="section">
+      <div class="container">
+        <p class="section-kicker reveal">What We Do</p>
+        <h2 class="section-title reveal">Interior Detailing Services Built For Real Life Messes.</h2>
+        <div class="cards three">
+          <article class="card reveal"><h3>Interior Detailing</h3><p>Vacuum, steam, detail brushing, stain care, plastics/leather protection, and full cabin reset.</p></article>
+          <article class="card reveal"><h3>Odor + Stain Recovery</h3><p>Targeted treatment for pet smell, smoke, food spills, and high-traffic grime areas.</p></article>
+          <article class="card reveal"><h3>Maintenance Details</h3><p>Keep your interior consistently clean with monthly or seasonal maintenance plans.</p></article>
         </div>
       </div>
     </section>
 
-    <section class="section" id="services">
+    <section id="packages" class="section section-alt">
       <div class="container">
-        <h2 class="section-title reveal">Our Detailing Services</h2>
-        <div class="cards">
-          <article class="card reveal">
+        <p class="section-kicker reveal">Popular Packages</p>
+        <h2 class="section-title reveal">Simple Pricing Tiers. Clear Deliverables.</h2>
+        <div class="cards three">
+          <article class="card pricing reveal">
+            <p class="badge">Starter</p>
             <h3>Interior Refresh</h3>
-            <p>Quick but complete interior wipe-down, vacuum, and surface treatment.</p>
+            <ul><li>Full vacuum</li><li>Surface wipe-down</li><li>Windows + mirrors</li><li>Floor mat clean</li></ul>
+            <a class="btn btn-ghost" href="#quote">Get Quote</a>
           </article>
-          <article class="card reveal">
+          <article class="card pricing featured reveal">
+            <p class="badge">Most Popular</p>
             <h3>Deep Interior Detail</h3>
-            <p>Deep stain removal, steam cleaning, vents and trim restoration, odor treatment.</p>
+            <ul><li>Steam + stain treatment</li><li>Shampoo seats/carpets</li><li>Trim/leather conditioning</li><li>Odor treatment</li></ul>
+            <a class="btn btn-primary" href="#quote">Get Quote</a>
           </article>
-          <article class="card reveal">
-            <h3>Maintenance Plans</h3>
-            <p>Recurring care options to keep your car interior clean all year long.</p>
+          <article class="card pricing reveal">
+            <p class="badge">Premium</p>
+            <h3>Full Cabin Restoration</h3>
+            <ul><li>Advanced stain extraction</li><li>Intensive odor reset</li><li>Multi-pass deep clean</li><li>Premium interior protection</li></ul>
+            <a class="btn btn-ghost" href="#quote">Get Quote</a>
           </article>
         </div>
       </div>
     </section>
 
-    <section class="section section-alt" id="gallery">
-      <div class="container">
-        <h2 class="section-title reveal">Style Inspired by Your Flyer</h2>
-        <p class="section-copy reveal">
-          Your brand assets are featured directly so the site matches your marketing style.
-        </p>
-        <div class="gallery">
-          <img src="./IMG_2864.PNG" alt="Shine N Time flyer design 1" loading="lazy" decoding="async" />
-          <img src="./IMG_2866.PNG" alt="Shine N Time flyer design 2" loading="lazy" decoding="async" />
-          <img src="./IMG_2867.PNG" alt="Shine N Time flyer design 3" loading="lazy" decoding="async" />
-          <img src="./IMG_2869.PNG" alt="Shine N Time flyer design 4" loading="lazy" decoding="async" />
-        </div>
-      </div>
-    </section>
-
-    <section class="section" id="quote">
+    <section id="process" class="section">
       <div class="container split">
         <div class="reveal">
-          <h2 class="section-title">Get a Fast Quote</h2>
-          <p class="section-copy">
-            Send your details and we will reach out with an estimated quote.
-            Final pricing is confirmed after a quick call or in-person review.
-          </p>
-          <ul class="quote-list">
-            <li>Response goal: within one business day</li>
-            <li>No-pressure recommendations</li>
-            <li>Clear next steps for true pricing</li>
-          </ul>
+          <p class="section-kicker">How It Works</p>
+          <h2 class="section-title">From Request To Results In 3 Easy Steps.</h2>
+          <ol class="steps">
+            <li><strong>Send Quote Request:</strong> Leave your phone or email and vehicle details.</li>
+            <li><strong>Get Personalized Estimate:</strong> We reach out with recommendations and timing.</li>
+            <li><strong>Schedule Service:</strong> Choose mobile or in-person appointment for your true quote/service.</li>
+          </ol>
+        </div>
+        <div class="gallery reveal">
+          <img src="./IMG_2864.PNG" alt="Shine N Time visual style sample 1" loading="lazy" decoding="async" />
+          <img src="./IMG_2866.PNG" alt="Shine N Time visual style sample 2" loading="lazy" decoding="async" />
+          <img src="./IMG_2867.PNG" alt="Shine N Time visual style sample 3" loading="lazy" decoding="async" />
+          <img src="./IMG_2869.PNG" alt="Shine N Time visual style sample 4" loading="lazy" decoding="async" />
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-alt">
+      <div class="container">
+        <p class="section-kicker reveal">Testimonials</p>
+        <h2 class="section-title reveal">Customers Love The Results.</h2>
+        <div class="cards three">
+          <article class="card quote reveal"><p>"My interior looked brand new again. Super professional and on time."</p><h3>- Local Customer</h3></article>
+          <article class="card quote reveal"><p>"Fast communication, clear pricing, and the deep clean was incredible."</p><h3>- Returning Client</h3></article>
+          <article class="card quote reveal"><p>"Best detailing experience I've had. They really care about quality."</p><h3>- 5-Star Review</h3></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="quote" class="section">
+      <div class="container split">
+        <div class="reveal">
+          <p class="section-kicker">Get Started</p>
+          <h2 class="section-title">Get Your Quote In Minutes.</h2>
+          <p class="section-copy">Leave at least one contact method (phone or email). We will follow up quickly with a personalized estimate.</p>
         </div>
         <form class="quote-form reveal" id="quoteForm" novalidate>
-          <label for="name">Full Name</label>
+          <label for="name">Full Name *</label>
           <input id="name" name="name" type="text" required />
-
           <label for="phone">Phone (optional if email is provided)</label>
-          <input id="phone" name="phone" type="tel" />
-
+          <input id="phone" name="phone" type="tel" placeholder="(555) 555-1234" />
           <label for="email">Email (optional if phone is provided)</label>
-          <input id="email" name="email" type="email" />
-
-          <p class="form-note">Please provide at least one contact method: phone or email.</p>
-
-          <label for="vehicle">Vehicle</label>
-          <input id="vehicle" name="vehicle" type="text" placeholder="Example: 2021 Honda Accord" required />
-
-          <label for="service">Service Needed</label>
+          <input id="email" name="email" type="email" placeholder="you@example.com" />
+          <p class="form-note">Required: at least one contact method (phone or email).</p>
+          <label for="vehicle">Vehicle *</label>
+          <input id="vehicle" name="vehicle" type="text" required placeholder="Example: 2021 Honda Accord" />
+          <label for="service">Service Needed *</label>
           <select id="service" name="service" required>
             <option value="">Select service</option>
             <option>Interior Refresh</option>
             <option>Deep Interior Detail</option>
-            <option>Maintenance Plan</option>
-            <option>Unsure - Need Recommendation</option>
+            <option>Full Cabin Restoration</option>
+            <option>Need Recommendation</option>
           </select>
-
           <label for="notes">Extra Details</label>
-          <textarea id="notes" name="notes" rows="4" placeholder="Spills, pet hair, stains, odors, preferred timing..."></textarea>
-
+          <textarea id="notes" name="notes" rows="4" placeholder="Stains, odor concerns, timeline, etc."></textarea>
           <button type="submit" class="btn btn-primary">Send Quote Request</button>
           <p id="formMessage" class="form-message" aria-live="polite"></p>
         </form>
       </div>
     </section>
 
-    <section class="section section-alt" id="schedule">
+    <section class="section section-alt">
       <div class="container">
-        <h2 class="section-title reveal">Schedule a Call or Meeting</h2>
-        <p class="section-copy reveal">
-          Pick what works best for you. We can confirm details by phone or set up an in-person estimate.
-        </p>
-        <div class="cards">
-          <article class="card reveal">
-            <h3>Call Now</h3>
-            <p>Speak directly to discuss your interior detail and timeline.</p>
-            <a class="btn btn-secondary" href="tel:+15555551234">Call (555) 555-1234</a>
-          </article>
-          <article class="card reveal">
-            <h3>Book a Meeting</h3>
-            <p>Use your scheduling link for a convenient consultation slot.</p>
-            <a class="btn btn-secondary" href="https://calendly.com/shine-n-time" target="_blank" rel="noopener">Open Scheduling</a>
-          </article>
+        <p class="section-kicker reveal">FAQ</p>
+        <h2 class="section-title reveal">Common Questions</h2>
+        <div class="faq reveal">
+          <details><summary>Do you come to my home or office?</summary><p>Yes. Mobile appointments are available when water/electric access is available.</p></details>
+          <details><summary>How long does detailing usually take?</summary><p>Timing depends on condition and package. Most interiors take 1.5 to 4 hours.</p></details>
+          <details><summary>Can I just call instead of filling the form?</summary><p>Absolutely. Call us directly at (555) 555-1234.</p></details>
         </div>
       </div>
     </section>
@@ -166,7 +182,7 @@
     <div class="container footer-grid">
       <div>
         <h2>Shine N Time Interior Detailing</h2>
-        <p>Professional interior detailing with premium care.</p>
+        <p>Premium interior detailing services for daily drivers, family vehicles, and luxury cars.</p>
       </div>
       <div>
         <h3>Contact</h3>
@@ -176,14 +192,13 @@
       <div>
         <h3>Service Area</h3>
         <p>Your City, State</p>
-        <p>Mobile appointments available</p>
+        <p>Mobile + Shop Appointments</p>
       </div>
     </div>
     <div class="container footer-bottom">
       <p>&copy; <span id="year"></span> Shine N Time. All rights reserved.</p>
     </div>
   </footer>
-
   <script src="./script.js" defer></script>
 </body>
 </html>

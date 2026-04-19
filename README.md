@@ -4,12 +4,13 @@ Fast, mobile-first GitHub Pages website for Shine N Time Interior Detailing.
 
 ## Features
 
-- Flyer-inspired visual style using your provided assets
+- Premium, conversion-focused hero and section design
 - Responsive design for phones, tablets, and desktop
 - Quote request form with validation (customers can leave phone, email, or both)
 - Call and meeting scheduling section
+- FAQ and testimonials sections for stronger trust and lead conversion
 - Lightweight scroll animations with reduced-motion support
-- Optimized loading (lazy images, minimal JS, preloaded hero asset)
+- Optimized loading (lazy images, minimal JS, preloaded hero + flyer assets)
 
 ## Customize business details
 
