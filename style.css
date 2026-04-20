@@ -569,11 +569,81 @@ img {
   aspect-ratio: 16 / 11;
 }
 
+.strip-card.gallery-tile {
+  appearance: none;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: zoom-in;
+  display: block;
+  width: 100%;
+  transition:
+    border-color 200ms ease,
+    box-shadow 220ms ease,
+    transform 220ms ease;
+}
+
+.strip-card.gallery-tile:hover {
+  border-color: rgba(242, 192, 75, 0.45);
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.38);
+  transform: translateY(-2px);
+}
+
+.strip-card.gallery-tile:focus-visible {
+  outline: 2px solid rgba(242, 192, 75, 0.85);
+  outline-offset: 3px;
+}
+
 .strip-card img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   transform: scale(1.02);
+  transition: transform 280ms ease;
+}
+
+.strip-card.gallery-tile:hover img {
+  transform: scale(1.06);
+}
+
+.section-gallery {
+  position: relative;
+}
+
+.section-gallery::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(520px 200px at 12% 0%, rgba(78, 140, 255, 0.12), transparent 70%);
+  opacity: 0.9;
+}
+
+.section-gallery .container {
+  position: relative;
+  z-index: 1;
+}
+
+@media (min-width: 981px) {
+  .photo-strip--gallery {
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1rem;
+    min-height: clamp(260px, 32vw, 400px);
+  }
+
+  .photo-strip--gallery .gallery-tile:first-child {
+    grid-row: 1 / -1;
+    aspect-ratio: auto;
+    min-height: 0;
+  }
+
+  .photo-strip--gallery .gallery-tile:not(:first-child) {
+    aspect-ratio: 16 / 10;
+    min-height: 0;
+  }
 }
 
 .service-card.has-thumb {
@@ -941,77 +1011,6 @@ h3 {
   margin: 0.9rem 0 0;
   padding-left: 1.1rem;
   color: var(--muted);
-}
-
-.past-grid,
-.past-work-scroll {
-  display: flex;
-  gap: 0.9rem;
-  margin-top: 1rem;
-  overflow-x: auto;
-  padding-bottom: 0.45rem;
-  scroll-snap-type: x mandatory;
-  scroll-behavior: smooth;
-}
-
-.past-work-scroll.is-paused {
-  scroll-behavior: auto;
-}
-
-.past-grid::-webkit-scrollbar,
-.past-work-scroll::-webkit-scrollbar {
-  height: 8px;
-}
-
-.past-grid::-webkit-scrollbar-thumb,
-.past-work-scroll::-webkit-scrollbar-thumb {
-  background: rgba(95, 154, 255, 0.45);
-  border-radius: 999px;
-}
-
-.work-shot,
-.work-card {
-  border: 1px solid var(--line);
-  border-radius: 0.85rem;
-  overflow: hidden;
-  background: var(--surface);
-  box-shadow: var(--shadow);
-  min-width: min(82vw, 340px);
-  flex: 0 0 auto;
-  scroll-snap-align: start;
-  cursor: zoom-in;
-}
-
-.work-card-btn {
-  appearance: none;
-  border: 0;
-  padding: 0;
-  margin: 0;
-  background: transparent;
-  color: inherit;
-  min-width: min(82vw, 340px);
-  flex: 0 0 auto;
-  border-radius: 0.85rem;
-  cursor: zoom-in;
-}
-
-.work-shot img,
-.work-card img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  aspect-ratio: 4 / 3;
-  transition: transform 220ms ease;
-}
-
-.work-shot:hover img,
-.work-card:hover img {
-  transform: scale(1.03);
-}
-
-.work-card-btn:focus-visible {
-  outline: 2px solid rgba(242, 192, 75, 0.8);
-  outline-offset: 3px;
 }
 
 .reviews-grid {
@@ -1474,21 +1473,6 @@ body.lightbox-open {
   .card,
   .review-card {
     padding: 0.85rem;
-  }
-
-  .past-work-scroll {
-    margin-top: 0.7rem;
-    gap: 0.7rem;
-    padding-bottom: 0.65rem;
-  }
-
-  .work-card {
-    min-width: 86vw;
-    border-radius: 0.75rem;
-  }
-
-  .work-card img {
-    aspect-ratio: 16 / 11;
   }
 
   .split {

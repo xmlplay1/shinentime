@@ -4,8 +4,7 @@ const quoteForm = document.getElementById("quoteForm");
 const formMessage = document.getElementById("formMessage");
 const year = document.getElementById("year");
 const editLastQuoteButton = document.getElementById("editLastQuoteBtn");
-const pastWorkScroll = document.querySelector(".past-work-scroll");
-const galleryButtons = Array.from(document.querySelectorAll(".work-card-btn"));
+const galleryButtons = Array.from(document.querySelectorAll(".gallery-tile"));
 const lightbox =
   document.getElementById("galleryLightbox") ||
   document.getElementById("lightbox");
@@ -40,9 +39,6 @@ const quoteEndpoint =
 const QUOTE_STORAGE_KEY = "shine-n-time-last-quote";
 let currentGalleryIndex = 0;
 let currentZoom = 1;
-let pastWorkAutoScrollKilled = false;
-let stopPastWorkAutoScroll = null;
-
 function buildLogoCandidates() {
   const urls = [];
   const push = (url) => {
@@ -180,74 +176,14 @@ if ("IntersectionObserver" in window) {
   revealItems.forEach((item) => item.classList.add("visible"));
 }
 
-if (pastWorkScroll && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-  const originalCards = Array.from(pastWorkScroll.children);
-  originalCards.forEach((card) => pastWorkScroll.appendChild(card.cloneNode(true)));
-
-  let animationFrame = null;
-  let resumeTimer = null;
-  let lastTime = 0;
-  let paused = false;
-  const speedPxPerSecond = window.matchMedia("(max-width: 760px)").matches ? 16 : 22;
-
-  const step = (timestamp) => {
-    if (!lastTime) lastTime = timestamp;
-    const delta = (timestamp - lastTime) / 1000;
-    lastTime = timestamp;
-
-    if (!paused && !pastWorkAutoScrollKilled) {
-      pastWorkScroll.scrollLeft += speedPxPerSecond * delta;
-      const resetPoint = pastWorkScroll.scrollWidth / 2;
-      if (pastWorkScroll.scrollLeft >= resetPoint) {
-        pastWorkScroll.scrollLeft -= resetPoint;
-      }
-    }
-
-    animationFrame = window.requestAnimationFrame(step);
-  };
-
-  const pause = () => {
-    paused = true;
-    pastWorkScroll.classList.add("is-paused");
-  };
-
-  const resume = () => {
-    if (pastWorkAutoScrollKilled) return;
-    paused = false;
-    pastWorkScroll.classList.remove("is-paused");
-  };
-
-  const resumeSoon = () => {
-    if (pastWorkAutoScrollKilled) return;
-    window.clearTimeout(resumeTimer);
-    resumeTimer = window.setTimeout(resume, 1800);
-  };
-
-  stopPastWorkAutoScroll = () => {
-    pastWorkAutoScrollKilled = true;
-    pause();
-  };
-
-  animationFrame = window.requestAnimationFrame(step);
-  pastWorkScroll.addEventListener("mouseenter", pause);
-  pastWorkScroll.addEventListener("mouseleave", resume);
-  pastWorkScroll.addEventListener("touchstart", pause, { passive: true });
-  pastWorkScroll.addEventListener("touchend", resumeSoon, { passive: true });
-  pastWorkScroll.addEventListener("wheel", resumeSoon, { passive: true });
-  window.addEventListener("pagehide", () => {
-    if (animationFrame) window.cancelAnimationFrame(animationFrame);
-    window.clearTimeout(resumeTimer);
-  });
-}
-
 function getGalleryItems() {
-  return Array.from(document.querySelectorAll(".work-card-btn"))
+  return Array.from(document.querySelectorAll(".gallery-tile"))
     .map((button) => {
       const img = button.querySelector("img");
       if (!img) return null;
       return {
         src: img.currentSrc || img.src,
-        alt: img.alt || "Past work photo"
+        alt: img.alt || "Gallery photo"
       };
     })
     .filter(Boolean);
@@ -273,9 +209,6 @@ function openLightbox(index) {
   lightbox.hidden = false;
   lightbox.setAttribute("aria-hidden", "false");
   document.body.classList.add("lightbox-open");
-  if (typeof stopPastWorkAutoScroll === "function") {
-    stopPastWorkAutoScroll();
-  }
 }
 
 function closeLightbox() {

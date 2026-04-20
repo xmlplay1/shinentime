@@ -5,6 +5,7 @@ Minimal, modern, fast static website for Shine N Time Interior Detailing.
 ## Features
 
 - Clean one-page layout (mobile + desktop)
+- Photo gallery (hero collage + gallery section) with lightbox zoom
 - Real business contact info
 - Quote form that sends to Formspree
 - "Edit Last Quote" button that reloads previous submission from browser storage
