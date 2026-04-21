@@ -145,9 +145,9 @@ function initSiteLogo() {
 initSiteLogo();
 
 const PACKAGE_PRICING = {
-  silver: { sedan: 49, suvTruck: 59 },
-  gold: { sedan: 125, suvTruck: 140 },
-  platinum: { sedan: 160, suvTruck: 180 }
+  silver: { sedan: 39, suvTruck: 49 },
+  gold: { sedan: 99, suvTruck: 115 },
+  platinum: { sedan: 129, suvTruck: 149 }
 };
 
 const TWO_CAR_BUNDLE_DISCOUNT = 0.1;
@@ -159,11 +159,11 @@ const EXTRA_PRICING = {
   bioClean: { low: 35, high: 35 },
   smokeOdor: { low: 25, high: 25 },
   moldRisk: { low: 60, high: 60 },
-  exteriorFoamWash: { low: 35, high: 50 },
-  wheelDecon: { low: 25, high: 35 },
-  spraySealant: { low: 30, high: 45 },
-  bugTarRemoval: { low: 20, high: 30 },
-  saltNeutralizer: { low: 22, high: 34 }
+  exteriorFoamWash: { low: 28, high: 40 },
+  wheelDecon: { low: 20, high: 28 },
+  spraySealant: { low: 25, high: 38 },
+  bugTarRemoval: { low: 15, high: 25 },
+  saltNeutralizer: { low: 18, high: 28 }
 };
 
 const SEVERITY_MULTIPLIER = {
@@ -171,6 +171,18 @@ const SEVERITY_MULTIPLIER = {
   medium: 1.35,
   heavy: 1.75
 };
+
+/** Pet hair, sand/mud, road salt, bio: no charge at "light" severity; medium/heavy add cost. */
+const SEVERITY_GATED_EXTRAS = new Set(["petHair", "sandSalt", "roadSalt", "bioClean", "moldRisk"]);
+
+function getSeverityForExtra(key) {
+  if (key === "petHair") return String(document.getElementById("petHairLevel")?.value || "light");
+  if (key === "sandSalt") return String(document.getElementById("sandLevel")?.value || "light");
+  if (key === "roadSalt") return String(document.getElementById("saltLevel")?.value || "light");
+  if (key === "bioClean") return String(document.getElementById("bioLevel")?.value || "light");
+  if (key === "moldRisk") return String(document.getElementById("moldLevel")?.value || "light");
+  return "medium";
+}
 
 if (year) {
   year.textContent = new Date().getFullYear();
@@ -359,25 +371,25 @@ function calculateEstimate() {
       const key = input.value;
       const pricing = EXTRA_PRICING[key];
       if (!pricing) return;
+
       let mult = 1;
-      if (key === "petHair") {
-        mult = SEVERITY_MULTIPLIER[String(document.getElementById("petHairLevel")?.value || "medium")] || 1;
-      } else if (key === "sandSalt") {
-        mult = SEVERITY_MULTIPLIER[String(document.getElementById("sandLevel")?.value || "medium")] || 1;
-      } else if (key === "roadSalt") {
-        mult = SEVERITY_MULTIPLIER[String(document.getElementById("saltLevel")?.value || "medium")] || 1;
-      } else if (key === "bioClean") {
-        mult = SEVERITY_MULTIPLIER[String(document.getElementById("bioLevel")?.value || "medium")] || 1;
+      const severity = getSeverityForExtra(key);
+
+      if (SEVERITY_GATED_EXTRAS.has(key)) {
+        if (severity === "light") {
+          extras.push(`${input.dataset.label || key} (light — included, no extra)`);
+          return;
+        }
+        mult = SEVERITY_MULTIPLIER[severity] || SEVERITY_MULTIPLIER.medium;
       }
+
       const addLow = Math.round(pricing.low * mult);
       const addHigh = Math.round(pricing.high * mult);
       low += addLow;
       high += addHigh;
       const label = input.dataset.label || key;
-      let severityLabel = "medium";
-      if (mult <= SEVERITY_MULTIPLIER.light + 0.001) severityLabel = "light";
-      else if (mult >= SEVERITY_MULTIPLIER.heavy - 0.001) severityLabel = "heavy";
-      extras.push(`${label} (${severityLabel} severity)`);
+      const severityLabel = SEVERITY_GATED_EXTRAS.has(key) || key === "moldRisk" ? severity : "add-on";
+      extras.push(`${label} (${severityLabel})`);
     });
   }
 
@@ -422,6 +434,7 @@ const petHairLevelInput = document.getElementById("petHairLevel");
 const sandLevelInput = document.getElementById("sandLevel");
 const roadSaltLevelInput = document.getElementById("saltLevel");
 const bioLevelInput = document.getElementById("bioLevel");
+const moldLevelInput = document.getElementById("moldLevel");
 if (conditionLevelInput) conditionLevelInput.addEventListener("change", calculateEstimate);
 if (firstDetailDiscountInput) firstDetailDiscountInput.addEventListener("change", calculateEstimate);
 if (carCountInput) carCountInput.addEventListener("change", calculateEstimate);
@@ -429,6 +442,7 @@ if (petHairLevelInput) petHairLevelInput.addEventListener("change", calculateEst
 if (sandLevelInput) sandLevelInput.addEventListener("change", calculateEstimate);
 if (roadSaltLevelInput) roadSaltLevelInput.addEventListener("change", calculateEstimate);
 if (bioLevelInput) bioLevelInput.addEventListener("change", calculateEstimate);
+if (moldLevelInput) moldLevelInput.addEventListener("change", calculateEstimate);
 if (extrasFieldset) {
   extrasFieldset.addEventListener("change", calculateEstimate);
 }
@@ -488,6 +502,7 @@ function fillQuoteForm(values) {
     "sandLevel",
     "saltLevel",
     "bioLevel",
+    "moldLevel",
     "notes",
     "estimateSummary",
     "prepSummary"
@@ -581,6 +596,7 @@ if (quoteForm) {
       sandLevel: String(data.get("sandLevel") || "").trim(),
       saltLevel: String(data.get("saltLevel") || "").trim(),
       bioLevel: String(data.get("bioLevel") || "").trim(),
+      moldLevel: String(data.get("moldLevel") || "").trim(),
       notes: String(data.get("notes") || "").trim(),
       estimateSummary: String(document.getElementById("estimateSummary")?.value || "").trim(),
       prepSummary: String(document.getElementById("prepSummary")?.value || "").trim(),

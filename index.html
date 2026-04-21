@@ -219,7 +219,7 @@
               <li>Tire and rim shine</li>
               <li>Door jamb cleaning</li>
             </ul>
-            <p class="price-tag">Sedan: $49 | SUV/Truck: $59</p>
+            <p class="price-tag">Sedan: $39 | SUV/Truck: $49</p>
           </article>
           <article class="card">
             <h3>Gold Package</h3>
@@ -229,7 +229,7 @@
               <li>Seat and carpet shampoo</li>
               <li>Odor removal</li>
             </ul>
-            <p class="price-tag">Sedan: $125 | SUV/Truck: $140</p>
+            <p class="price-tag">Sedan: $99 | SUV/Truck: $115</p>
           </article>
           <article class="card">
             <h3>Platinum Package</h3>
@@ -239,7 +239,7 @@
               <li>Clay bar treatment</li>
               <li>Ceramic sealant</li>
             </ul>
-            <p class="price-tag">Sedan: $160 | SUV/Truck: $180</p>
+            <p class="price-tag">Sedan: $129 | SUV/Truck: $149</p>
           </article>
         </div>
       </div>
@@ -392,7 +392,17 @@
                   <input id="email" name="email" type="email" placeholder="you@example.com" />
                 </div>
               </div>
-              <p class="field-hint">Leave at least phone or email so we can reply.</p>
+              <div class="field" style="margin-top: 0.5rem">
+                <label for="friendCc">Also email a copy to (optional)</label>
+                <input
+                  id="friendCc"
+                  name="_cc"
+                  type="email"
+                  placeholder="Friend or co-owner email"
+                  autocomplete="email"
+                />
+              </div>
+              <p class="field-hint">Leave at least phone or email so we can reply. “Also email a copy” uses Formspree <code>_cc</code> when your plan supports it — otherwise add them under Formspree → Settings → Notifications.</p>
             </div>
 
             <div class="quote-section quote-span-2">
@@ -489,45 +499,54 @@
 
             <fieldset class="extras-group quote-section quote-span-2" id="extrasFieldset">
               <legend>Extras (if needed)</legend>
+              <p class="quote-helper">Light pet hair, sand, salt, bio, or mold is included in the estimate (no extra). Medium or heavy adds a fair add-on.</p>
               <div class="extra-row">
-                <label class="extra-check"><input type="checkbox" name="extras" value="petHair" data-label="Pet hair removal" data-base="20" /> Pet hair (+$20)</label>
+                <label class="extra-check"><input type="checkbox" name="extras" value="petHair" data-label="Pet hair removal" data-base="20" /> Pet hair</label>
                 <label class="extra-sub" for="petHairLevel">Severity</label>
                 <select id="petHairLevel" name="petHairLevel">
-                  <option value="light">Light</option>
-                  <option value="medium" selected>Medium</option>
+                  <option value="light" selected>Light (no extra)</option>
+                  <option value="medium">Medium</option>
                   <option value="heavy">Heavy</option>
                 </select>
               </div>
               <div class="extra-row">
-                <label class="extra-check"><input type="checkbox" name="extras" value="sandSalt" data-label="Sand/mud heavy cleanup" data-base="15" /> Sand/mud (+$15)</label>
+                <label class="extra-check"><input type="checkbox" name="extras" value="sandSalt" data-label="Sand/mud heavy cleanup" data-base="15" /> Sand/mud</label>
                 <label class="extra-sub" for="sandLevel">Severity</label>
                 <select id="sandLevel" name="sandLevel">
-                  <option value="light">Light</option>
-                  <option value="medium" selected>Medium</option>
+                  <option value="light" selected>Light (no extra)</option>
+                  <option value="medium">Medium</option>
                   <option value="heavy">Heavy</option>
                 </select>
               </div>
               <div class="extra-row">
-                <label class="extra-check"><input type="checkbox" name="extras" value="roadSalt" data-label="Road salt neutralizing wash" data-base="18" /> Road salt (+$18)</label>
+                <label class="extra-check"><input type="checkbox" name="extras" value="roadSalt" data-label="Road salt neutralizing wash" data-base="18" /> Road salt</label>
                 <label class="extra-sub" for="saltLevel">Severity</label>
                 <select id="saltLevel" name="saltLevel">
-                  <option value="light">Light</option>
-                  <option value="medium" selected>Medium</option>
+                  <option value="light" selected>Light (no extra)</option>
+                  <option value="medium">Medium</option>
                   <option value="heavy">Heavy</option>
                 </select>
               </div>
               <div class="extra-row">
-                <label class="extra-check"><input type="checkbox" name="extras" value="bioClean" data-label="Vomit/biological cleanup" data-base="35" /> Bio cleanup (+$35)</label>
+                <label class="extra-check"><input type="checkbox" name="extras" value="bioClean" data-label="Vomit/biological cleanup" data-base="35" /> Bio cleanup</label>
                 <label class="extra-sub" for="bioLevel">Severity</label>
                 <select id="bioLevel" name="bioLevel">
-                  <option value="light">Light</option>
-                  <option value="medium" selected>Medium</option>
+                  <option value="light" selected>Light (no extra)</option>
+                  <option value="medium">Medium</option>
+                  <option value="heavy">Heavy</option>
+                </select>
+              </div>
+              <div class="extra-row">
+                <label class="extra-check"><input type="checkbox" name="extras" value="moldRisk" data-label="Surface mold treatment" data-base="60" /> Mold</label>
+                <label class="extra-sub" for="moldLevel">Severity</label>
+                <select id="moldLevel" name="moldLevel">
+                  <option value="light" selected>Light (no extra)</option>
+                  <option value="medium">Medium</option>
                   <option value="heavy">Heavy</option>
                 </select>
               </div>
               <div class="extras-inline">
                 <label><input type="checkbox" name="extras" value="smokeOdor" data-label="Smoke odor treatment" data-base="25" /> Smoke (+$25)</label>
-                <label><input type="checkbox" name="extras" value="moldRisk" data-label="Surface mold treatment" data-base="60" /> Mold (+$60)</label>
               </div>
             </fieldset>
 

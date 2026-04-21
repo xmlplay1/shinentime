@@ -28,6 +28,10 @@ Remove `data-formspark-endpoint` from the form (or leave it empty).
 
 Photo uploads: Formspree handles file fields on the free tier; Formspark often wants [Uploadcare](https://documentation.formspark.io/setup/file-uploads.html) for reliable file links — either works with this form’s `multipart` POST.
 
+**Second recipient:** optional field `Also email a copy to` maps to Formspree’s `_cc`. If your plan does not deliver CC copies, add the second address under **Formspree → your form → Notifications**.
+
+**Estimate extras:** pet hair, sand/mud, road salt, bio, and mold default to **light = no extra charge**; medium/heavy add to the estimate.
+
 ## Logo files (optional)
 
 Add a square-ish logo image and commit it to the **same branch Vercel deploys** (usually `main`). The script tries these folders in order: repo root, `assets/`, `images/`, `img/`, `public/`, with names like `logo.png`, `Logo.png`, `shine-n-time-logo.png`, etc.
