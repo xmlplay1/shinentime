@@ -430,8 +430,8 @@ img {
     url("./IMG_2868.PNG");
   background-size: auto, auto, auto, cover;
   background-position: center, center, center, 50% 35%;
-  filter: saturate(1.05) contrast(1.05);
-  opacity: 0.3;
+  filter: saturate(1.08) contrast(1.08) brightness(1.03);
+  opacity: 0.36;
   pointer-events: none;
 }
 
@@ -537,6 +537,41 @@ img {
   padding: clamp(1.8rem, 4vw, 2.6rem) 0;
 }
 
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+  margin-bottom: 0.3rem;
+}
+
+.section-tagline {
+  margin: 0;
+  color: #a9bfdc;
+  font-size: 0.92rem;
+}
+
+.services-shell {
+  position: relative;
+}
+
+.services-shell::before {
+  content: "";
+  position: absolute;
+  inset: -12% -4% -12%;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(500px 220px at 10% 5%, rgba(78, 140, 255, 0.16), transparent 72%),
+    radial-gradient(420px 190px at 92% 0%, rgba(242, 192, 75, 0.12), transparent 72%);
+}
+
+.services-shell > * {
+  position: relative;
+  z-index: 1;
+}
+
 .strip-head {
   display: flex;
   flex-wrap: wrap;
@@ -622,8 +657,19 @@ img {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(520px 200px at 12% 0%, rgba(78, 140, 255, 0.12), transparent 70%);
+  background:
+    radial-gradient(520px 200px at 12% 0%, rgba(78, 140, 255, 0.12), transparent 70%),
+    radial-gradient(420px 220px at 88% 100%, rgba(242, 192, 75, 0.09), transparent 75%);
   opacity: 0.9;
+}
+
+.section-gallery::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 28%);
+  opacity: 0.5;
 }
 
 .section-gallery .container {
@@ -636,6 +682,10 @@ img {
   padding: 0.9rem;
   display: grid;
   gap: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02)),
+    radial-gradient(380px 180px at 90% 8%, rgba(78, 140, 255, 0.08), transparent 70%);
 }
 
 .gallery-video-head h3 {
@@ -652,10 +702,17 @@ img {
 .gallery-video-media {
   width: min(380px, 100%);
   max-height: 560px;
+  aspect-ratio: 9 / 16;
+  object-fit: cover;
+  object-position: center;
   border-radius: 0.85rem;
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: #0a1020;
   box-shadow: var(--shadow);
+}
+
+.media-treatment {
+  filter: saturate(1.08) contrast(1.04) brightness(1.02);
 }
 
 @media (min-width: 981px) {
@@ -698,15 +755,15 @@ img {
   background-size: cover;
   background-position: center;
   transform: scale(1.05);
-  opacity: 0.55;
-  filter: saturate(1.05) contrast(1.05);
+  opacity: 0.72;
+  filter: saturate(1.12) contrast(1.1) brightness(1.02);
 }
 
 .service-card.has-thumb::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(10, 16, 28, 0.08), rgba(10, 16, 28, 0.88));
+  background: linear-gradient(180deg, rgba(10, 16, 28, 0.04), rgba(10, 16, 28, 0.82));
 }
 
 .service-card.has-thumb > * {
@@ -715,15 +772,15 @@ img {
 }
 
 .thumb-a::before {
-  background-image: url("./IMG_2895.JPG");
+  background-image: url("./IMG_2895.webp");
 }
 
 .thumb-b::before {
-  background-image: url("./IMG_2875.JPG");
+  background-image: url("./IMG_2867.PNG");
 }
 
 .thumb-c::before {
-  background-image: url("./IMG_2898.JPG");
+  background-image: url("./IMG_2898.webp");
 }
 
 .eyebrow {
@@ -1034,6 +1091,25 @@ h3 {
 
 .service-card h3 {
   margin-bottom: 0.4rem;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
+}
+
+.service-card p {
+  color: #e5eefb;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.38);
+}
+
+.service-card {
+  transition:
+    transform 180ms ease,
+    box-shadow 220ms ease,
+    border-color 180ms ease;
+}
+
+.service-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(242, 192, 75, 0.34);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.38);
 }
 
 .service-card ul {
@@ -1431,6 +1507,15 @@ body.lightbox-open {
 
   .cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gallery-video {
+    grid-template-columns: 1fr;
+  }
+
+  .gallery-video-media {
+    width: min(340px, 100%);
+    margin: 0 auto;
   }
 
   .reviews-grid {
