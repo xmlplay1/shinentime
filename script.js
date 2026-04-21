@@ -129,9 +129,15 @@ const PACKAGE_PRICING = {
 const EXTRA_PRICING = {
   petHair: { low: 20, high: 20 },
   sandSalt: { low: 15, high: 15 },
+  roadSalt: { low: 18, high: 18 },
   bioClean: { low: 35, high: 35 },
   smokeOdor: { low: 25, high: 25 },
-  moldRisk: { low: 60, high: 60 }
+  moldRisk: { low: 60, high: 60 },
+  exteriorFoamWash: { low: 35, high: 50 },
+  wheelDecon: { low: 25, high: 35 },
+  spraySealant: { low: 30, high: 45 },
+  bugTarRemoval: { low: 20, high: 30 },
+  saltNeutralizer: { low: 22, high: 34 }
 };
 
 const SEVERITY_MULTIPLIER = {
@@ -328,6 +334,8 @@ function calculateEstimate() {
         mult = SEVERITY_MULTIPLIER[String(document.getElementById("petHairLevel")?.value || "medium")] || 1;
       } else if (key === "sandSalt") {
         mult = SEVERITY_MULTIPLIER[String(document.getElementById("sandLevel")?.value || "medium")] || 1;
+      } else if (key === "roadSalt") {
+        mult = SEVERITY_MULTIPLIER[String(document.getElementById("saltLevel")?.value || "medium")] || 1;
       } else if (key === "bioClean") {
         mult = SEVERITY_MULTIPLIER[String(document.getElementById("bioLevel")?.value || "medium")] || 1;
       }
@@ -367,11 +375,13 @@ const conditionLevelInput = document.getElementById("conditionLevel");
 const firstDetailDiscountInput = document.getElementById("firstDetailDiscount");
 const petHairLevelInput = document.getElementById("petHairLevel");
 const sandLevelInput = document.getElementById("sandLevel");
+const roadSaltLevelInput = document.getElementById("saltLevel");
 const bioLevelInput = document.getElementById("bioLevel");
 if (conditionLevelInput) conditionLevelInput.addEventListener("change", calculateEstimate);
 if (firstDetailDiscountInput) firstDetailDiscountInput.addEventListener("change", calculateEstimate);
 if (petHairLevelInput) petHairLevelInput.addEventListener("change", calculateEstimate);
 if (sandLevelInput) sandLevelInput.addEventListener("change", calculateEstimate);
+if (roadSaltLevelInput) roadSaltLevelInput.addEventListener("change", calculateEstimate);
 if (bioLevelInput) bioLevelInput.addEventListener("change", calculateEstimate);
 if (extrasFieldset) {
   extrasFieldset.addEventListener("change", calculateEstimate);
@@ -427,6 +437,7 @@ function fillQuoteForm(values) {
     "conditionLevel",
     "petHairLevel",
     "sandLevel",
+    "saltLevel",
     "bioLevel",
     "notes",
     "estimateSummary",
@@ -517,6 +528,7 @@ if (quoteForm) {
       conditionLevel: String(data.get("conditionLevel") || "").trim(),
       petHairLevel: String(data.get("petHairLevel") || "").trim(),
       sandLevel: String(data.get("sandLevel") || "").trim(),
+      saltLevel: String(data.get("saltLevel") || "").trim(),
       bioLevel: String(data.get("bioLevel") || "").trim(),
       notes: String(data.get("notes") || "").trim(),
       estimateSummary: String(data.get("estimateSummary") || "").trim(),

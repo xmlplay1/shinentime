@@ -136,17 +136,19 @@
           </button>
         </div>
         <div class="gallery-video card">
-          <video autoplay muted loop playsinline preload="metadata" class="gallery-video-bg media-treatment" poster="./IMG_2895.webp" aria-hidden="true">
-            <source src="./walkthrough.mp4" type="video/mp4" />
-          </video>
-          <div class="gallery-video-head">
-            <h3>Walkthrough clip</h3>
-            <p>Short raw clip to show real finish quality.</p>
+          <div class="gallery-video-bg">
+            <video autoplay muted loop playsinline preload="metadata" class="gallery-video-bg-media media-treatment" poster="./IMG_2895.webp" aria-hidden="true">
+              <source src="./walkthrough.mp4" type="video/mp4" />
+            </video>
+            <div class="gallery-video-bg-copy">
+              <h3>Walkthrough clip</h3>
+              <p>Real exterior rinse + finish pass from a recent job.</p>
+              <div class="gallery-video-bg-actions">
+                <a class="btn btn-secondary" href="#quote">Get this service</a>
+                <a class="btn btn-ghost" href="https://instagram.com/shine_n_time" target="_blank" rel="noopener">See more on IG</a>
+              </div>
+            </div>
           </div>
-          <video controls preload="metadata" playsinline muted class="gallery-video-media media-treatment" poster="./IMG_2895.webp">
-            <source src="./walkthrough.mp4" type="video/mp4" />
-            Your browser does not support this video.
-          </video>
         </div>
       </div>
     </section>
@@ -392,6 +394,19 @@
             </div>
 
             <div class="quote-section quote-span-2">
+              <h3 class="quote-section-title">Service type *</h3>
+              <div class="field">
+                <label class="visually-hidden" for="serviceFocus">Service type</label>
+                <select id="serviceFocus" name="serviceFocus" required>
+                  <option value="">Select service type</option>
+                  <option value="interior" selected>Deep Interior Detail</option>
+                  <option value="exterior">Exterior Wash + Shine</option>
+                  <option value="full">Interior + Exterior Complete</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="quote-section quote-span-2">
               <h3 class="quote-section-title">Vehicle</h3>
               <div class="quote-row-3">
                 <div class="field">
@@ -410,6 +425,19 @@
                     <option value="suv">SUV / Truck / Van</option>
                   </select>
                 </div>
+              </div>
+            </div>
+
+            <div class="quote-section quote-span-2">
+              <h3 class="quote-section-title">Service Scope *</h3>
+              <div class="field">
+                <label class="visually-hidden" for="serviceScope">Service scope</label>
+                <select id="serviceScope" name="serviceScope" required>
+                  <option value="">Select scope</option>
+                  <option value="interior">Interior only</option>
+                  <option value="exterior">Exterior only</option>
+                  <option value="both">Interior + Exterior</option>
+                </select>
               </div>
             </div>
 
@@ -454,6 +482,15 @@
                 <label class="extra-check"><input type="checkbox" name="extras" value="sandSalt" data-label="Sand/mud heavy cleanup" data-base="15" /> Sand/mud (+$15)</label>
                 <label class="extra-sub" for="sandLevel">Severity</label>
                 <select id="sandLevel" name="sandLevel">
+                  <option value="light">Light</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="heavy">Heavy</option>
+                </select>
+              </div>
+              <div class="extra-row">
+                <label class="extra-check"><input type="checkbox" name="extras" value="roadSalt" data-label="Road salt neutralizing wash" data-base="18" /> Road salt (+$18)</label>
+                <label class="extra-sub" for="saltLevel">Severity</label>
+                <select id="saltLevel" name="saltLevel">
                   <option value="light">Light</option>
                   <option value="medium" selected>Medium</option>
                   <option value="heavy">Heavy</option>
