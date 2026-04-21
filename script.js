@@ -457,6 +457,8 @@ function fillQuoteForm(values) {
     "carCount",
     "vehicleType",
     "vehicleSize",
+    "serviceFocus",
+    "serviceScope",
     "package",
     "conditionLevel",
     "petHairLevel",
@@ -578,12 +580,11 @@ if (quoteForm) {
     formMessage.style.color = "#0f766e";
 
     try {
+      // Formspark accepts the same payload as a normal HTML form. Use multipart FormData
+      // (do not force JSON or Content-Type — browser sets the boundary for file fields).
       const response = await fetch(quoteEndpoint, {
         method: "POST",
-        body: data,
-        headers: {
-          Accept: "application/json"
-        }
+        body: data
       });
 
       if (!response.ok) {

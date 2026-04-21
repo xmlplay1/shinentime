@@ -7,7 +7,7 @@ Minimal, modern, fast static website for Shine N Time Interior Detailing.
 - Clean one-page layout (mobile + desktop)
 - Photo gallery (hero collage + gallery section) with lightbox zoom
 - Real business contact info
-- Quote form that sends to Formspree
+- Quote form that sends to Formspark
 - "Edit Last Quote" button that reloads previous submission from browser storage
 - Lightweight animations and fast load
 
@@ -15,7 +15,9 @@ Minimal, modern, fast static website for Shine N Time Interior Detailing.
 
 - Phone: `734-419-1846`
 - Instagram: `@shine_n_time`
-- Form endpoint: `https://formspree.io/f/mgorzwbw`
+- Form endpoint (Formspark): `https://submit-form.com/1Ybov8mSM`
+
+Optional photo fields submit as normal file inputs. If Formspark does not show attachments in your dashboard, use their [Uploadcare integration](https://documentation.formspark.io/setup/file-uploads.html) or DM photos instead.
 
 ## Logo files (optional)
 
