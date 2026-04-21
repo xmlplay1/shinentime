@@ -56,6 +56,7 @@ function buildLogoCandidates() {
     "logo.PNG",
     "logo.webp",
     "logo.WEBP",
+    "Logo.PNG",
     "logo.jpg",
     "logo.JPG",
     "logo.jpeg",
