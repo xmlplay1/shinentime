@@ -1349,6 +1349,11 @@ h3 {
   font-size: 0.78rem;
 }
 
+.field-hint.bundle-note {
+  margin-top: 0.3rem;
+  color: #b6cff0;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

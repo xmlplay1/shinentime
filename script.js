@@ -34,6 +34,7 @@ const estimateBreakdown = document.getElementById("estimateBreakdown");
 const estimateHidden = document.getElementById("estimateSummary");
 const quoteEndpoint =
   quoteForm?.getAttribute("action") ||
+  quoteForm?.dataset?.formsparkEndpoint ||
   quoteForm?.dataset?.formspreeEndpoint ||
   "";
 const QUOTE_STORAGE_KEY = "shine-n-time-last-quote";
@@ -125,6 +126,8 @@ const PACKAGE_PRICING = {
   gold: { sedan: 125, suvTruck: 140 },
   platinum: { sedan: 160, suvTruck: 180 }
 };
+
+const TWO_CAR_BUNDLE_DISCOUNT = 0.1;
 
 const EXTRA_PRICING = {
   petHair: { low: 20, high: 20 },
@@ -308,6 +311,10 @@ function calculateEstimate() {
 
   estimateRange.classList.remove("estimate-value--pending");
 
+  const carCountInput = document.getElementById("carCount");
+  const carCountRaw = Number.parseInt(String(carCountInput?.value || "1"), 10);
+  const carCount = Number.isFinite(carCountRaw) ? Math.min(4, Math.max(1, carCountRaw)) : 1;
+
   let low = PACKAGE_PRICING[pkg][priceKey];
   let high = PACKAGE_PRICING[pkg][priceKey];
   const extras = [];
@@ -357,10 +364,24 @@ function calculateEstimate() {
     high = Math.max(0, Math.round(high * (1 - discountPct)));
   }
 
+  low *= carCount;
+  high *= carCount;
+
+  const bundleEligible = carCount >= 2;
+  if (bundleEligible) {
+    low = Math.max(0, Math.round(low * (1 - TWO_CAR_BUNDLE_DISCOUNT)));
+    high = Math.max(0, Math.round(high * (1 - TWO_CAR_BUNDLE_DISCOUNT)));
+  } else {
+    low = Math.round(low);
+    high = Math.round(high);
+  }
+
   estimateRange.textContent = `$${low} - $${high}`;
   const extrasText = extras.length ? ` + extras: ${extras.join(", ")}` : "";
+  const carsText = carCount > 1 ? ` for ${carCount} cars` : " for 1 car";
+  const bundleText = bundleEligible ? ` Includes ${Math.round(TWO_CAR_BUNDLE_DISCOUNT * 100)}% bundle discount.` : "";
   const vehicleLabel = vehicle === "sedan" ? "Sedan / coupe" : "SUV / truck / van";
-  const summaryText = `Estimated $${low} - $${high}. Base ${pkg.toUpperCase()} package for ${vehicleLabel}${extrasText}. Final quote confirmed after inspection.`;
+  const summaryText = `Estimated $${low} - $${high}. Base ${pkg.toUpperCase()} package for ${vehicleLabel}${carsText}${extrasText}.${bundleText} Final quote confirmed after inspection.`;
   if (estimateBreakdown) {
     estimateBreakdown.textContent = summaryText.replace(/^Estimated \$\d+ - \$\d+\. /, "");
   }
@@ -373,12 +394,14 @@ if (vehicleType) vehicleType.addEventListener("change", calculateEstimate);
 if (packageSelect) packageSelect.addEventListener("change", calculateEstimate);
 const conditionLevelInput = document.getElementById("conditionLevel");
 const firstDetailDiscountInput = document.getElementById("firstDetailDiscount");
+const carCountInput = document.getElementById("carCount");
 const petHairLevelInput = document.getElementById("petHairLevel");
 const sandLevelInput = document.getElementById("sandLevel");
 const roadSaltLevelInput = document.getElementById("saltLevel");
 const bioLevelInput = document.getElementById("bioLevel");
 if (conditionLevelInput) conditionLevelInput.addEventListener("change", calculateEstimate);
 if (firstDetailDiscountInput) firstDetailDiscountInput.addEventListener("change", calculateEstimate);
+if (carCountInput) carCountInput.addEventListener("change", calculateEstimate);
 if (petHairLevelInput) petHairLevelInput.addEventListener("change", calculateEstimate);
 if (sandLevelInput) sandLevelInput.addEventListener("change", calculateEstimate);
 if (roadSaltLevelInput) roadSaltLevelInput.addEventListener("change", calculateEstimate);
@@ -431,6 +454,7 @@ function fillQuoteForm(values) {
     "timeWindow",
     "vehicle",
     "zipCode",
+    "carCount",
     "vehicleType",
     "vehicleSize",
     "package",
@@ -490,7 +514,7 @@ if (quoteForm) {
   quoteForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const data = new FormData(quoteForm);
-    const requiredFields = ["name", "vehicle", "zipCode", "vehicleType", "package", "conditionLevel", "appointmentDate"];
+    const requiredFields = ["name", "vehicle", "zipCode", "vehicleType", "carCount", "package", "serviceScope", "conditionLevel", "appointmentDate"];
     const hasMissing = requiredFields.some((field) => !String(data.get(field) || "").trim());
     const phoneValue = String(data.get("phone") || "").trim();
     const emailValue = String(data.get("email") || "").trim();
@@ -523,6 +547,7 @@ if (quoteForm) {
       timeWindow: String(data.get("timeWindow") || "").trim(),
       vehicle: String(data.get("vehicle") || "").trim(),
       zipCode: String(data.get("zipCode") || "").trim(),
+      carCount: String(data.get("carCount") || "1").trim(),
       vehicleType: String(data.get("vehicleType") || "").trim(),
       package: String(data.get("package") || "").trim(),
       conditionLevel: String(data.get("conditionLevel") || "").trim(),
