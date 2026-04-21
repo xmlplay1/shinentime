@@ -711,6 +711,75 @@ img {
   box-shadow: var(--shadow);
 }
 
+.gallery-video-bg {
+  position: relative;
+  overflow: hidden;
+  min-height: clamp(250px, 42vw, 420px);
+  padding: 1rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background:
+    linear-gradient(180deg, rgba(8, 12, 20, 0.58), rgba(8, 12, 20, 0.72)),
+    radial-gradient(520px 260px at 84% 0%, rgba(78, 140, 255, 0.18), transparent 70%);
+}
+
+.gallery-video-bg[hidden] {
+  display: none;
+}
+
+.gallery-video-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(10, 16, 28, 0.22), rgba(10, 16, 28, 0.78));
+}
+
+.gallery-video-bg-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  filter: saturate(1.08) contrast(1.06) brightness(0.72);
+}
+
+.gallery-video-bg-copy {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 0.45rem;
+  max-width: 44ch;
+  align-content: start;
+}
+
+.gallery-video-bg-copy h3 {
+  margin: 0;
+  font-size: clamp(1.05rem, 2vw, 1.4rem);
+  color: #f4f9ff;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.5);
+}
+
+.gallery-video-bg-copy p {
+  margin: 0;
+  color: #d6e6fb;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.42);
+}
+
+.gallery-video-bg-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.15rem;
+}
+
+.gallery-video-bg-actions .btn {
+  min-height: 40px;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.86rem;
+}
+
 .media-treatment {
   filter: saturate(1.08) contrast(1.04) brightness(1.02);
 }
@@ -772,15 +841,15 @@ img {
 }
 
 .thumb-a::before {
-  background-image: url("./IMG_2895.webp");
+  background-image: url("./IMG_2866.PNG");
 }
 
 .thumb-b::before {
-  background-image: url("./IMG_2867.PNG");
+  background-image: url("./IMG_2875.webp");
 }
 
 .thumb-c::before {
-  background-image: url("./IMG_2898.webp");
+  background-image: url("./IMG_2895.webp");
 }
 
 .eyebrow {
@@ -1097,6 +1166,32 @@ h3 {
 .service-card p {
   color: #e5eefb;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.38);
+}
+
+.service-card .service-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 0.55rem;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(10, 16, 28, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  color: #dbe9fb;
+  font-size: 0.73rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.service-card .service-list {
+  margin: 0.6rem 0 0;
+  padding-left: 1rem;
+  color: #e7f2ff;
+  font-size: 0.89rem;
+}
+
+.service-card .service-list li + li {
+  margin-top: 0.22rem;
 }
 
 .service-card {
@@ -1520,6 +1615,10 @@ body.lightbox-open {
 
   .reviews-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gallery-video-bg {
+    min-height: 300px;
   }
 }
 
