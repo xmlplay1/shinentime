@@ -2,17 +2,22 @@ const menuToggle = document.getElementById("menuToggle");
 const nav = document.getElementById("primaryNav");
 const quoteForm = document.getElementById("quoteForm");
 const formMessage = document.getElementById("formMessage");
-const formsparkRedirectInput = document.getElementById("formsparkRedirect");
 
-if (formsparkRedirectInput && typeof window !== "undefined" && window.location?.href) {
-  try {
-    const returnUrl = new URL(window.location.href);
-    returnUrl.hash = "quote";
-    returnUrl.searchParams.set("submitted", "1");
-    formsparkRedirectInput.value = returnUrl.toString();
-  } catch (error) {
-    formsparkRedirectInput.value = "";
+/** Prefer Formspree (smooth AJAX). Set data-quote-backend="formspark" to use Formspark instead. */
+function getQuotePostEndpoint() {
+  const backend = String(quoteForm?.dataset?.quoteBackend || "formspree").toLowerCase();
+  if (backend === "formspark") {
+    return (
+      quoteForm?.dataset?.formsparkEndpoint?.trim() ||
+      quoteForm?.getAttribute("action")?.trim() ||
+      ""
+    );
   }
+  return (
+    quoteForm?.dataset?.formspreeEndpoint?.trim() ||
+    quoteForm?.getAttribute("action")?.trim() ||
+    ""
+  );
 }
 
 if (typeof window !== "undefined" && window.location?.search) {
@@ -58,7 +63,6 @@ const prepSummaryInput = document.getElementById("prepSummary");
 const estimateRange = document.getElementById("estimateValue");
 const estimateBreakdown = document.getElementById("estimateBreakdown");
 const estimateHidden = document.getElementById("estimateSummary");
-const quoteFormAction = quoteForm?.getAttribute("action") || "";
 const QUOTE_STORAGE_KEY = "shine-n-time-last-quote";
 let currentGalleryIndex = 0;
 let currentZoom = 1;
@@ -535,7 +539,7 @@ if (editLastQuoteButton) {
 }
 
 if (quoteForm) {
-  quoteForm.addEventListener("submit", (event) => {
+  quoteForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const data = new FormData(quoteForm);
     const requiredFields = ["name", "vehicle", "zipCode", "vehicleType", "carCount", "package", "serviceScope", "conditionLevel", "appointmentDate"];
@@ -593,7 +597,8 @@ if (quoteForm) {
     };
     saveQuoteDraft(draftValues);
 
-    if (!quoteFormAction || !quoteFormAction.includes("submit-form.com")) {
+    const quoteEndpoint = getQuotePostEndpoint();
+    if (!quoteEndpoint) {
       formMessage.textContent = "Form not connected. Call 734-419-1846 or DM @shine_n_time.";
       formMessage.style.color = "#b91c1c";
       return;
@@ -602,7 +607,29 @@ if (quoteForm) {
     formMessage.textContent = "Sending your request…";
     formMessage.style.color = "#0f766e";
 
-    // Formspark: real browser POST (HTML `action`). `submit()` does not re-dispatch the submit event.
-    quoteForm.submit();
+    const backend = String(quoteForm.dataset.quoteBackend || "formspree").toLowerCase();
+
+    try {
+      if (backend === "formspark") {
+        const response = await fetch(quoteEndpoint, {
+          method: "POST",
+          body: data
+        });
+        if (!response.ok) throw new Error("Request failed");
+      } else {
+        const response = await fetch(quoteEndpoint, {
+          method: "POST",
+          body: data,
+          headers: { Accept: "application/json" }
+        });
+        if (!response.ok) throw new Error("Request failed");
+      }
+
+      formMessage.textContent = "Thanks! Quote sent. We will reach out soon.";
+      formMessage.style.color = "#0f766e";
+    } catch (error) {
+      formMessage.textContent = "Could not send right now. Call 734-419-1846 or DM @shine_n_time.";
+      formMessage.style.color = "#b91c1c";
+    }
   });
 }

@@ -7,7 +7,7 @@ Minimal, modern, fast static website for Shine N Time Interior Detailing.
 - Clean one-page layout (mobile + desktop)
 - Photo gallery (hero collage + gallery section) with lightbox zoom
 - Real business contact info
-- Quote form that sends to Formspark
+- Quote form with **Formspree** by default (smooth AJAX, stays on your page) — optional **Formspark** switch
 - "Edit Last Quote" button that reloads previous submission from browser storage
 - Lightweight animations and fast load
 
@@ -15,11 +15,30 @@ Minimal, modern, fast static website for Shine N Time Interior Detailing.
 
 - Phone: `734-419-1846`
 - Instagram: `@shine_n_time`
-- Form endpoint (Formspark): `https://submit-form.com/1Ybov8mSM` (set as the form `action` in `index.html`)
+- **Formspree (default):** `https://formspree.io/f/mgorzwbw` — good free tier, simple setup, **AJAX** so visitors never leave your site after submit.
+- **Formspark (optional):** `https://submit-form.com/1Ybov8mSM` — also generous on free tiers; you can switch the site to use it in one line (below).
 
-The quote form uses a **native browser POST** to Formspark after client-side validation (matches [Formspark’s HTML setup](https://documentation.formspark.io/setup/)). A hidden `_redirect` sends users back to this site’s quote section (see [Formspark redirection](https://documentation.formspark.io/customization/redirection.html)) so they do not land on Formspark’s blank default feedback page. The URL includes `?submitted=1` briefly so the page can show a thank-you line, then the query param is removed.
+There is no perfect “use both at once” on a static site: if you POST to two services, **you get two emails / two records per quote**. The practical “best of both” is **pick one active provider** and keep the other URL in the HTML so you can swap in seconds.
 
-Optional photo fields use normal file inputs. If attachments do not appear in Formspark, use their [Uploadcare integration](https://documentation.formspark.io/setup/file-uploads.html) or DM photos instead.
+### Switch to Formspark
+
+On the `<form id="quoteForm">` in `index.html`, set:
+
+```html
+data-quote-backend="formspark"
+```
+
+and set `action` to your Formspark URL (or rely on `data-formspark-endpoint` — the script reads it when backend is `formspark`).
+
+### Switch back to Formspree
+
+```html
+data-quote-backend="formspree"
+```
+
+with `action="https://formspree.io/f/mgorzwbw"` (or your Formspree form id).
+
+Photo uploads: Formspree handles file fields on the free tier; Formspark often wants [Uploadcare](https://documentation.formspark.io/setup/file-uploads.html) for reliable file links — either works with this form’s `multipart` POST.
 
 ## Logo files (optional)
 
