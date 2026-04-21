@@ -3,21 +3,18 @@ const nav = document.getElementById("primaryNav");
 const quoteForm = document.getElementById("quoteForm");
 const formMessage = document.getElementById("formMessage");
 
-/** Prefer Formspree (smooth AJAX). Set data-quote-backend="formspark" to use Formspark instead. */
-function getQuotePostEndpoint() {
-  const backend = String(quoteForm?.dataset?.quoteBackend || "formspree").toLowerCase();
-  if (backend === "formspark") {
-    return (
-      quoteForm?.dataset?.formsparkEndpoint?.trim() ||
-      quoteForm?.getAttribute("action")?.trim() ||
-      ""
-    );
-  }
+function getFormspreeEndpoint() {
   return (
     quoteForm?.dataset?.formspreeEndpoint?.trim() ||
-    quoteForm?.getAttribute("action")?.trim() ||
+    (String(quoteForm?.dataset?.quoteBackend || "formspree").toLowerCase() !== "formspark"
+      ? quoteForm?.getAttribute("action")?.trim()
+      : "") ||
     ""
   );
+}
+
+function getFormsparkEndpoint() {
+  return quoteForm?.dataset?.formsparkEndpoint?.trim() || "";
 }
 
 if (typeof window !== "undefined" && window.location?.search) {
@@ -597,8 +594,17 @@ if (quoteForm) {
     };
     saveQuoteDraft(draftValues);
 
-    const quoteEndpoint = getQuotePostEndpoint();
-    if (!quoteEndpoint) {
+    const formspreeUrl = getFormspreeEndpoint();
+    const formsparkUrl = getFormsparkEndpoint();
+    const backend = String(quoteForm.dataset.quoteBackend || "formspree").toLowerCase();
+
+    if (backend === "formspark") {
+      if (!formsparkUrl) {
+        formMessage.textContent = "Form not connected. Call 734-419-1846 or DM @shine_n_time.";
+        formMessage.style.color = "#b91c1c";
+        return;
+      }
+    } else if (!formspreeUrl) {
       formMessage.textContent = "Form not connected. Call 734-419-1846 or DM @shine_n_time.";
       formMessage.style.color = "#b91c1c";
       return;
@@ -607,22 +613,24 @@ if (quoteForm) {
     formMessage.textContent = "Sending your request…";
     formMessage.style.color = "#0f766e";
 
-    const backend = String(quoteForm.dataset.quoteBackend || "formspree").toLowerCase();
-
     try {
       if (backend === "formspark") {
-        const response = await fetch(quoteEndpoint, {
-          method: "POST",
-          body: data
-        });
+        const fd = new FormData(quoteForm);
+        const response = await fetch(formsparkUrl, { method: "POST", body: fd });
         if (!response.ok) throw new Error("Request failed");
       } else {
-        const response = await fetch(quoteEndpoint, {
+        const fdSpree = new FormData(quoteForm);
+        const spreeRes = await fetch(formspreeUrl, {
           method: "POST",
-          body: data,
+          body: fdSpree,
           headers: { Accept: "application/json" }
         });
-        if (!response.ok) throw new Error("Request failed");
+        if (!spreeRes.ok) throw new Error("Formspree failed");
+
+        if (formsparkUrl) {
+          const fdSpark = new FormData(quoteForm);
+          fetch(formsparkUrl, { method: "POST", body: fdSpark, mode: "no-cors" }).catch(() => {});
+        }
       }
 
       formMessage.textContent = "Thanks! Quote sent. We will reach out soon.";

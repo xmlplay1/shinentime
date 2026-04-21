@@ -7,7 +7,7 @@ Minimal, modern, fast static website for Shine N Time Interior Detailing.
 - Clean one-page layout (mobile + desktop)
 - Photo gallery (hero collage + gallery section) with lightbox zoom
 - Real business contact info
-- Quote form with **Formspree** by default (smooth AJAX, stays on your page) — optional **Formspark** switch
+- Quote form: **Formspree** (primary, AJAX + JSON) plus a **Formspark** mirror when `data-formspark-endpoint` is set (same quote, two inboxes)
 - "Edit Last Quote" button that reloads previous submission from browser storage
 - Lightweight animations and fast load
 
@@ -16,27 +16,15 @@ Minimal, modern, fast static website for Shine N Time Interior Detailing.
 - Phone: `734-419-1846`
 - Instagram: `@shine_n_time`
 - **Formspree (default):** `https://formspree.io/f/mgorzwbw` — good free tier, simple setup, **AJAX** so visitors never leave your site after submit.
-- **Formspark (optional):** `https://submit-form.com/1Ybov8mSM` — also generous on free tiers; you can switch the site to use it in one line (below).
+- **Formspark (mirror):** `https://submit-form.com/1Ybov8mSM` — set on `data-formspark-endpoint`. After a successful Formspree POST, the same form is sent again to Formspark using `mode: "no-cors"` so the browser does not block cross-origin POSTs. You get **one quote, two submissions** (check both dashboards).
 
-There is no perfect “use both at once” on a static site: if you POST to two services, **you get two emails / two records per quote**. The practical “best of both” is **pick one active provider** and keep the other URL in the HTML so you can swap in seconds.
+### Formspark only (no Formspree)
 
-### Switch to Formspark
+On the `<form id="quoteForm">` in `index.html`, set `data-quote-backend="formspark"` and point `action` or `data-formspark-endpoint` at Formspark.
 
-On the `<form id="quoteForm">` in `index.html`, set:
+### Formspree only (no Formspark mirror)
 
-```html
-data-quote-backend="formspark"
-```
-
-and set `action` to your Formspark URL (or rely on `data-formspark-endpoint` — the script reads it when backend is `formspark`).
-
-### Switch back to Formspree
-
-```html
-data-quote-backend="formspree"
-```
-
-with `action="https://formspree.io/f/mgorzwbw"` (or your Formspree form id).
+Remove `data-formspark-endpoint` from the form (or leave it empty).
 
 Photo uploads: Formspree handles file fields on the free tier; Formspark often wants [Uploadcare](https://documentation.formspark.io/setup/file-uploads.html) for reliable file links — either works with this form’s `multipart` POST.
 
