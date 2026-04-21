@@ -17,7 +17,7 @@ Minimal, modern, fast static website for Shine N Time Interior Detailing.
 - Instagram: `@shine_n_time`
 - Form endpoint (Formspark): `https://submit-form.com/1Ybov8mSM` (set as the form `action` in `index.html`)
 
-The quote form uses a **native browser POST** to Formspark after client-side validation (matches [Formspark’s HTML setup](https://documentation.formspark.io/setup/)). You can configure a thank-you redirect in the Formspark dashboard so users return to your site instead of staying on Formspark’s default page.
+The quote form uses a **native browser POST** to Formspark after client-side validation (matches [Formspark’s HTML setup](https://documentation.formspark.io/setup/)). A hidden `_redirect` sends users back to this site’s quote section (see [Formspark redirection](https://documentation.formspark.io/customization/redirection.html)) so they do not land on Formspark’s blank default feedback page. The URL includes `?submitted=1` briefly so the page can show a thank-you line, then the query param is removed.
 
 Optional photo fields use normal file inputs. If attachments do not appear in Formspark, use their [Uploadcare integration](https://documentation.formspark.io/setup/file-uploads.html) or DM photos instead.
 

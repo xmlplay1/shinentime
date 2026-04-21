@@ -2,6 +2,32 @@ const menuToggle = document.getElementById("menuToggle");
 const nav = document.getElementById("primaryNav");
 const quoteForm = document.getElementById("quoteForm");
 const formMessage = document.getElementById("formMessage");
+const formsparkRedirectInput = document.getElementById("formsparkRedirect");
+
+if (formsparkRedirectInput && typeof window !== "undefined" && window.location?.href) {
+  try {
+    const returnUrl = new URL(window.location.href);
+    returnUrl.hash = "quote";
+    returnUrl.searchParams.set("submitted", "1");
+    formsparkRedirectInput.value = returnUrl.toString();
+  } catch (error) {
+    formsparkRedirectInput.value = "";
+  }
+}
+
+if (typeof window !== "undefined" && window.location?.search) {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("submitted") === "1" && formMessage) {
+    formMessage.textContent = "Thanks! Your quote was sent. We will reach out soon.";
+    formMessage.style.color = "#0f766e";
+    const clean = new URL(window.location.href);
+    clean.searchParams.delete("submitted");
+    const nextSearch = clean.searchParams.toString();
+    const path = `${clean.pathname}${nextSearch ? `?${nextSearch}` : ""}${clean.hash || "#quote"}`;
+    window.history.replaceState({}, "", path);
+    document.getElementById("quote")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
 const year = document.getElementById("year");
 const editLastQuoteButton = document.getElementById("editLastQuoteBtn");
 const galleryButtons = Array.from(document.querySelectorAll(".gallery-tile"));

@@ -373,6 +373,9 @@
           enctype="multipart/form-data"
           target="_self"
         >
+          <!-- After submit, Formspark redirects here instead of a blank feedback page (see Formspark docs: _redirect + _append) -->
+          <input type="hidden" name="_redirect" id="formsparkRedirect" value="" />
+          <input type="hidden" name="_append" value="false" />
           <div class="quote-grid">
             <div class="quote-section quote-span-2">
               <h3 class="quote-section-title">Contact</h3>
