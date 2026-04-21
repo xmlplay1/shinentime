@@ -32,11 +32,7 @@ const prepSummaryInput = document.getElementById("prepSummary");
 const estimateRange = document.getElementById("estimateValue");
 const estimateBreakdown = document.getElementById("estimateBreakdown");
 const estimateHidden = document.getElementById("estimateSummary");
-const quoteEndpoint =
-  quoteForm?.getAttribute("action") ||
-  quoteForm?.dataset?.formsparkEndpoint ||
-  quoteForm?.dataset?.formspreeEndpoint ||
-  "";
+const quoteFormAction = quoteForm?.getAttribute("action") || "";
 const QUOTE_STORAGE_KEY = "shine-n-time-last-quote";
 let currentGalleryIndex = 0;
 let currentZoom = 1;
@@ -513,7 +509,7 @@ if (editLastQuoteButton) {
 }
 
 if (quoteForm) {
-  quoteForm.addEventListener("submit", async (event) => {
+  quoteForm.addEventListener("submit", (event) => {
     event.preventDefault();
     const data = new FormData(quoteForm);
     const requiredFields = ["name", "vehicle", "zipCode", "vehicleType", "carCount", "package", "serviceScope", "conditionLevel", "appointmentDate"];
@@ -540,6 +536,7 @@ if (quoteForm) {
     }
 
     updatePrepSummary();
+    calculateEstimate();
 
     const draftValues = {
       name: String(data.get("name") || "").trim(),
@@ -558,8 +555,8 @@ if (quoteForm) {
       saltLevel: String(data.get("saltLevel") || "").trim(),
       bioLevel: String(data.get("bioLevel") || "").trim(),
       notes: String(data.get("notes") || "").trim(),
-      estimateSummary: String(data.get("estimateSummary") || "").trim(),
-      prepSummary: String(data.get("prepSummary") || "").trim(),
+      estimateSummary: String(document.getElementById("estimateSummary")?.value || "").trim(),
+      prepSummary: String(document.getElementById("prepSummary")?.value || "").trim(),
       firstDetailDiscount: Boolean(document.getElementById("firstDetailDiscount")?.checked),
       extras: Array.from(
         (extrasFieldset ? extrasFieldset.querySelectorAll("input[type='checkbox']:checked") : [])
@@ -570,32 +567,16 @@ if (quoteForm) {
     };
     saveQuoteDraft(draftValues);
 
-    if (!quoteEndpoint) {
+    if (!quoteFormAction || !quoteFormAction.includes("submit-form.com")) {
       formMessage.textContent = "Form not connected. Call 734-419-1846 or DM @shine_n_time.";
       formMessage.style.color = "#b91c1c";
       return;
     }
 
-    formMessage.textContent = "Sending your request...";
+    formMessage.textContent = "Sending your request…";
     formMessage.style.color = "#0f766e";
 
-    try {
-      // Formspark accepts the same payload as a normal HTML form. Use multipart FormData
-      // (do not force JSON or Content-Type — browser sets the boundary for file fields).
-      const response = await fetch(quoteEndpoint, {
-        method: "POST",
-        body: data
-      });
-
-      if (!response.ok) {
-        throw new Error("Request failed");
-      }
-
-      formMessage.textContent = "Thanks! Quote sent. We will reach out soon.";
-      formMessage.style.color = "#0f766e";
-    } catch (error) {
-      formMessage.textContent = "Could not send right now. Call 734-419-1846 or DM @shine_n_time.";
-      formMessage.style.color = "#b91c1c";
-    }
+    // Formspark: real browser POST (HTML `action`). `submit()` does not re-dispatch the submit event.
+    quoteForm.submit();
   });
 }
