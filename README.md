@@ -32,7 +32,7 @@ Photo uploads: Formspree handles file fields on the free tier; Formspark often w
 
 ## Logo files (optional)
 
-Add a square-ish logo image and commit it to the **same branch Vercel deploys** (usually `main`). The script tries these folders in order: repo root, `assets/`, `images/`, `img/`, `public/`, with names like `logo.png`, `Logo.png`, `shine-n-time-logo.png`, etc.
+Add a square-ish **real logo** image (not the flyer) and commit it to the **same branch Vercel deploys** (usually `main`). The script tries `logo.webp` and similar names under repo root, `assets/`, `images/`, `img/`, `public/`. Branded PNG/JPEG filenames and flyer art (`IMG_2868`) are skipped so the header never shows the flyer as a “logo.”
 
 **Override (any filename):** in `index.html` head, uncomment and set:
 

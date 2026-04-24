@@ -155,11 +155,23 @@ const submitEstimateHint = document.getElementById("submitEstimateHint");
 const QUOTE_STORAGE_KEY = "shine-n-time-last-quote";
 let currentGalleryIndex = 0;
 let currentZoom = 1;
+function isFlyerOrBrandedLogoUrl(url) {
+  const u = String(url || "").toLowerCase();
+  if (!u) return true;
+  if (u.includes("img_2868")) return true;
+  if (u.includes("logo.png") || u.includes("logo.jpg") || u.includes("logo.jpeg")) return true;
+  if (u.includes("logo-mark")) return true;
+  if (u.includes("shinentime") && u.includes("logo")) return true;
+  if (u.includes("shine-n-time") && u.includes("logo")) return true;
+  if (u.includes("shinen") && u.includes("logo")) return true;
+  return false;
+}
+
 function buildLogoCandidates() {
   const urls = [];
   const push = (url) => {
     const trimmed = String(url || "").trim();
-    if (!trimmed || urls.includes(trimmed)) return;
+    if (!trimmed || urls.includes(trimmed) || isFlyerOrBrandedLogoUrl(trimmed)) return;
     urls.push(trimmed);
   };
 
@@ -172,13 +184,10 @@ function buildLogoCandidates() {
     "logo.PNG",
     "logo.webp",
     "logo.WEBP",
-    "Logo.PNG",
     "logo.jpg",
     "logo.JPG",
     "logo.jpeg",
     "logo.JPEG",
-    "Logo.png",
-    "LOGO.png",
     "logo-mark.png",
     "logo-mark.webp",
     "logo-1.png",
@@ -186,13 +195,7 @@ function buildLogoCandidates() {
     "logo-3.png",
     "logo1.png",
     "logo2.png",
-    "logo3.png",
-    "ShineNTime.png",
-    "shine-n-time.png",
-    "shine-n-time-logo.png",
-    "shine-n-time-logo.webp",
-    "shinentime-logo.png",
-    "shinentime-logo.webp"
+    "logo3.png"
   ];
 
   bases.forEach((base) => {

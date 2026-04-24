@@ -427,9 +427,9 @@ img {
     radial-gradient(900px 520px at 18% 20%, rgba(78, 140, 255, 0.18), transparent 55%),
     radial-gradient(700px 520px at 88% 10%, rgba(242, 192, 75, 0.14), transparent 52%),
     linear-gradient(180deg, rgba(10, 16, 28, 0.78), rgba(10, 16, 28, 0.52)),
-    url("./IMG_2868.PNG");
+    url("./IMG_2864.PNG");
   background-size: auto, auto, auto, cover;
-  background-position: center, center, center, 50% 35%;
+  background-position: center, center, center, 50% 40%;
   filter: saturate(1.08) contrast(1.08) brightness(1.03);
   opacity: 0.36;
   pointer-events: none;
