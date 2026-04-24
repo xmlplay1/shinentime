@@ -921,6 +921,76 @@ h3 {
   gap: 0.7rem;
 }
 
+.btn-row--submit {
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.35rem;
+}
+
+.btn-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  align-items: center;
+}
+
+.submit-estimate-preview {
+  flex: 1 1 200px;
+  min-width: min(100%, 200px);
+  max-width: 320px;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(242, 192, 75, 0.45);
+  background: rgba(242, 192, 75, 0.1);
+}
+
+.submit-estimate-label {
+  margin: 0;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: #fce8b1;
+}
+
+.submit-estimate-range {
+  margin: 0.15rem 0 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #ffe39a;
+  line-height: 1.2;
+}
+
+.submit-estimate-range.estimate-value--pending {
+  color: #9fb3cf;
+  font-weight: 700;
+  font-size: 0.98rem;
+  letter-spacing: 0.02em;
+}
+
+.submit-estimate-hint {
+  margin: 0.2rem 0 0;
+  font-size: 0.72rem;
+  color: #c5d6ec;
+  line-height: 1.35;
+}
+
+@media (max-width: 760px) {
+  .btn-row--submit {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .submit-estimate-preview {
+    max-width: none;
+  }
+
+  .btn-row-actions .btn {
+    width: 100%;
+  }
+}
+
 .btn {
   min-height: 44px;
   display: inline-flex;
@@ -1789,7 +1859,7 @@ body.lightbox-open {
     font-size: 16px;
   }
 
-  .btn-row .btn {
+  .btn-row-actions .btn {
     width: 100%;
   }
 

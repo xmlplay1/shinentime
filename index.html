@@ -612,9 +612,16 @@
           <input type="hidden" id="estimateSummary" name="estimateSummary" value="" />
           <input type="hidden" id="emailEstimate" name="emailEstimate" value="" />
 
-          <div class="btn-row">
-            <button type="submit" class="btn btn-primary" id="submitBtn">Send Quote Request</button>
-            <button type="button" class="btn btn-secondary" id="editLastQuoteBtn">Edit Last Quote</button>
+          <div class="btn-row btn-row--submit">
+            <div class="submit-estimate-preview" id="submitEstimatePreview" aria-live="polite">
+              <p class="submit-estimate-label">Estimated quote</p>
+              <p class="submit-estimate-range" id="submitEstimateRange">—</p>
+              <p class="submit-estimate-hint" id="submitEstimateHint">Pick vehicle size + package to see range.</p>
+            </div>
+            <div class="btn-row-actions">
+              <button type="submit" class="btn btn-primary" id="submitBtn">Send Quote Request</button>
+              <button type="button" class="btn btn-secondary" id="editLastQuoteBtn">Edit Last Quote</button>
+            </div>
           </div>
           <p id="formMessage" class="form-message" aria-live="polite"></p>
         </form>

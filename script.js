@@ -150,6 +150,8 @@ const prepSummaryInput = document.getElementById("prepSummary");
 const estimateRange = document.getElementById("estimateValue");
 const estimateBreakdown = document.getElementById("estimateBreakdown");
 const estimateHidden = document.getElementById("estimateSummary");
+const submitEstimateRange = document.getElementById("submitEstimateRange");
+const submitEstimateHint = document.getElementById("submitEstimateHint");
 const QUOTE_STORAGE_KEY = "shine-n-time-last-quote";
 let currentGalleryIndex = 0;
 let currentZoom = 1;
@@ -408,7 +410,8 @@ window.addEventListener("keydown", (event) => {
 });
 
 function calculateEstimate() {
-  if (!vehicleType || !packageSelect || !estimateRange || !estimateHidden) return;
+  if (!vehicleType || !packageSelect || !estimateHidden) return;
+  if (!estimateRange && !submitEstimateRange) return;
 
   const rawVehicle = String(vehicleType.value || "").trim().toLowerCase();
   const vehicle =
@@ -421,9 +424,16 @@ function calculateEstimate() {
   const priceKey = vehicle === "suv" ? "suvTruck" : vehicle;
 
   const setPendingEstimate = (message) => {
-    estimateRange.textContent = "—";
-    estimateRange.classList.add("estimate-value--pending");
+    if (estimateRange) {
+      estimateRange.textContent = "—";
+      estimateRange.classList.add("estimate-value--pending");
+    }
+    if (submitEstimateRange) {
+      submitEstimateRange.textContent = "—";
+      submitEstimateRange.classList.add("estimate-value--pending");
+    }
     if (estimateBreakdown) estimateBreakdown.textContent = message;
+    if (submitEstimateHint) submitEstimateHint.textContent = message;
     estimateHidden.value = "";
     const emailEstimate = document.getElementById("emailEstimate");
     if (emailEstimate) emailEstimate.value = "";
@@ -434,7 +444,8 @@ function calculateEstimate() {
     return;
   }
 
-  estimateRange.classList.remove("estimate-value--pending");
+  estimateRange?.classList.remove("estimate-value--pending");
+  submitEstimateRange?.classList.remove("estimate-value--pending");
 
   const carCountInput = document.getElementById("carCount");
   const carCountRaw = Number.parseInt(String(carCountInput?.value || "1"), 10);
@@ -501,14 +512,20 @@ function calculateEstimate() {
     high = Math.round(high);
   }
 
-  estimateRange.textContent = `$${low} - $${high}`;
+  const rangeText = `$${low} - $${high}`;
+  if (estimateRange) estimateRange.textContent = rangeText;
+  if (submitEstimateRange) submitEstimateRange.textContent = rangeText;
   const extrasText = extras.length ? ` + extras: ${extras.join(", ")}` : "";
   const carsText = carCount > 1 ? ` for ${carCount} cars` : " for 1 car";
   const bundleText = bundleEligible ? ` Includes ${Math.round(TWO_CAR_BUNDLE_DISCOUNT * 100)}% bundle discount.` : "";
   const vehicleLabel = vehicle === "sedan" ? "Sedan / coupe" : "SUV / truck / van";
   const summaryText = `Estimated $${low} - $${high}. Base ${pkg.toUpperCase()} package for ${vehicleLabel}${carsText}${extrasText}.${bundleText} Final quote confirmed after inspection.`;
+  const shortBreakdown = summaryText.replace(/^Estimated \$\d+ - \$\d+\. /, "");
   if (estimateBreakdown) {
-    estimateBreakdown.textContent = summaryText.replace(/^Estimated \$\d+ - \$\d+\. /, "");
+    estimateBreakdown.textContent = shortBreakdown;
+  }
+  if (submitEstimateHint) {
+    submitEstimateHint.textContent = shortBreakdown;
   }
   estimateHidden.value = summaryText;
   const emailEstimate = document.getElementById("emailEstimate");
