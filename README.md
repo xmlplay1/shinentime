@@ -16,7 +16,7 @@ Minimal, modern, fast static website for Shine N Time Interior Detailing.
 - Phone: `734-419-1846`
 - Instagram: `@shine_n_time`
 - **Formspree (default):** `https://formspree.io/f/mgorzwbw` — good free tier, simple setup, **AJAX** so visitors never leave your site after submit.
-- **Formspark (mirror):** `https://submit-form.com/1Ybov8mSM` — set on `data-formspark-endpoint`. After a successful Formspree POST, the same form is sent again to Formspark using `mode: "no-cors"` so the browser does not block cross-origin POSTs. You get **one quote, two submissions** (check both dashboards).
+- **Formspark (mirror):** `https://submit-form.com/1Ybov8mSM` — set on `data-formspark-endpoint`. After Formspree succeeds, the site tries Formspark in order: **full multipart fetch** (includes photos), then **sendBeacon** / fetch with **text fields only** plus a note that photos went to Formspree, then a **hidden iframe POST** as a last resort. Check the Formspark dashboard for at least one row per quote (photo files may only appear on Formspree unless the first step succeeds).
 
 ### Formspark only (no Formspree)
 

@@ -17,6 +17,96 @@ function getFormsparkEndpoint() {
   return quoteForm?.dataset?.formsparkEndpoint?.trim() || "";
 }
 
+/**
+ * Mirror the quote to Formspark. Cross-origin fetch often fails for multipart;
+ * we try full FormData first, then text-only + sendBeacon, then a real iframe POST.
+ */
+function formDataWithoutFiles(sourceForm) {
+  const fd = new FormData(sourceForm);
+  fd.delete("photo1");
+  fd.delete("photo2");
+  fd.delete("photo3");
+  fd.append("_photosNote", "Photos were sent with the Formspree copy of this quote.");
+  return fd;
+}
+
+function postFormDataViaHiddenIframe(url, formData) {
+  return new Promise((resolve) => {
+    const iframeName = `formspark_${Date.now()}`;
+    const iframe = document.createElement("iframe");
+    iframe.name = iframeName;
+    iframe.setAttribute("hidden", "");
+    iframe.style.cssText = "position:absolute;width:0;height:0;border:0;visibility:hidden";
+    document.body.appendChild(iframe);
+
+    const f = document.createElement("form");
+    f.method = "POST";
+    f.action = url;
+    f.target = iframeName;
+    f.enctype = "multipart/form-data";
+    f.setAttribute("hidden", "");
+
+    for (const [key, val] of formData.entries()) {
+      if (val instanceof File) {
+        continue;
+      }
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = key;
+      input.value = String(val);
+      f.appendChild(input);
+    }
+
+    document.body.appendChild(f);
+    f.submit();
+    window.setTimeout(() => {
+      f.remove();
+      iframe.remove();
+      resolve();
+    }, 2500);
+  });
+}
+
+async function mirrorToFormspark(sourceForm, url) {
+  if (!url) return;
+
+  const full = new FormData(sourceForm);
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      body: full,
+      mode: "cors",
+      credentials: "omit"
+    });
+    if (res.ok) return;
+  } catch (e) {
+    // continue
+  }
+
+  const slim = formDataWithoutFiles(sourceForm);
+  if (navigator.sendBeacon) {
+    try {
+      if (navigator.sendBeacon(url, slim)) return;
+    } catch (e2) {
+      // continue
+    }
+  }
+
+  try {
+    const res2 = await fetch(url, {
+      method: "POST",
+      body: slim,
+      mode: "cors",
+      credentials: "omit"
+    });
+    if (res2.ok) return;
+  } catch (e3) {
+    // continue
+  }
+
+  await postFormDataViaHiddenIframe(url, slim);
+}
+
 if (typeof window !== "undefined" && window.location?.search) {
   const params = new URLSearchParams(window.location.search);
   if (params.get("submitted") === "1" && formMessage) {
@@ -644,8 +734,7 @@ if (quoteForm) {
         if (!spreeRes.ok) throw new Error("Formspree failed");
 
         if (formsparkUrl) {
-          const fdSpark = new FormData(quoteForm);
-          fetch(formsparkUrl, { method: "POST", body: fdSpark, mode: "no-cors" }).catch(() => {});
+          mirrorToFormspark(quoteForm, formsparkUrl).catch(() => {});
         }
       }
 
