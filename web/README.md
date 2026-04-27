@@ -24,11 +24,13 @@ The gallery expects these files in `web/public/` (same names, case-sensitive, **
 
 Replace these WebPs with your real **B4\*** / **AFT\*** exports when you have them. Until then, the repo may ship **interior** placeholders derived from the `IMG_286*.PNG` set so the comparison strip stays on-message.
 
-The static `index.html` site uses the same filenames at the repo root. `data-fallback-src` on each slider image points at a matching PNG if a WebP fails to load.
+The static `index.html` site uses the same filenames at the repo root with **`?v=3`** on gallery URLs so CDNs refresh after you replace bytes.
+
+**Do not** point gallery fallbacks at `IMG_2864.PNG` — in this repo that file is a **pricing flyer**, not a vehicle photo (it will show up inside a slider if a WebP 404s and a fallback swaps it in).
 
 **Layout:** sliders stack on small screens; from ~900px up they sit in a **horizontal scroll-snap** row. Handles **auto-animate** (±20% around center) until the user drags.
 
-**Placeholder mapping (when placeholders are used):** slot 1 = driver area (2866 → 2867); slot 2 = rear cargo/trunk (2864 → 2869); slot 3 = dash/console (2868 → 2867).
+**Interim placeholder mapping (replace with your real WebPs):** slot 1 = dash dirty → dash clean (2868 → 2867); slot 2 = rear fabric → rear leather (2866 → 2869); slot 3 = fabric → dash clean (2866 → 2867) until distinct `B4PAS2` / `AFTPAS2` files are provided.
 
 ## Supabase setup
 
