@@ -14,6 +14,16 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+## Before / after gallery assets
+
+The gallery expects these files in `web/public/` (same names, case-sensitive):
+
+- `B4CHEV1.jpg`, `AFTCHEV4.jpg` — Driver Side Deep Clean  
+- `B4CHEV2.jpg`, `AFTCHEV1.jpg` — Rear Floor Extraction  
+- `B4PAS2.jpg`, `AFTPAS2.jpg` — Full Interior Reset  
+
+The repo may ship **temporary copies** of existing shots under those filenames until you upload the real pairs.
+
 ## Supabase setup
 
 1. Create a table `public.jobs` (example SQL):

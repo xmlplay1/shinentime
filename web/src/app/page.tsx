@@ -37,24 +37,27 @@ const packages: readonly PackageCard[] = [
   }
 ];
 
-const comparisons = [
+const transformations = [
   {
-    before: "/IMG_2898.webp",
-    after: "/IMG_2895.webp",
-    altBefore: "Vehicle before detail",
-    altAfter: "Vehicle after detail"
+    before: "/B4CHEV1.jpg",
+    after: "/AFTCHEV4.jpg",
+    altBefore: "Before — driver side",
+    altAfter: "After — driver side",
+    label: "Driver Side Deep Clean"
   },
   {
-    before: "/IMG_2866.PNG",
-    after: "/IMG_2867.PNG",
-    altBefore: "Interior before",
-    altAfter: "Interior after"
+    before: "/B4CHEV2.jpg",
+    after: "/AFTCHEV1.jpg",
+    altBefore: "Before — rear floor",
+    altAfter: "After — rear floor",
+    label: "Rear Floor Extraction"
   },
   {
-    before: "/IMG_2895.webp",
-    after: "/IMG_2867.PNG",
-    altBefore: "Exterior before",
-    altAfter: "Interior refresh after"
+    before: "/B4PAS2.jpg",
+    after: "/AFTPAS2.jpg",
+    altBefore: "Before — full interior",
+    altAfter: "After — full interior",
+    label: "Full Interior Reset"
   }
 ] as const;
 
@@ -130,22 +133,30 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Before & After */}
+        {/* Before & After gallery */}
         <section id="gallery" className="border-t border-white/5 bg-gradient-to-b from-black to-zinc-950 px-5 py-20 md:px-8 md:py-28">
           <div className="mx-auto max-w-6xl">
             <h2 className="text-center text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Before & After</h2>
-            <p className="mx-auto mt-3 max-w-xl text-center text-2xl font-semibold text-white md:text-3xl">Three transformations. Zero guesswork.</p>
-            <div className="mt-16 grid gap-16 md:grid-cols-3 md:gap-8">
-              {comparisons.map((c, i) => (
+            <p className="mx-auto mt-3 max-w-xl text-center text-2xl font-semibold text-white md:text-3xl">
+              Interactive transformations — drag or watch the reveal.
+            </p>
+            <div className="mt-14 grid w-full grid-cols-1 gap-12 md:grid-cols-3 md:gap-8">
+              {transformations.map((c, i) => (
                 <motion.div
-                  key={i}
+                  key={c.label}
                   initial={{ opacity: 0, y: 24 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-60px" }}
                   transition={{ duration: 0.5, delay: i * 0.08 }}
-                  className="flex flex-col items-center"
+                  className="mx-auto w-full max-w-lg md:mx-0 md:max-w-none"
                 >
-                  <BeforeAfterSlider beforeSrc={c.before} afterSrc={c.after} altBefore={c.altBefore} altAfter={c.altAfter} />
+                  <BeforeAfterSlider
+                    beforeSrc={c.before}
+                    afterSrc={c.after}
+                    altBefore={c.altBefore}
+                    altAfter={c.altAfter}
+                    label={c.label}
+                  />
                 </motion.div>
               ))}
             </div>

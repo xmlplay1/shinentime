@@ -4,15 +4,16 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { format } from "date-fns";
+import { ClipboardCheck, Loader2 } from "lucide-react";
 import { formatSharePath, normalizePhone } from "@/lib/phone";
 import { PreferredDateTime, type PreferredTime } from "@/components/PreferredDateTime";
 
 const STEPS = ["name", "phone", "car", "service", "schedule", "referral", "review"] as const;
 
 const services = [
-  { id: "silver", label: "Silver" },
-  { id: "gold", label: "Gold" },
-  { id: "platinum", label: "Platinum" }
+  { id: "silver", label: "Silver", price: "From $39" },
+  { id: "gold", label: "Gold", price: "From $99" },
+  { id: "platinum", label: "Platinum", price: "From $129" }
 ] as const;
 
 const timeLabels: Record<PreferredTime, string> = {
@@ -105,7 +106,9 @@ export function BookingForm() {
     }
   };
 
-  const serviceLabel = services.find((s) => s.id === service)?.label ?? "—";
+  const serviceMeta = services.find((s) => s.id === service);
+  const serviceLabel = serviceMeta?.label ?? "—";
+  const servicePrice = serviceMeta?.price ?? "";
 
   if (status === "success") {
     return (
@@ -258,7 +261,15 @@ export function BookingForm() {
                 </div>
                 <div>
                   <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Package</dt>
-                  <dd className="mt-1 text-slate-200">{serviceLabel}</dd>
+                  <dd className="mt-1 flex flex-wrap items-center gap-2 text-slate-200">
+                    <span>{serviceLabel}</span>
+                    {servicePrice ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-md border border-amber-400/25 bg-amber-400/10 px-2 py-0.5 text-xs font-semibold text-amber-100">
+                        <ClipboardCheck className="size-3.5 text-amber-300" aria-hidden />
+                        {servicePrice}
+                      </span>
+                    ) : null}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Preferred</dt>
@@ -305,9 +316,16 @@ export function BookingForm() {
             type="button"
             disabled={!confirmed || status === "loading"}
             onClick={() => void submit()}
-            className="ml-auto rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 px-8 py-3 text-xs font-bold uppercase tracking-[0.2em] text-white shadow-lg shadow-blue-500/25 transition enabled:hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40"
+            className="ml-auto inline-flex min-h-[48px] min-w-[12rem] items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-3 text-[11px] font-bold uppercase tracking-[0.14em] text-white shadow-lg shadow-blue-500/25 transition enabled:hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {status === "loading" ? "Sending…" : "Send booking"}
+            {status === "loading" ? (
+              <>
+                <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />
+                <span className="text-left leading-snug">Sending to Shine N Time System…</span>
+              </>
+            ) : (
+              "Send booking"
+            )}
           </button>
         ) : (
           <button
