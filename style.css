@@ -435,6 +435,11 @@ img {
   pointer-events: none;
 }
 
+.parallax-bg {
+  transform: translateY(var(--parallax-y, 0px));
+  will-change: transform;
+}
+
 .hero-layout {
   position: relative;
   z-index: 1;
@@ -843,9 +848,10 @@ img {
   inset: 0;
   background-size: cover;
   background-position: center;
-  transform: scale(1.05);
+  transform: perspective(700px) rotateX(var(--card-tilt-x, 0deg)) rotateY(var(--card-tilt-y, 0deg)) scale(1.05);
   opacity: 0.72;
   filter: saturate(1.12) contrast(1.1) brightness(1.02);
+  transition: transform 220ms ease;
 }
 
 .service-card.has-thumb::after {
@@ -1310,12 +1316,18 @@ h3 {
     transform 180ms ease,
     box-shadow 220ms ease,
     border-color 180ms ease;
+  transform-style: preserve-3d;
+  will-change: transform;
 }
 
 .service-card:hover {
   transform: translateY(-2px);
   border-color: rgba(242, 192, 75, 0.34);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.38);
+}
+
+.service-card.tilt-hover {
+  transform: perspective(900px) rotateX(-5deg) rotateY(5deg) scale(1.02);
 }
 
 .service-card ul {
@@ -1941,6 +1953,7 @@ body.lightbox-open {
   position: relative;
   border-color: rgba(242, 192, 75, 0.62);
   box-shadow: 0 0 20px rgba(212, 175, 55, 0.1);
+  animation: goldGlowPulse 6s ease-in-out infinite;
 }
 
 .package-badge {
@@ -2144,6 +2157,16 @@ body.lightbox-open {
   }
   50% {
     box-shadow: 0 0 24px rgba(212, 175, 55, 0.24);
+  }
+}
+
+@keyframes goldGlowPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 14px rgba(212, 175, 55, 0.08);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(212, 175, 55, 0.18);
   }
 }
 

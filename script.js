@@ -34,6 +34,53 @@ function applyImageFallbacks() {
 
 applyImageFallbacks();
 
+function initParallaxMotion() {
+  const layers = Array.from(document.querySelectorAll("[data-parallax], .parallax-layer"));
+  if (!layers.length) return;
+  let ticking = false;
+  const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+  if (reduce) return;
+  const update = () => {
+    const y = window.scrollY || 0;
+    layers.forEach((el) => {
+      const speed = Number.parseFloat(el.getAttribute("data-parallax-speed") || "0.08");
+      const offset = Math.round(y * speed);
+      el.style.transform = `translate3d(0, ${offset}px, 0)`;
+    });
+    ticking = false;
+  };
+  window.addEventListener("scroll", () => {
+    if (ticking) return;
+    ticking = true;
+    window.requestAnimationFrame(update);
+  }, { passive: true });
+  update();
+}
+
+initParallaxMotion();
+
+function initServiceTilt() {
+  const cards = Array.from(document.querySelectorAll(".service-card"));
+  if (!cards.length) return;
+  const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+  if (reduce) return;
+  cards.forEach((card) => {
+    card.addEventListener("mousemove", (event) => {
+      const rect = card.getBoundingClientRect();
+      const x = (event.clientX - rect.left) / rect.width - 0.5;
+      const y = (event.clientY - rect.top) / rect.height - 0.5;
+      card.style.setProperty("--tilt-y", `${(x * 5).toFixed(2)}deg`);
+      card.style.setProperty("--tilt-x", `${(-y * 5).toFixed(2)}deg`);
+    });
+    card.addEventListener("mouseleave", () => {
+      card.style.setProperty("--tilt-x", "0deg");
+      card.style.setProperty("--tilt-y", "0deg");
+    });
+  });
+}
+
+initServiceTilt();
+
 function getFormspreeEndpoint() {
   return (
     quoteForm?.dataset?.formspreeEndpoint?.trim() ||
