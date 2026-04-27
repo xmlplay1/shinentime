@@ -39,22 +39,22 @@ const packages: readonly PackageCard[] = [
 
 const transformations = [
   {
-    before: "/B4CHEV1.jpg",
-    after: "/AFTCHEV4.jpg",
+    before: "/B4CHEV1.webp",
+    after: "/AFTCHEV4.webp",
     altBefore: "Before — driver side",
     altAfter: "After — driver side",
     label: "Driver Side Deep Clean"
   },
   {
-    before: "/B4CHEV2.jpg",
-    after: "/AFTCHEV1.jpg",
+    before: "/B4CHEV2.webp",
+    after: "/AFTCHEV1.webp",
     altBefore: "Before — rear floor",
     altAfter: "After — rear floor",
     label: "Rear Floor Extraction"
   },
   {
-    before: "/B4PAS2.jpg",
-    after: "/AFTPAS2.jpg",
+    before: "/B4PAS2.webp",
+    after: "/AFTPAS2.webp",
     altBefore: "Before — full interior",
     altAfter: "After — full interior",
     label: "Full Interior Reset"

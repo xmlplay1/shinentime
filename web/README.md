@@ -16,13 +16,13 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Before / after gallery assets
 
-The gallery expects these files in `web/public/` (same names, case-sensitive):
+The gallery expects these files in `web/public/` (same names, case-sensitive, **WebP**):
 
-- `B4CHEV1.jpg`, `AFTCHEV4.jpg` — Driver Side Deep Clean  
-- `B4CHEV2.jpg`, `AFTCHEV1.jpg` — Rear Floor Extraction  
-- `B4PAS2.jpg`, `AFTPAS2.jpg` — Full Interior Reset  
+- `B4CHEV1.webp`, `AFTCHEV4.webp` — Driver Side Deep Clean  
+- `B4CHEV2.webp`, `AFTCHEV1.webp` — Rear Floor Extraction  
+- `B4PAS2.webp`, `AFTPAS2.webp` — Full Interior Reset  
 
-The repo may ship **temporary copies** of existing shots under those filenames until you upload the real pairs.
+Commit the real photos into `web/public/` (or keep them in repo root and copy into `web/public/` for Vercel builds).
 
 ## Supabase setup
 
