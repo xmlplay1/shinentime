@@ -15,15 +15,20 @@ function applyImageFallbacks() {
   images.forEach((img) => {
     const fallbackSrc = String(img.getAttribute("data-fallback-src") || "").trim();
     if (!fallbackSrc) return;
+    const applyFallback = () => {
+      if (img.dataset.fallbackApplied === "1") return;
+      img.dataset.fallbackApplied = "1";
+      img.src = fallbackSrc;
+    };
     img.addEventListener(
       "error",
-      () => {
-        if (img.dataset.fallbackApplied === "1") return;
-        img.dataset.fallbackApplied = "1";
-        img.src = fallbackSrc;
-      },
+      applyFallback,
       { once: true }
     );
+    // If image already failed before listener attached, recover immediately.
+    if (img.complete && (!img.naturalWidth || img.naturalWidth === 0)) {
+      applyFallback();
+    }
   });
 }
 
