@@ -48,7 +48,7 @@
       <div class="container hero-layout">
         <div class="hero-copy">
           <p class="eyebrow">Mobile interior detailing · Canton area</p>
-          <h1>Interior detailing that looks clean and feels fresh.</h1>
+          <h1>Canton’s Mobile Interior Detailers Who Actually Show Up.</h1>
           <p class="hero-lead">We are young, hungry, and focused on quality work. Straight answers, fair estimates, and results you can see.</p>
           <p class="hero-reply-note">We usually reply within a few hours (same day most days).</p>
           <div class="hero-actions">
@@ -120,18 +120,23 @@
         <div class="photo-strip photo-strip--gallery">
           <button type="button" class="strip-card gallery-tile" aria-label="Open gallery photo 1 full screen">
             <img src="./IMG_2895.webp" alt="Freshly detailed front and center console area" loading="lazy" decoding="async" />
+            <span class="gallery-caption">Deep stain extraction</span>
           </button>
           <button type="button" class="strip-card gallery-tile" aria-label="Open gallery photo 2 full screen">
             <img src="./IMG_2867.PNG" alt="Detailed interior seats and center area" loading="lazy" decoding="async" />
+            <span class="gallery-caption">Seat + console reset</span>
           </button>
           <button type="button" class="strip-card gallery-tile" aria-label="Open gallery photo 3 full screen">
             <img src="./IMG_2898.webp" alt="Clean rear seating and floor area after detail" loading="lazy" decoding="async" />
+            <span class="gallery-caption">Rear floor recovery</span>
           </button>
           <button type="button" class="strip-card gallery-tile" aria-label="Open gallery photo 4 full screen">
             <img src="./IMG_2866.PNG" alt="Interior seat and center area close-up" loading="lazy" decoding="async" />
+            <span class="gallery-caption">Interior refresh finish</span>
           </button>
           <button type="button" class="strip-card gallery-tile" aria-label="Open gallery photo 5 full screen">
             <img src="./IMG_2869.PNG" alt="Clean rear interior and trim result" loading="lazy" decoding="async" />
+            <span class="gallery-caption">Trim + fabric detail</span>
           </button>
         </div>
         <div class="gallery-video card">
@@ -220,7 +225,8 @@
             </ul>
             <p class="price-tag">Sedan: $39 | SUV/Truck: $49</p>
           </article>
-          <article class="card">
+          <article class="card pricing-card pricing-card--featured">
+            <p class="package-badge">Most Popular</p>
             <h3>Gold Package</h3>
             <ul class="mini-list">
               <li>Silver package plus</li>
@@ -374,8 +380,13 @@
           data-formspree-endpoint="https://formspree.io/f/mgorzwbw"
           data-formspark-endpoint="https://submit-form.com/1Ybov8mSM"
         >
+          <div class="quote-steps-nav" role="tablist" aria-label="Quote steps">
+            <button type="button" class="quote-step-btn is-active" data-step-trigger="1" aria-current="step">1. Vehicle Info</button>
+            <button type="button" class="quote-step-btn" data-step-trigger="2">2. Service Selection</button>
+            <button type="button" class="quote-step-btn" data-step-trigger="3">3. Contact & Photos</button>
+          </div>
           <div class="quote-grid">
-            <div class="quote-section quote-span-2">
+            <div class="quote-section quote-span-2 quote-step-panel" data-step="3">
               <h3 class="quote-section-title">Contact</h3>
               <div class="quote-row-3">
                 <div class="field">
@@ -394,7 +405,7 @@
               <p class="field-hint">Leave at least phone or email so we can reply.</p>
             </div>
 
-            <div class="quote-section quote-span-2">
+            <div class="quote-section quote-span-2 quote-step-panel" data-step="2">
               <h3 class="quote-section-title">Service type *</h3>
               <div class="field">
                 <label class="visually-hidden" for="serviceFocus">Service type</label>
@@ -407,7 +418,7 @@
               </div>
             </div>
 
-            <div class="quote-section quote-span-2">
+            <div class="quote-section quote-span-2 quote-step-panel" data-step="1">
               <h3 class="quote-section-title">Vehicle</h3>
               <div class="quote-row-3">
                 <div class="field">
@@ -429,7 +440,7 @@
               </div>
             </div>
 
-            <div class="quote-section">
+            <div class="quote-section quote-step-panel" data-step="1">
               <h3 class="quote-section-title">Cars *</h3>
               <div class="field">
                 <label class="visually-hidden" for="carCount">Number of cars</label>
@@ -442,12 +453,12 @@
               </div>
             </div>
 
-            <div class="quote-section">
+            <div class="quote-section quote-step-panel" data-step="1">
               <h3 class="quote-section-title">Bundle</h3>
               <p class="quote-helper" id="bundleNote">Book 2 cars at once and get 10% off the package portion.</p>
             </div>
 
-            <div class="quote-section quote-span-2">
+            <div class="quote-section quote-span-2 quote-step-panel" data-step="2">
               <h3 class="quote-section-title">Service Scope *</h3>
               <div class="field">
                 <label class="visually-hidden" for="serviceScope">Service scope</label>
@@ -460,7 +471,7 @@
               </div>
             </div>
 
-            <div class="quote-section">
+            <div class="quote-section quote-step-panel" data-step="2">
               <h3 class="quote-section-title">Package *</h3>
               <div class="field">
                 <label class="visually-hidden" for="package">Package</label>
@@ -473,7 +484,7 @@
               </div>
             </div>
 
-            <div class="quote-section">
+            <div class="quote-section quote-step-panel" data-step="1">
               <h3 class="quote-section-title">Condition *</h3>
               <div class="field">
                 <label class="visually-hidden" for="conditionLevel">Interior condition</label>
@@ -486,7 +497,7 @@
               </div>
             </div>
 
-            <fieldset class="extras-group quote-section quote-span-2" id="extrasFieldset">
+            <fieldset class="extras-group quote-section quote-span-2 quote-step-panel" id="extrasFieldset" data-step="2">
               <legend>Extras (if needed)</legend>
               <p class="quote-helper">Light pet hair, sand, salt, bio, or mold is included in the estimate (no extra). Medium or heavy adds a fair add-on.</p>
               <div class="extra-row">
@@ -539,11 +550,11 @@
               </div>
             </fieldset>
 
-            <div class="quote-section quote-span-2 discount-row">
+            <div class="quote-section quote-span-2 discount-row quote-step-panel" data-step="2">
               <label class="discount-label"><input id="firstDetailDiscount" name="firstDetailDiscount" type="checkbox" checked /> First-time 20% off package</label>
             </div>
 
-            <div class="quote-section">
+            <div class="quote-section quote-step-panel" data-step="3">
               <h3 class="quote-section-title">Date *</h3>
               <div class="field">
                 <label class="visually-hidden" for="appointmentDate">Preferred date</label>
@@ -551,7 +562,7 @@
               </div>
             </div>
 
-            <div class="quote-section">
+            <div class="quote-section quote-step-panel" data-step="3">
               <h3 class="quote-section-title">Time</h3>
               <div class="field">
                 <label class="visually-hidden" for="timeWindow">Preferred time window</label>
@@ -564,7 +575,7 @@
               </div>
             </div>
 
-            <div class="quote-section quote-span-2">
+            <div class="quote-section quote-span-2 quote-step-panel" data-step="3">
               <h3 class="quote-section-title">Notes</h3>
               <div class="field">
                 <label class="visually-hidden" for="notes">Extra details</label>
@@ -572,7 +583,7 @@
               </div>
             </div>
 
-            <fieldset class="prep-fieldset quote-section quote-span-2" id="prepFieldset">
+            <fieldset class="prep-fieldset quote-section quote-span-2 quote-step-panel" id="prepFieldset" data-step="3">
               <legend>Pre-visit checklist</legend>
               <p class="quote-helper">Check what applies so we show up ready.</p>
               <div class="check-grid">
@@ -585,7 +596,7 @@
               <input type="hidden" id="prepSummary" name="prepSummary" value="" />
             </fieldset>
 
-            <fieldset class="photo-upload quote-section quote-span-2">
+            <fieldset class="photo-upload quote-section quote-span-2 quote-step-panel" data-step="3">
               <legend>Photos (optional, up to 3)</legend>
               <p class="quote-helper">
                 Wide interior, worst spot close-up, trunk if messy. If upload fails on your plan, DM
@@ -611,7 +622,11 @@
           <input type="hidden" id="estimateSummary" name="estimateSummary" value="" />
           <input type="hidden" id="emailEstimate" name="emailEstimate" value="" />
 
-          <div class="btn-row btn-row--submit">
+          <div class="quote-step-actions">
+            <button type="button" class="btn btn-secondary" id="quotePrevStep" disabled>Back</button>
+            <button type="button" class="btn btn-primary" id="quoteNextStep">Next</button>
+          </div>
+          <div class="btn-row btn-row--submit quote-step-panel" data-step="3">
             <div class="submit-estimate-preview" id="submitEstimatePreview" aria-live="polite">
               <p class="submit-estimate-label">Estimated quote</p>
               <p class="submit-estimate-range" id="submitEstimateRange">—</p>
@@ -678,6 +693,11 @@
       <p>&copy; <span id="year"></span> Shine N Time. All rights reserved.</p>
     </div>
   </footer>
+
+  <div class="floating-action-bar" aria-label="Quick mobile actions">
+    <a class="btn btn-secondary" href="tel:+17344191846">Call Now</a>
+    <a class="btn btn-primary" href="https://calendar.app.google/BJtrqAT2SDPsZAUi6" target="_blank" rel="noopener">Book Online</a>
+  </div>
 
   <div class="lightbox" id="galleryLightbox" hidden aria-hidden="true">
     <div class="lightbox-content">
