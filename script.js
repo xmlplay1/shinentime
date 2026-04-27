@@ -418,7 +418,7 @@ if ("IntersectionObserver" in window) {
 }
 
 function getGalleryItems() {
-  return Array.from(document.querySelectorAll(".gallery-tile"))
+  const fromTiles = Array.from(document.querySelectorAll(".gallery-tile"))
     .map((button) => {
       const img = button.querySelector("img");
       if (!img) return null;
@@ -427,6 +427,13 @@ function getGalleryItems() {
         alt: img.alt || "Gallery photo"
       };
     })
+    .filter(Boolean);
+  if (fromTiles.length) return fromTiles;
+  return Array.from(document.querySelectorAll(".ba-compare .ba-after"))
+    .map((img) => ({
+      src: img.currentSrc || img.src,
+      alt: img.alt || "After photo"
+    }))
     .filter(Boolean);
 }
 
@@ -483,6 +490,106 @@ function updateZoom(step) {
 galleryButtons.forEach((button, index) => {
   button.addEventListener("click", () => openLightbox(index));
 });
+
+/** Before/After compare sliders (#gallery): auto-sweep until user drags; optional full screen into lightbox */
+function initBeforeAfterSliders() {
+  document.querySelectorAll(".ba-compare").forEach((fig, figIndex) => {
+    const stage = fig.querySelector(".ba-stage");
+    const wrap = fig.querySelector(".ba-before-wrap");
+    const handle = fig.querySelector(".ba-handle");
+    const afterImg = fig.querySelector(".ba-after");
+    const beforeImg = fig.querySelector(".ba-before");
+    const fsBtn = fig.querySelector(".ba-fullscreen");
+    if (!stage || !wrap || !handle || !afterImg || !beforeImg) return;
+
+    let pct = 50;
+    let autoDir = 1;
+    let rafId = null;
+    let userInteracted = false;
+
+    const apply = () => {
+      stage.style.setProperty("--ba-split", `${pct}%`);
+    };
+    apply();
+
+    const tick = () => {
+      if (userInteracted) return;
+      pct += autoDir * 0.22;
+      if (pct >= 78) {
+        pct = 78;
+        autoDir = -1;
+      }
+      if (pct <= 22) {
+        pct = 22;
+        autoDir = 1;
+      }
+      apply();
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+
+    const stopAuto = () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = null;
+    };
+
+    const setFromClientX = (clientX) => {
+      const rect = stage.getBoundingClientRect();
+      pct = Math.min(100, Math.max(0, ((clientX - rect.left) / rect.width) * 100));
+      apply();
+    };
+
+    const onPointerDown = (e) => {
+      if (e.target.closest(".ba-fullscreen")) return;
+      userInteracted = true;
+      stopAuto();
+      try {
+        stage.setPointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+      setFromClientX(e.clientX);
+    };
+
+    const onPointerMove = (e) => {
+      if (!stage.hasPointerCapture(e.pointerId)) return;
+      setFromClientX(e.clientX);
+    };
+
+    const onPointerUp = (e) => {
+      try {
+        stage.releasePointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+    };
+
+    stage.addEventListener("pointerdown", onPointerDown);
+    stage.addEventListener("pointermove", onPointerMove);
+    stage.addEventListener("pointerup", onPointerUp);
+    stage.addEventListener("pointercancel", onPointerUp);
+
+    if (fsBtn && lightbox && lightboxImage) {
+      fsBtn.addEventListener("click", () => {
+        userInteracted = true;
+        stopAuto();
+        currentGalleryIndex = figIndex;
+        currentZoom = 1;
+        lightboxImage.src = afterImg.currentSrc || afterImg.src;
+        lightboxImage.alt = afterImg.alt || "After photo";
+        if (lightboxCaption) {
+          lightboxCaption.textContent = `${fig.querySelector(".ba-label")?.textContent || "Before & After"} — after view (${figIndex + 1}/3)`;
+        }
+        lightboxImage.style.transform = "scale(1)";
+        lightbox.hidden = false;
+        lightbox.setAttribute("aria-hidden", "false");
+        document.body.classList.add("lightbox-open");
+      });
+    }
+  });
+}
+
+initBeforeAfterSliders();
 
 if (lightboxClose) lightboxClose.addEventListener("click", closeLightbox);
 if (lightboxNext) lightboxNext.addEventListener("click", nextLightbox);

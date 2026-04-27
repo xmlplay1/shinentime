@@ -116,39 +116,62 @@
       </div>
     </section>
 
-    <section id="gallery" class="section section-tight section-gallery" aria-label="Photo gallery">
+    <section id="gallery" class="section section-tight section-gallery" aria-label="Before and after gallery">
       <div class="container">
-        <p class="section-tagline">Recent work</p>
+        <p class="section-tagline">Transformations</p>
         <div class="strip-head">
-          <h2 class="strip-title">Real work photos</h2>
-          <p class="strip-sub">Tap any shot to open full screen — interior and exterior results from recent jobs.</p>
+          <h2 class="strip-title">Before &amp; After</h2>
+          <p class="strip-sub">Drag the handle to compare — sliders animate until you touch them. Tap &quot;Full screen&quot; to zoom any shot.</p>
         </div>
-        <div class="photo-strip photo-strip--gallery">
-          <button type="button" class="strip-card gallery-tile" aria-label="Open gallery photo 1 full screen">
-            <span class="gallery-tile-hd" aria-hidden="true">HD</span>
-            <img src="./INPHOTO1.PNG" data-fallback-src="./IMG_2867.PNG" alt="Freshly detailed front and center console area" loading="lazy" decoding="async" />
-            <span class="gallery-caption">Deep clean console</span>
-          </button>
-          <button type="button" class="strip-card gallery-tile" aria-label="Open gallery photo 2 full screen">
-            <span class="gallery-tile-hd" aria-hidden="true">HD</span>
-            <img src="./INPHOTO2.PNG" data-fallback-src="./IMG_2866.PNG" alt="Detailed interior seats and center area" loading="lazy" decoding="async" />
-            <span class="gallery-caption">Rear seat refresh</span>
-          </button>
-          <button type="button" class="strip-card gallery-tile" aria-label="Open gallery photo 3 full screen">
-            <span class="gallery-tile-hd" aria-hidden="true">HD</span>
-            <img src="./INPHOTO3.PNG" data-fallback-src="./IMG_2869.PNG" alt="Clean rear seating and floor area after detail" loading="lazy" decoding="async" />
-            <span class="gallery-caption">Leather shampoo finish</span>
-          </button>
-          <button type="button" class="strip-card gallery-tile" aria-label="Open gallery photo 4 full screen">
-            <span class="gallery-tile-hd" aria-hidden="true">HD</span>
-            <img src="./INPHOTO4.PNG" data-fallback-src="./IMG_2898.webp" alt="Interior seat and center area close-up" loading="lazy" decoding="async" />
-            <span class="gallery-caption">Winter salt cleanup wash</span>
-          </button>
-          <button type="button" class="strip-card gallery-tile" aria-label="Open gallery photo 5 full screen">
-            <span class="gallery-tile-hd" aria-hidden="true">HD</span>
-            <img src="./EXPHOTO1.JPG" data-fallback-src="./IMG_2895.webp" alt="Clean rear interior and trim result" loading="lazy" decoding="async" />
-            <span class="gallery-caption">Exterior hand wash in progress</span>
-          </button>
+        <div class="ba-gallery-grid">
+          <figure class="ba-compare" data-ba-index="0">
+            <div class="ba-stage" role="img" aria-label="Before and after comparison">
+              <img class="ba-after" src="./AFTCHEV4.webp" alt="After — driver side deep clean" loading="lazy" decoding="async" />
+              <div class="ba-before-wrap">
+                <img class="ba-before" src="./B4CHEV1.webp" alt="Before — driver side" loading="lazy" decoding="async" />
+              </div>
+              <span class="ba-badge ba-badge--before">Before</span>
+              <span class="ba-badge ba-badge--after">After</span>
+              <div class="ba-divider" aria-hidden="true"></div>
+              <button type="button" class="ba-handle" aria-label="Drag to compare before and after">
+                <span class="ba-handle-text">Drag</span>
+              </button>
+            </div>
+            <figcaption class="ba-label">Driver Side Deep Clean</figcaption>
+            <button type="button" class="ba-fullscreen btn btn-ghost btn-compact">Full screen</button>
+          </figure>
+          <figure class="ba-compare" data-ba-index="1">
+            <div class="ba-stage" role="img" aria-label="Before and after comparison">
+              <img class="ba-after" src="./AFTCHEV1.webp" alt="After — rear floor extraction" loading="lazy" decoding="async" />
+              <div class="ba-before-wrap">
+                <img class="ba-before" src="./B4CHEV2.webp" alt="Before — rear floor" loading="lazy" decoding="async" />
+              </div>
+              <span class="ba-badge ba-badge--before">Before</span>
+              <span class="ba-badge ba-badge--after">After</span>
+              <div class="ba-divider" aria-hidden="true"></div>
+              <button type="button" class="ba-handle" aria-label="Drag to compare before and after">
+                <span class="ba-handle-text">Drag</span>
+              </button>
+            </div>
+            <figcaption class="ba-label">Rear Floor Extraction</figcaption>
+            <button type="button" class="ba-fullscreen btn btn-ghost btn-compact">Full screen</button>
+          </figure>
+          <figure class="ba-compare" data-ba-index="2">
+            <div class="ba-stage" role="img" aria-label="Before and after comparison">
+              <img class="ba-after" src="./AFTPAS2.webp" alt="After — full interior reset" loading="lazy" decoding="async" />
+              <div class="ba-before-wrap">
+                <img class="ba-before" src="./B4PAS2.webp" alt="Before — full interior" loading="lazy" decoding="async" />
+              </div>
+              <span class="ba-badge ba-badge--before">Before</span>
+              <span class="ba-badge ba-badge--after">After</span>
+              <div class="ba-divider" aria-hidden="true"></div>
+              <button type="button" class="ba-handle" aria-label="Drag to compare before and after">
+                <span class="ba-handle-text">Drag</span>
+              </button>
+            </div>
+            <figcaption class="ba-label">Full Interior Reset</figcaption>
+            <button type="button" class="ba-fullscreen btn btn-ghost btn-compact">Full screen</button>
+          </figure>
         </div>
         <div class="gallery-video card">
           <div class="gallery-video-bg">
