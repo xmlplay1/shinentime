@@ -712,8 +712,8 @@ if (editLastQuoteButton) {
 if (quoteForm) {
   const QUOTE_TOTAL_STEPS = 3;
   const requiredByStep = {
-    1: ["name", "vehicle", "zipCode", "vehicleType"],
-    2: ["serviceFocus", "serviceScope", "package", "conditionLevel"],
+    1: ["name", "phone", "email", "vehicleType", "zipCode"],
+    2: ["package", "conditionLevel"],
     3: ["appointmentDate"]
   };
 
@@ -748,9 +748,22 @@ if (quoteForm) {
       const input = quoteForm.elements.namedItem(name);
       const value = String(input?.value || "").trim();
       if (!value) {
+        if (step === 1 && (name === "phone" || name === "email")) {
+          continue;
+        }
         formMessage.textContent = "Please complete this step before moving on.";
         formMessage.style.color = "#b91c1c";
         input?.focus?.();
+        return false;
+      }
+    }
+    if (step === 1) {
+      const phone = String(quoteForm.elements.namedItem("phone")?.value || "").trim();
+      const email = String(quoteForm.elements.namedItem("email")?.value || "").trim();
+      if (!phone && !email) {
+        formMessage.textContent = "Add at least a phone number or email before continuing.";
+        formMessage.style.color = "#b91c1c";
+        quoteForm.elements.namedItem("phone")?.focus?.();
         return false;
       }
     }
