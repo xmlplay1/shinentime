@@ -2141,8 +2141,45 @@ body.lightbox-open {
 
 .quote-steps-nav {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.5rem;
+}
+
+.quote-confirm-summary {
+  margin: 0.75rem 0 1rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(8, 12, 20, 0.55);
+  font-size: 0.86rem;
+  color: #d6e4f7;
+  line-height: 1.55;
+}
+
+.quote-confirm-summary dt {
+  margin-top: 0.45rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9fb3cf;
+  font-weight: 800;
+}
+
+.quote-confirm-summary dt:first-child {
+  margin-top: 0;
+}
+
+.quote-confirm-summary dd {
+  margin: 0.15rem 0 0;
+}
+
+.quote-confirm-check {
+  margin-top: 0.5rem;
+  align-items: flex-start;
+}
+
+.quote-step-actions--nav {
+  margin-top: 0.75rem;
 }
 
 .quote-step-btn {

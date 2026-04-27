@@ -767,30 +767,60 @@ function fillQuoteForm(values) {
   calculateEstimate();
 }
 
-if (editLastQuoteButton) {
-  editLastQuoteButton.addEventListener("click", () => {
-    const draft = loadQuoteDraft();
-    if (!draft) {
-      formMessage.textContent = "No previous quote found yet. Submit one first.";
-      formMessage.style.color = "#b91c1c";
-      return;
-    }
-    fillQuoteForm(draft);
-    formMessage.textContent = "Last quote loaded. You can edit and resend it.";
-    formMessage.style.color = "#0f766e";
-  });
-}
-
 if (quoteForm) {
-  const QUOTE_TOTAL_STEPS = 3;
+  const QUOTE_TOTAL_STEPS = 4;
   const requiredByStep = {
     1: ["name"],
     2: ["serviceFocus", "serviceScope", "package", "conditionLevel", "vehicle", "vehicleType", "zipCode"],
-    3: ["appointmentDate"]
+    3: ["appointmentDate"],
+    4: []
   };
+
+  function labelForSelect(id) {
+    const el = document.getElementById(id);
+    if (!el || el.tagName !== "SELECT") return "";
+    const opt = el.options[el.selectedIndex];
+    return opt ? String(opt.textContent || "").trim() : "";
+  }
+
+  function buildQuoteConfirmSummary() {
+    const box = document.getElementById("quoteConfirmSummary");
+    if (!box) return;
+    const fd = new FormData(quoteForm);
+    const get = (k) => String(fd.get(k) || "").trim();
+    const extras = Array.from(quoteForm.querySelectorAll('#extrasFieldset input[name="extras"]:checked')).map(
+      (input) => input.dataset.label || input.value
+    );
+    const prep = Array.from(quoteForm.querySelectorAll('#prepFieldset input[name="prep"]:checked')).map((input) => {
+      const lab = input.closest("label");
+      return lab ? lab.textContent.trim() : input.value;
+    });
+    const rows = [
+      ["Contact", [get("name"), get("phone"), get("email")].filter(Boolean).join(" · ")],
+      ["Vehicle", [get("vehicle"), get("vehicleType") ? labelForSelect("vehicleType") : "", get("zipCode")].filter(Boolean).join(" · ")],
+      ["Cars", get("carCount") ? `${get("carCount")} car(s)` : ""],
+      ["Service", [labelForSelect("serviceFocus"), labelForSelect("serviceScope"), labelForSelect("package")].filter(Boolean).join(" · ")],
+      ["Condition", labelForSelect("conditionLevel")],
+      ["Date & time", [get("appointmentDate"), get("timeWindow")].filter(Boolean).join(" · ")],
+      ["Notes", get("notes")],
+      ["Extras", extras.length ? extras.join(", ") : "None selected"],
+      ["Prep", prep.length ? prep.join(", ") : "None checked"],
+      ["Estimate", String(document.getElementById("estimateSummary")?.value || "").trim() || "—"]
+    ];
+    box.innerHTML = rows
+      .filter(([, val]) => val)
+      .map(
+        ([k, v]) =>
+          `<div><dt>${k}</dt><dd>${String(v)
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")}</dd></div>`
+      )
+      .join("");
+  }
 
   function showQuoteStep(step) {
     currentQuoteStep = Math.max(1, Math.min(QUOTE_TOTAL_STEPS, step));
+    quoteForm.dataset.quoteStep = String(currentQuoteStep);
     quoteStepPanels.forEach((panel) => {
       const panelStep = Number(panel.getAttribute("data-step") || "1");
       const isActivePanel = panelStep === currentQuoteStep;
@@ -811,6 +841,10 @@ if (quoteForm) {
     if (quoteProgressFill) {
       const width = ((currentQuoteStep - 1) / (QUOTE_TOTAL_STEPS - 1)) * 100;
       quoteProgressFill.style.width = `${width}%`;
+    }
+    if (currentQuoteStep === 4) {
+      calculateEstimate();
+      buildQuoteConfirmSummary();
     }
   }
 
@@ -833,6 +867,15 @@ if (quoteForm) {
         formMessage.textContent = "Leave at least phone or email so we can reply.";
         formMessage.style.color = "#b91c1c";
         quoteForm.elements.namedItem("phone")?.focus?.();
+        return false;
+      }
+    }
+    if (step === 4) {
+      const ack = document.getElementById("quoteConfirmAck");
+      if (!ack || ack.type !== "checkbox" || !ack.checked) {
+        formMessage.textContent = "Please confirm your details with the checkbox before sending.";
+        formMessage.style.color = "#b91c1c";
+        ack?.focus?.();
         return false;
       }
     }
@@ -874,8 +917,39 @@ if (quoteForm) {
   extrasFieldset?.addEventListener("change", toggleExtraSeverity);
   toggleExtraSeverity();
 
+  quoteForm.addEventListener("input", () => {
+    if (Number(quoteForm.dataset.quoteStep) === 4) buildQuoteConfirmSummary();
+  });
+  quoteForm.addEventListener("change", () => {
+    if (Number(quoteForm.dataset.quoteStep) === 4) buildQuoteConfirmSummary();
+  });
+
+  if (editLastQuoteButton) {
+    editLastQuoteButton.addEventListener("click", () => {
+      const draft = loadQuoteDraft();
+      if (!draft) {
+        formMessage.textContent = "No previous quote found yet. Submit one first.";
+        formMessage.style.color = "#b91c1c";
+        return;
+      }
+      fillQuoteForm(draft);
+      const ack = document.getElementById("quoteConfirmAck");
+      if (ack && "checked" in ack) ack.checked = false;
+      showQuoteStep(1);
+      formMessage.textContent = "Last quote loaded. Review each step, then confirm on step 4.";
+      formMessage.style.color = "#0f766e";
+    });
+  }
+
   quoteForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (Number(quoteForm.dataset.quoteStep) !== QUOTE_TOTAL_STEPS) {
+      formMessage.textContent = "Go to the last step to review and send your quote.";
+      formMessage.style.color = "#b91c1c";
+      showQuoteStep(QUOTE_TOTAL_STEPS);
+      return;
+    }
+    if (!validateStep(4)) return;
     const data = new FormData(quoteForm);
     const requiredFields = ["name", "vehicle", "zipCode", "vehicleType", "carCount", "package", "serviceScope", "conditionLevel", "appointmentDate"];
     const hasMissing = requiredFields.some((field) => !String(data.get(field) || "").trim());

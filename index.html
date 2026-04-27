@@ -399,7 +399,8 @@
           <div class="quote-steps-nav" role="tablist" aria-label="Quote steps">
             <button type="button" class="quote-step-btn is-active" data-step-trigger="1" aria-current="step">1. Contact</button>
             <button type="button" class="quote-step-btn" data-step-trigger="2">2. Service</button>
-            <button type="button" class="quote-step-btn" data-step-trigger="3">3. Logistics</button>
+            <button type="button" class="quote-step-btn" data-step-trigger="3">3. Visit</button>
+            <button type="button" class="quote-step-btn" data-step-trigger="4">4. Confirm</button>
           </div>
           <div class="quote-grid">
             <div class="quote-section quote-span-2 quote-step-panel" data-step="1">
@@ -633,16 +634,26 @@
                 </div>
               </div>
             </fieldset>
+
+            <div class="quote-section quote-span-2 quote-step-panel" data-step="4" id="quoteConfirmPanel">
+              <h3 class="quote-section-title">Confirm your request</h3>
+              <p class="quote-helper">Review everything below. When it looks right, check the box and send your quote.</p>
+              <div class="quote-confirm-summary" id="quoteConfirmSummary" aria-live="polite"></div>
+              <label class="discount-label quote-confirm-check">
+                <input id="quoteConfirmAck" type="checkbox" value="1" />
+                I&apos;ve double-checked my details — send this quote request.
+              </label>
+            </div>
           </div>
 
           <input type="hidden" id="estimateSummary" name="estimateSummary" value="" />
           <input type="hidden" id="emailEstimate" name="emailEstimate" value="" />
 
-          <div class="quote-step-actions">
+          <div class="quote-step-actions quote-step-actions--nav">
             <button type="button" class="btn btn-secondary" id="quotePrevStep" disabled>Back</button>
             <button type="button" class="btn btn-primary btn-shine" id="quoteNextStep">Next</button>
           </div>
-          <div class="btn-row btn-row--submit quote-step-panel" data-step="3">
+          <div class="btn-row btn-row--submit quote-step-panel" data-step="4">
             <div class="submit-estimate-preview" id="submitEstimatePreview" aria-live="polite">
               <p class="submit-estimate-label">Estimated quote</p>
               <p class="submit-estimate-range" id="submitEstimateRange">—</p>

@@ -3,16 +3,23 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { format } from "date-fns";
 import { formatSharePath, normalizePhone } from "@/lib/phone";
 import { PreferredDateTime, type PreferredTime } from "@/components/PreferredDateTime";
 
-const STEPS = ["name", "phone", "car", "service", "schedule", "referral"] as const;
+const STEPS = ["name", "phone", "car", "service", "schedule", "referral", "review"] as const;
 
 const services = [
   { id: "silver", label: "Silver" },
   { id: "gold", label: "Gold" },
   { id: "platinum", label: "Platinum" }
 ] as const;
+
+const timeLabels: Record<PreferredTime, string> = {
+  morning: "Morning (8am – 12pm)",
+  afternoon: "Afternoon (12pm – 4pm)",
+  evening: "Evening (4pm – 8pm)"
+};
 
 export function BookingForm() {
   const searchParams = useSearchParams();
@@ -24,6 +31,7 @@ export function BookingForm() {
   const [preferredDate, setPreferredDate] = useState<Date | undefined>(undefined);
   const [preferredTime, setPreferredTime] = useState<PreferredTime | "">("");
   const [referredBy, setReferredBy] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "error" | "success">("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [shareUrl, setShareUrl] = useState("");
@@ -35,6 +43,7 @@ export function BookingForm() {
 
   const step = STEPS[stepIndex];
   const progress = useMemo(() => ((stepIndex + 1) / STEPS.length) * 100, [stepIndex]);
+  const isReviewStep = step === "review";
 
   const canNext = () => {
     if (step === "name") return name.trim().length >= 2;
@@ -43,20 +52,30 @@ export function BookingForm() {
     if (step === "service") return Boolean(service);
     if (step === "schedule") return Boolean(preferredDate) && Boolean(preferredTime);
     if (step === "referral") return true;
+    if (step === "review") return confirmed;
     return false;
   };
 
   const goNext = () => {
     if (!canNext()) return;
+    if (step === "review") return;
     if (stepIndex < STEPS.length - 1) setStepIndex((i) => i + 1);
-    else void submit();
   };
 
   const goBack = () => {
     if (stepIndex > 0) setStepIndex((i) => i - 1);
   };
 
+  useEffect(() => {
+    if (!isReviewStep) setConfirmed(false);
+  }, [stepIndex, isReviewStep]);
+
   const submit = async () => {
+    if (!confirmed) {
+      setErrorMsg("Please confirm your details before sending.");
+      setStatus("error");
+      return;
+    }
     setStatus("loading");
     setErrorMsg("");
     try {
@@ -85,6 +104,8 @@ export function BookingForm() {
       setErrorMsg(e instanceof Error ? e.message : "Something went wrong.");
     }
   };
+
+  const serviceLabel = services.find((s) => s.id === service)?.label ?? "—";
 
   if (status === "success") {
     return (
@@ -218,6 +239,52 @@ export function BookingForm() {
               />
             </div>
           )}
+          {step === "review" && (
+            <div>
+              <h3 className="text-lg font-semibold text-white">Confirm your request</h3>
+              <p className="mt-2 text-sm text-slate-400">Double-check everything before we receive your booking.</p>
+              <dl className="mt-6 space-y-4 rounded-2xl border border-white/10 bg-black/40 p-4 text-sm">
+                <div>
+                  <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Name</dt>
+                  <dd className="mt-1 text-slate-200">{name || "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Phone</dt>
+                  <dd className="mt-1 font-mono text-slate-200">{normalizePhone(phone) || "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Vehicle</dt>
+                  <dd className="mt-1 text-slate-200">{car || "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Package</dt>
+                  <dd className="mt-1 text-slate-200">{serviceLabel}</dd>
+                </div>
+                <div>
+                  <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Preferred</dt>
+                  <dd className="mt-1 text-slate-200">
+                    {preferredDate ? format(preferredDate, "PPP") : "—"}
+                    {preferredTime ? ` · ${timeLabels[preferredTime]}` : ""}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Referral</dt>
+                  <dd className="mt-1 font-mono text-slate-200">
+                    {referredBy.trim() ? normalizePhone(referredBy) : "None"}
+                  </dd>
+                </div>
+              </dl>
+              <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={confirmed}
+                  onChange={(e) => setConfirmed(e.target.checked)}
+                  className="mt-1 size-4 rounded border-white/20"
+                />
+                <span>I&apos;ve reviewed my details — send this booking request.</span>
+              </label>
+            </div>
+          )}
         </motion.div>
       </AnimatePresence>
       {status === "error" ? <p className="mt-4 text-sm text-red-400">{errorMsg}</p> : null}
@@ -233,14 +300,25 @@ export function BookingForm() {
         ) : (
           <span />
         )}
-        <button
-          type="button"
-          disabled={!canNext() || status === "loading"}
-          onClick={goNext}
-          className="ml-auto rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 px-8 py-3 text-xs font-bold uppercase tracking-[0.2em] text-white shadow-lg shadow-blue-500/25 transition enabled:hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          {stepIndex === STEPS.length - 1 ? (status === "loading" ? "Sending…" : "Submit") : "Continue"}
-        </button>
+        {isReviewStep ? (
+          <button
+            type="button"
+            disabled={!confirmed || status === "loading"}
+            onClick={() => void submit()}
+            className="ml-auto rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 px-8 py-3 text-xs font-bold uppercase tracking-[0.2em] text-white shadow-lg shadow-blue-500/25 transition enabled:hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {status === "loading" ? "Sending…" : "Send booking"}
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled={!canNext() || status === "loading"}
+            onClick={goNext}
+            className="ml-auto rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 px-8 py-3 text-xs font-bold uppercase tracking-[0.2em] text-white shadow-lg shadow-blue-500/25 transition enabled:hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Continue
+          </button>
+        )}
       </div>
     </div>
   );
