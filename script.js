@@ -2,6 +2,11 @@ const menuToggle = document.getElementById("menuToggle");
 const nav = document.getElementById("primaryNav");
 const quoteForm = document.getElementById("quoteForm");
 const formMessage = document.getElementById("formMessage");
+const quoteStepButtons = Array.from(document.querySelectorAll(".quote-step-btn"));
+const quoteStepPanels = Array.from(document.querySelectorAll(".quote-step-panel"));
+const quotePrevStepBtn = document.getElementById("quotePrevStep");
+const quoteNextStepBtn = document.getElementById("quoteNextStep");
+let currentQuoteStep = 1;
 
 function getFormspreeEndpoint() {
   return (
@@ -661,6 +666,69 @@ if (editLastQuoteButton) {
 }
 
 if (quoteForm) {
+  const QUOTE_TOTAL_STEPS = 3;
+  const requiredByStep = {
+    1: ["vehicle", "zipCode", "vehicleType", "carCount", "conditionLevel"],
+    2: ["serviceFocus", "serviceScope", "package"],
+    3: ["name", "appointmentDate"]
+  };
+
+  function showQuoteStep(step) {
+    currentQuoteStep = Math.max(1, Math.min(QUOTE_TOTAL_STEPS, step));
+    quoteStepPanels.forEach((panel) => {
+      const panelStep = Number(panel.getAttribute("data-step") || "1");
+      const isActivePanel = panelStep === currentQuoteStep;
+      panel.hidden = !isActivePanel;
+      panel.classList.toggle("is-active", isActivePanel);
+    });
+    quoteStepButtons.forEach((button) => {
+      const isActive = Number(button.dataset.stepTrigger || "1") === currentQuoteStep;
+      button.classList.toggle("is-active", isActive);
+      if (isActive) {
+        button.setAttribute("aria-current", "step");
+      } else {
+        button.removeAttribute("aria-current");
+      }
+    });
+    if (quotePrevStepBtn) quotePrevStepBtn.disabled = currentQuoteStep === 1;
+    if (quoteNextStepBtn) quoteNextStepBtn.hidden = currentQuoteStep === QUOTE_TOTAL_STEPS;
+  }
+
+  function validateStep(step) {
+    const required = requiredByStep[step] || [];
+    for (const name of required) {
+      const input = quoteForm.elements.namedItem(name);
+      const value = String(input?.value || "").trim();
+      if (!value) {
+        formMessage.textContent = "Please complete this step before moving on.";
+        formMessage.style.color = "#b91c1c";
+        input?.focus?.();
+        return false;
+      }
+    }
+    formMessage.textContent = "";
+    return true;
+  }
+
+  quoteStepButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const targetStep = Number(button.dataset.stepTrigger || "1");
+      if (targetStep <= currentQuoteStep + 1) {
+        if (targetStep > currentQuoteStep && !validateStep(currentQuoteStep)) return;
+        showQuoteStep(targetStep);
+      }
+    });
+  });
+
+  quotePrevStepBtn?.addEventListener("click", () => {
+    showQuoteStep(currentQuoteStep - 1);
+  });
+  quoteNextStepBtn?.addEventListener("click", () => {
+    if (!validateStep(currentQuoteStep)) return;
+    showQuoteStep(currentQuoteStep + 1);
+  });
+  showQuoteStep(1);
+
   quoteForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const data = new FormData(quoteForm);
