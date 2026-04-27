@@ -23,7 +23,7 @@ html {
 
 body {
   margin: 0;
-  font-family: "DM Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: "Inter", "DM Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   color: var(--text);
   background:
     radial-gradient(circle at 15% -10%, rgba(105, 167, 255, 0.13), transparent 42%),
@@ -862,19 +862,19 @@ img {
 
 /* Exterior Wash — real outdoor wash shot */
 .thumb-a::before {
-  background-image: url("./IMG_2898.webp");
+  background-image: url("./IMG_2895.webp");
   background-position: center 52%;
 }
 
 /* Deep interior — cabin / seats */
 .thumb-b::before {
-  background-image: url("./IMG_2895.webp");
-  background-position: center 50%;
+  background-image: url("./IMG_2867.PNG");
+  background-position: center 44%;
 }
 
 /* Interior + exterior complete — premium dash / console (matches “third” reference shot) */
 .thumb-c::before {
-  background-image: url("./IMG_2875.webp");
+  background-image: url("./IMG_2898.webp");
   background-position: center 46%;
 }
 
@@ -892,6 +892,8 @@ h2,
 h3 {
   line-height: 1.2;
   margin-top: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 h1 {
@@ -1626,7 +1628,7 @@ h3 {
 .reveal {
   opacity: 0;
   transform: translateY(20px);
-  transition: opacity 800ms ease-out, transform 800ms ease-out;
+  transition: opacity 600ms ease-out, transform 600ms ease-out;
 }
 
 .reveal.visible {
@@ -1955,6 +1957,10 @@ body.lightbox-open {
 
 .photo-strip--gallery {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.photo-strip--gallery .strip-card {
+  aspect-ratio: 1 / 1;
 }
 
 @media (min-width: 980px) {
