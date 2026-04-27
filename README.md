@@ -2,6 +2,10 @@
 
 Minimal, modern, fast static website for Shine N Time Interior Detailing.
 
+## Next.js app (shinentime.net)
+
+The production-grade landing stack for **shinentime.net** lives in **`web/`** (Next.js + Tailwind + Framer Motion + Supabase). See [`web/README.md`](./web/README.md) for setup, env vars, and deploy notes. The static `index.html` site in the repo root remains for reference or legacy hosting.
+
 ## Features
 
 - Clean one-page layout (mobile + desktop)
