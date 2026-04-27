@@ -22,7 +22,9 @@ The gallery expects these files in `web/public/` (same names, case-sensitive, **
 - `B4CHEV2.webp`, `AFTCHEV1.webp` — Rear Floor Extraction  
 - `B4PAS2.webp`, `AFTPAS2.webp` — Full Interior Reset  
 
-Commit the real photos into `web/public/` (or keep them in repo root and copy into `web/public/` for Vercel builds).
+Replace these WebPs with your real **B4\*** / **AFT\*** exports when you have them. Until then, the repo keeps them as **interior** placeholders derived from the `IMG_286*.PNG` set (not the exterior `IMG_2895` / `IMG_2898` shots) so the landing page never shows the wrong service type in the comparison strip.
+
+The static `index.html` site uses the same filenames at the repo root; `data-fallback-src` on each slider image points at the matching PNG if a WebP fails to load.
 
 ## Supabase setup
 

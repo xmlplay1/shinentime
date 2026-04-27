@@ -41,22 +41,22 @@ const transformations = [
   {
     before: "/B4CHEV1.webp",
     after: "/AFTCHEV4.webp",
-    altBefore: "Before — driver side",
-    altAfter: "After — driver side",
+    altBefore: "Before — driver area interior",
+    altAfter: "After — driver area interior",
     label: "Driver Side Deep Clean"
   },
   {
     before: "/B4CHEV2.webp",
     after: "/AFTCHEV1.webp",
-    altBefore: "Before — rear floor",
-    altAfter: "After — rear floor",
+    altBefore: "Before — rear cargo area",
+    altAfter: "After — rear cargo area",
     label: "Rear Floor Extraction"
   },
   {
     before: "/B4PAS2.webp",
     after: "/AFTPAS2.webp",
-    altBefore: "Before — full interior",
-    altAfter: "After — full interior",
+    altBefore: "Before — dash and console",
+    altAfter: "After — dash and console",
     label: "Full Interior Reset"
   }
 ] as const;
