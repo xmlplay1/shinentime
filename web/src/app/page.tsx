@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Suspense } from "react";
 import { motion } from "framer-motion";
 import { BeforeAfterSlider } from "@/components/BeforeAfterSlider";
 import { BookingForm } from "@/components/BookingForm";
@@ -195,7 +196,9 @@ export default function Home() {
             <h2 className="text-center text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Book</h2>
             <p className="mt-3 text-center text-2xl font-semibold text-white">One question at a time.</p>
             <div className="mt-12">
-              <BookingForm />
+              <Suspense fallback={<div className="h-64 animate-pulse rounded-3xl bg-white/5" aria-hidden />}>
+                <BookingForm />
+              </Suspense>
             </div>
           </div>
         </section>

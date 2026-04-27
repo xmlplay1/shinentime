@@ -1,7 +1,8 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { formatSharePath, normalizePhone } from "@/lib/phone";
 
 const STEPS = ["name", "phone", "car", "service", "referral"] as const;
@@ -14,6 +15,7 @@ const services = [
 ] as const;
 
 export function BookingForm() {
+  const searchParams = useSearchParams();
   const [stepIndex, setStepIndex] = useState(0);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -23,6 +25,11 @@ export function BookingForm() {
   const [status, setStatus] = useState<"idle" | "loading" | "error" | "success">("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [shareUrl, setShareUrl] = useState("");
+
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    if (ref) setReferredBy((prev) => prev || ref);
+  }, [searchParams]);
 
   const step = STEPS[stepIndex];
   const progress = useMemo(() => ((stepIndex + 1) / STEPS.length) * 100, [stepIndex]);
