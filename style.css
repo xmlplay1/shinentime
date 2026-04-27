@@ -1,13 +1,13 @@
 :root {
-  --bg: #0c1220;
-  --surface: #121b2e;
-  --surface-2: #0f1729;
-  --text: #f8fbff;
-  --muted: #c3d4ea;
-  --line: rgba(255, 255, 255, 0.18);
-  --brand: #f2c04b;
-  --brand-soft: #fde6a4;
-  --neon: #4e8cff;
+  --bg: #0f0f0f;
+  --surface: #121212;
+  --surface-2: #181818;
+  --text: #f5f7fa;
+  --muted: #c5cad1;
+  --line: rgba(255, 255, 255, 0.1);
+  --brand: #d4af37;
+  --brand-soft: #f2e3a6;
+  --neon: #69a7ff;
   --shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
 }
 
@@ -26,9 +26,9 @@ body {
   font-family: "DM Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   color: var(--text);
   background:
-    radial-gradient(circle at 15% -10%, rgba(78, 140, 255, 0.2), transparent 42%),
-    radial-gradient(circle at 88% 2%, rgba(242, 192, 75, 0.16), transparent 40%),
-    linear-gradient(180deg, #0b1020 0%, #101a2e 42%, #0c1424 100%);
+    radial-gradient(circle at 15% -10%, rgba(105, 167, 255, 0.13), transparent 42%),
+    radial-gradient(circle at 88% 2%, rgba(212, 175, 55, 0.1), transparent 40%),
+    linear-gradient(180deg, #0f0f0f 0%, #121212 42%, #0f0f0f 100%);
   line-height: 1.6;
 }
 
@@ -604,7 +604,7 @@ img {
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow: var(--shadow);
-  aspect-ratio: 16 / 11;
+  aspect-ratio: 1 / 1;
 }
 
 .strip-card.gallery-tile {
@@ -862,19 +862,19 @@ img {
 
 /* Exterior Wash — real outdoor wash shot */
 .thumb-a::before {
-  background-image: url("./IMG_2875.webp");
+  background-image: url("./IMG_2898.webp");
   background-position: center 52%;
 }
 
 /* Deep interior — cabin / seats */
 .thumb-b::before {
-  background-image: url("./IMG_2898.webp");
+  background-image: url("./IMG_2895.webp");
   background-position: center 50%;
 }
 
 /* Interior + exterior complete — premium dash / console (matches “third” reference shot) */
 .thumb-c::before {
-  background-image: url("./IMG_2895.webp");
+  background-image: url("./IMG_2875.webp");
   background-position: center 46%;
 }
 
@@ -1250,7 +1250,8 @@ h3 {
 }
 
 .card {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
   border: 1px solid var(--line);
   border-radius: 0.9rem;
   padding: 1rem;
@@ -1624,8 +1625,8 @@ h3 {
 
 .reveal {
   opacity: 0;
-  transform: translateY(10px);
-  transition: opacity 300ms ease, transform 300ms ease;
+  transform: translateY(20px);
+  transition: opacity 800ms ease-out, transform 800ms ease-out;
 }
 
 .reveal.visible {
@@ -1933,7 +1934,7 @@ body.lightbox-open {
 .pricing-card--featured {
   position: relative;
   border-color: rgba(242, 192, 75, 0.62);
-  box-shadow: 0 18px 36px rgba(242, 192, 75, 0.14);
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.1);
 }
 
 .package-badge {
@@ -1946,7 +1947,8 @@ body.lightbox-open {
   text-transform: uppercase;
   font-weight: 800;
   color: #2b1c00;
-  background: linear-gradient(180deg, #ffe39a, #e4b444);
+  background: linear-gradient(180deg, #f2e7bc, #bda772);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 999px;
   padding: 0.22rem 0.55rem;
 }
@@ -2009,6 +2011,26 @@ body.lightbox-open {
   cursor: pointer;
 }
 
+.quote-progress {
+  margin-bottom: 0.6rem;
+}
+
+.quote-progress-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.quote-progress-fill {
+  width: 33.333%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #d4af37, #e9d28b);
+  transition: width 280ms ease;
+}
+
 .quote-step-btn.is-active {
   border-color: rgba(242, 192, 75, 0.72);
   color: #fff0c1;
@@ -2044,8 +2066,8 @@ body.lightbox-open {
   gap: 0.55rem;
   padding: 0.6rem;
   border-top: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(8, 13, 23, 0.94);
-  backdrop-filter: blur(6px);
+  background: rgba(14, 14, 14, 0.72);
+  backdrop-filter: blur(12px);
 }
 
 .floating-action-bar .btn {
@@ -2059,11 +2081,30 @@ body.lightbox-open {
 
 .btn:hover,
 .btn:focus-visible {
-  transform: scale(1.05);
+  transform: scale(1.02);
 }
 
 .btn:active {
   transform: scale(1.02);
+}
+
+.card:hover,
+.card:focus-within {
+  transform: scale(1.02);
+}
+
+.btn-pulse {
+  animation: quotePulse 3.8s ease-in-out infinite;
+}
+
+@keyframes quotePulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 rgba(212, 175, 55, 0);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(212, 175, 55, 0.24);
+  }
 }
 
 @media (max-width: 760px) {
