@@ -4,9 +4,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { formatSharePath, normalizePhone } from "@/lib/phone";
+import { PreferredDateTime, type PreferredTime } from "@/components/PreferredDateTime";
 
-const STEPS = ["name", "phone", "car", "service", "referral"] as const;
-type Step = (typeof STEPS)[number];
+const STEPS = ["name", "phone", "car", "service", "schedule", "referral"] as const;
 
 const services = [
   { id: "silver", label: "Silver" },
@@ -21,6 +21,8 @@ export function BookingForm() {
   const [phone, setPhone] = useState("");
   const [car, setCar] = useState("");
   const [service, setService] = useState<(typeof services)[number]["id"] | "">("");
+  const [preferredDate, setPreferredDate] = useState<Date | undefined>(undefined);
+  const [preferredTime, setPreferredTime] = useState<PreferredTime | "">("");
   const [referredBy, setReferredBy] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "error" | "success">("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -39,6 +41,7 @@ export function BookingForm() {
     if (step === "phone") return normalizePhone(phone).length >= 10;
     if (step === "car") return car.trim().length >= 2;
     if (step === "service") return Boolean(service);
+    if (step === "schedule") return Boolean(preferredDate) && Boolean(preferredTime);
     if (step === "referral") return true;
     return false;
   };
@@ -57,6 +60,7 @@ export function BookingForm() {
     setStatus("loading");
     setErrorMsg("");
     try {
+      const preferred_date = preferredDate ? preferredDate.toISOString().slice(0, 10) : null;
       const res = await fetch("/api/jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -65,6 +69,8 @@ export function BookingForm() {
           phone: normalizePhone(phone),
           car_make_model: car.trim(),
           service_package: service,
+          preferred_date,
+          preferred_time: preferredTime || null,
           referred_by_phone: referredBy.trim() ? normalizePhone(referredBy) : null
         })
       });
@@ -189,6 +195,14 @@ export function BookingForm() {
                 ))}
               </div>
             </div>
+          )}
+          {step === "schedule" && (
+            <PreferredDateTime
+              selected={preferredDate}
+              onSelect={setPreferredDate}
+              preferredTime={preferredTime}
+              onPreferredTime={setPreferredTime}
+            />
           )}
           {step === "referral" && (
             <div>

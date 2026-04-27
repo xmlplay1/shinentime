@@ -25,9 +25,15 @@ create table public.jobs (
   phone text not null,
   car_make_model text not null,
   service_package text not null,
+  preferred_date date not null,
+  preferred_time text not null,
   referred_by_phone text,
   created_at timestamptz default now()
 );
+
+-- If you already have `jobs`, add columns:
+-- alter table public.jobs add column if not exists preferred_date date;
+-- alter table public.jobs add column if not exists preferred_time text;
 
 -- Optional: enable RLS; API uses service role to insert
 alter table public.jobs enable row level security;
