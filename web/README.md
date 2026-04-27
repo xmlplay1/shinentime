@@ -22,11 +22,13 @@ The gallery expects these files in `web/public/` (same names, case-sensitive, **
 - `B4CHEV2.webp`, `AFTCHEV1.webp` — Rear Floor Extraction  
 - `B4PAS2.webp`, `AFTPAS2.webp` — Full Interior Reset  
 
-Replace these WebPs with your real **B4\*** / **AFT\*** exports when you have them. Until then, the repo keeps them as **interior** placeholders derived from the `IMG_286*.PNG` set (not the exterior `IMG_2895` / `IMG_2898` shots) so the landing page never shows the wrong service type in the comparison strip.
+Replace these WebPs with your real **B4\*** / **AFT\*** exports when you have them. Until then, the repo may ship **interior** placeholders derived from the `IMG_286*.PNG` set so the comparison strip stays on-message.
 
-The static `index.html` site uses the same filenames at the repo root with a **`?v=2` cache-bust** on gallery URLs so browsers and CDNs do not keep serving an older WebP after you deploy new bytes. `data-fallback-src` on each slider image points at the matching PNG if a WebP fails to load.
+The static `index.html` site uses the same filenames at the repo root. `data-fallback-src` on each slider image points at a matching PNG if a WebP fails to load.
 
-**Placeholder mapping (interim):** slot 1 = driver area (2866 → 2867); slot 2 = rear cargo/trunk (2864 dirty → 2869 clean); slot 3 = dash/console (2868 → 2867).
+**Layout:** sliders stack on small screens; from ~900px up they sit in a **horizontal scroll-snap** row. Handles **auto-animate** (±20% around center) until the user drags.
+
+**Placeholder mapping (when placeholders are used):** slot 1 = driver area (2866 → 2867); slot 2 = rear cargo/trunk (2864 → 2869); slot 3 = dash/console (2868 → 2867).
 
 ## Supabase setup
 

@@ -30,8 +30,9 @@ export function BeforeAfterSlider({ beforeSrc, afterSrc, altBefore, altAfter, la
       stopAuto();
       return;
     }
-    const a = animate(split, [22, 78], {
-      duration: 2.6,
+    // “Breathe” around center (50%): ±20% → 30% … 70% (Framer Motion loop).
+    const a = animate(split, [30, 70], {
+      duration: 2.4,
       repeat: Infinity,
       repeatType: "mirror",
       ease: "easeInOut"

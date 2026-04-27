@@ -704,16 +704,31 @@ img {
 
 /* Before / After interactive compare (static site) */
 .ba-gallery-grid {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 2rem;
   margin-top: 1.25rem;
+  width: 100%;
 }
 
 @media (min-width: 900px) {
   .ba-gallery-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1rem;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 1.25rem;
+    overflow-x: auto;
+    overflow-y: visible;
+    padding-bottom: 0.5rem;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 0.5rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .ba-gallery-grid .ba-compare {
+    flex: 0 0 min(22rem, 85vw);
+    max-width: 22rem;
+    scroll-snap-align: center;
   }
 }
 
@@ -723,6 +738,14 @@ img {
   gap: 0.5rem;
   justify-items: center;
   width: 100%;
+  max-width: 520px;
+  margin-inline: auto;
+}
+
+@media (min-width: 900px) {
+  .ba-gallery-grid .ba-compare {
+    margin-inline: 0;
+  }
 }
 
 .ba-stage {

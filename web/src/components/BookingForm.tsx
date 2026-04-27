@@ -11,7 +11,7 @@ import { PreferredDateTime, type PreferredTime } from "@/components/PreferredDat
 const STEPS = ["name", "phone", "car", "service", "schedule", "referral", "review"] as const;
 
 const services = [
-  { id: "silver", label: "Silver", price: "From $39" },
+  { id: "silver", label: "Silver", price: "From $37" },
   { id: "gold", label: "Gold", price: "From $99" },
   { id: "platinum", label: "Platinum", price: "From $129" }
 ] as const;

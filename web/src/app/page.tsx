@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { motion } from "framer-motion";
-import { BeforeAfterSlider } from "@/components/BeforeAfterSlider";
+import { BeforeAfterGallery } from "@/components/BeforeAfterGallery";
 import { BookingForm } from "@/components/BookingForm";
 import { ReferralStatus } from "@/components/ReferralStatus";
 
@@ -19,7 +19,7 @@ const packages: readonly PackageCard[] = [
   {
     id: "silver",
     name: "Silver",
-    price: "From $39",
+    price: "From $37",
     bullets: ["Hand wash", "Windows", "Tires shined", "Door jambs"]
   },
   {
@@ -37,26 +37,24 @@ const packages: readonly PackageCard[] = [
   }
 ];
 
-const GALLERY_V = "2";
-
 const transformations = [
   {
-    before: `/B4CHEV1.webp?v=${GALLERY_V}`,
-    after: `/AFTCHEV4.webp?v=${GALLERY_V}`,
+    before: "/B4CHEV1.webp",
+    after: "/AFTCHEV4.webp",
     altBefore: "Before — driver area interior",
     altAfter: "After — driver area interior",
     label: "Driver Side Deep Clean"
   },
   {
-    before: `/B4CHEV2.webp?v=${GALLERY_V}`,
-    after: `/AFTCHEV1.webp?v=${GALLERY_V}`,
+    before: "/B4CHEV2.webp",
+    after: "/AFTCHEV1.webp",
     altBefore: "Before — rear cargo area",
     altAfter: "After — rear cargo area",
     label: "Rear Floor Extraction"
   },
   {
-    before: `/B4PAS2.webp?v=${GALLERY_V}`,
-    after: `/AFTPAS2.webp?v=${GALLERY_V}`,
+    before: "/B4PAS2.webp",
+    after: "/AFTPAS2.webp",
     altBefore: "Before — dash and console",
     altAfter: "After — dash and console",
     label: "Full Interior Reset"
@@ -142,26 +140,7 @@ export default function Home() {
             <p className="mx-auto mt-3 max-w-xl text-center text-2xl font-semibold text-white md:text-3xl">
               Interactive transformations — drag or watch the reveal.
             </p>
-            <div className="mt-14 grid w-full grid-cols-1 gap-12 md:grid-cols-3 md:gap-8">
-              {transformations.map((c, i) => (
-                <motion.div
-                  key={c.label}
-                  initial={{ opacity: 0, y: 24 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-60px" }}
-                  transition={{ duration: 0.5, delay: i * 0.08 }}
-                  className="mx-auto w-full max-w-lg md:mx-0 md:max-w-none"
-                >
-                  <BeforeAfterSlider
-                    beforeSrc={c.before}
-                    afterSrc={c.after}
-                    altBefore={c.altBefore}
-                    altAfter={c.altAfter}
-                    label={c.label}
-                  />
-                </motion.div>
-              ))}
-            </div>
+            <BeforeAfterGallery items={transformations} />
           </div>
         </section>
 

@@ -318,10 +318,36 @@ function initSiteLogo() {
 initSiteLogo();
 
 const PACKAGE_PRICING = {
-  silver: { sedan: 39, suvTruck: 49 },
+  silver: { sedan: 37, suvTruck: 49 },
   gold: { sedan: 99, suvTruck: 115 },
   platinum: { sedan: 129, suvTruck: 149 }
 };
+
+function packageMenuLineFromForm(form) {
+  const pkg = String(form.elements.namedItem("package")?.value || "")
+    .trim()
+    .toLowerCase();
+  const rawVehicle = String(form.elements.namedItem("vehicleType")?.value || "")
+    .trim()
+    .toLowerCase();
+  const vehicle =
+    rawVehicle === "suv" || rawVehicle === "truck" || rawVehicle === "van" || rawVehicle.includes("suv")
+      ? "suv"
+      : rawVehicle === "sedan" || rawVehicle === "coupe"
+        ? "sedan"
+        : rawVehicle;
+  const priceKey = vehicle === "suv" ? "suvTruck" : vehicle;
+  const row = PACKAGE_PRICING[pkg];
+  if (!row || !priceKey || row[priceKey] == null) {
+    return "Pick vehicle size + package to see menu base.";
+  }
+  const label =
+    pkg === "silver" ? "Silver" : pkg === "gold" ? "Gold" : pkg === "platinum" ? "Platinum" : pkg;
+  const sizeLabel = vehicle === "suv" ? "SUV / truck / van" : "Sedan / coupe";
+  const sedan = row.sedan;
+  const suv = row.suvTruck;
+  return `${label} menu: sedan $${sedan} · SUV/truck $${suv} (your pick: ${sizeLabel} → $${row[priceKey]} base)`;
+}
 
 const TWO_CAR_BUNDLE_DISCOUNT = 0.1;
 
@@ -514,13 +540,13 @@ function initBeforeAfterSliders() {
 
     const tick = () => {
       if (userInteracted) return;
-      pct += autoDir * 0.22;
-      if (pct >= 78) {
-        pct = 78;
+      pct += autoDir * 0.2;
+      if (pct >= 70) {
+        pct = 70;
         autoDir = -1;
       }
-      if (pct <= 22) {
-        pct = 22;
+      if (pct <= 30) {
+        pct = 30;
         autoDir = 1;
       }
       apply();
@@ -907,6 +933,7 @@ if (quoteForm) {
       ["Vehicle", [get("vehicle"), get("vehicleType") ? labelForSelect("vehicleType") : "", get("zipCode")].filter(Boolean).join(" · ")],
       ["Cars", get("carCount") ? `${get("carCount")} car(s)` : ""],
       ["Service", [labelForSelect("serviceFocus"), labelForSelect("serviceScope"), labelForSelect("package")].filter(Boolean).join(" · ")],
+      ["Package menu (base)", packageMenuLineFromForm(quoteForm)],
       ["Condition", labelForSelect("conditionLevel")],
       ["Date & time", [get("appointmentDate"), get("timeWindow")].filter(Boolean).join(" · ")],
       ["Notes", get("notes")],
