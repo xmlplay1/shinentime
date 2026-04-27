@@ -9,6 +9,26 @@ const quoteNextStepBtn = document.getElementById("quoteNextStep");
 const quoteProgressFill = document.getElementById("quoteProgressFill");
 let currentQuoteStep = 1;
 
+// If requested EX/IN assets are missing in deployment, fall back automatically.
+function applyImageFallbacks() {
+  const images = Array.from(document.querySelectorAll("img[data-fallback-src]"));
+  images.forEach((img) => {
+    const fallbackSrc = String(img.getAttribute("data-fallback-src") || "").trim();
+    if (!fallbackSrc) return;
+    img.addEventListener(
+      "error",
+      () => {
+        if (img.dataset.fallbackApplied === "1") return;
+        img.dataset.fallbackApplied = "1";
+        img.src = fallbackSrc;
+      },
+      { once: true }
+    );
+  });
+}
+
+applyImageFallbacks();
+
 function getFormspreeEndpoint() {
   return (
     quoteForm?.dataset?.formspreeEndpoint?.trim() ||
