@@ -427,9 +427,9 @@ img {
     radial-gradient(900px 520px at 18% 20%, rgba(78, 140, 255, 0.18), transparent 55%),
     radial-gradient(700px 520px at 88% 10%, rgba(242, 192, 75, 0.14), transparent 52%),
     linear-gradient(180deg, rgba(5, 10, 18, 0.78), rgba(5, 10, 18, 0.66)),
-    url("./IMG_2864.PNG");
+    url("./IMG_2869.PNG");
   background-size: auto, auto, auto, cover;
-  background-position: center, center, center, 50% 40%;
+  background-position: center, center, center, 50% 48%;
   filter: saturate(1.08) contrast(1.08) brightness(0.9);
   opacity: 0.58;
   pointer-events: none;
@@ -1974,16 +1974,20 @@ body.lightbox-open {
 .gallery-caption {
   position: absolute;
   left: 0.6rem;
-  right: 0.6rem;
+  right: auto;
   bottom: 0.55rem;
   z-index: 2;
   border-radius: 0.45rem;
   background: rgba(6, 11, 20, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.24);
   color: #f0f7ff;
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   font-weight: 700;
-  padding: 0.28rem 0.5rem;
+  line-height: 1.2;
+  padding: 0.32rem 0.56rem;
+  max-width: calc(100% - 1.2rem);
+  white-space: nowrap;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
 }
 
 .quote-steps-nav {
