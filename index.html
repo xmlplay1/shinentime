@@ -52,7 +52,7 @@
           <p class="hero-lead">We are young, hungry, and focused on quality work. Straight answers, fair estimates, and results you can see.</p>
           <p class="hero-reply-note">We usually reply within a few hours (same day most days).</p>
           <div class="hero-actions">
-            <a class="btn btn-primary" href="#quote">Get a Quote</a>
+            <a class="btn btn-primary btn-pulse" id="heroQuoteBtn" href="#quote">Get a Quote</a>
             <a class="btn btn-secondary" href="tel:+17344191846">Call 734-419-1846</a>
             <a class="btn btn-ghost" href="sms:+17344191846">Text us</a>
           </div>
@@ -380,13 +380,18 @@
           data-formspree-endpoint="https://formspree.io/f/mgorzwbw"
           data-formspark-endpoint="https://submit-form.com/1Ybov8mSM"
         >
+          <div class="quote-progress" aria-hidden="true">
+            <div class="quote-progress-track">
+              <div class="quote-progress-fill" id="quoteProgressFill"></div>
+            </div>
+          </div>
           <div class="quote-steps-nav" role="tablist" aria-label="Quote steps">
-            <button type="button" class="quote-step-btn is-active" data-step-trigger="1" aria-current="step">1. Vehicle Info</button>
-            <button type="button" class="quote-step-btn" data-step-trigger="2">2. Service Selection</button>
-            <button type="button" class="quote-step-btn" data-step-trigger="3">3. Contact & Photos</button>
+            <button type="button" class="quote-step-btn is-active" data-step-trigger="1" aria-current="step">1. Vehicle</button>
+            <button type="button" class="quote-step-btn" data-step-trigger="2">2. Service</button>
+            <button type="button" class="quote-step-btn" data-step-trigger="3">3. Final</button>
           </div>
           <div class="quote-grid">
-            <div class="quote-section quote-span-2 quote-step-panel" data-step="3">
+            <div class="quote-section quote-span-2 quote-step-panel" data-step="1">
               <h3 class="quote-section-title">Contact</h3>
               <div class="quote-row-3">
                 <div class="field">
@@ -484,7 +489,7 @@
               </div>
             </div>
 
-            <div class="quote-section quote-step-panel" data-step="1">
+            <div class="quote-section quote-step-panel" data-step="2">
               <h3 class="quote-section-title">Condition *</h3>
               <div class="field">
                 <label class="visually-hidden" for="conditionLevel">Interior condition</label>

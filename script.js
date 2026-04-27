@@ -6,6 +6,7 @@ const quoteStepButtons = Array.from(document.querySelectorAll(".quote-step-btn")
 const quoteStepPanels = Array.from(document.querySelectorAll(".quote-step-panel"));
 const quotePrevStepBtn = document.getElementById("quotePrevStep");
 const quoteNextStepBtn = document.getElementById("quoteNextStep");
+const quoteProgressFill = document.getElementById("quoteProgressFill");
 let currentQuoteStep = 1;
 
 function getFormspreeEndpoint() {
@@ -302,6 +303,29 @@ if (menuToggle && nav) {
   });
 }
 
+// Smooth custom 1s anchor scrolling for on-page nav links.
+document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+  anchor.addEventListener("click", (event) => {
+    const href = anchor.getAttribute("href");
+    if (!href || href === "#" || href.length < 2) return;
+    const target = document.querySelector(href);
+    if (!target) return;
+    event.preventDefault();
+    const startY = window.scrollY;
+    const targetY = target.getBoundingClientRect().top + window.scrollY - 8;
+    const duration = 1000;
+    const start = performance.now();
+    const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+    const tick = (now) => {
+      const p = Math.min(1, (now - start) / duration);
+      const eased = easeOutCubic(p);
+      window.scrollTo(0, startY + (targetY - startY) * eased);
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+});
+
 const revealItems = document.querySelectorAll(".reveal");
 if ("IntersectionObserver" in window) {
   const observer = new IntersectionObserver(
@@ -550,6 +574,22 @@ const sandLevelInput = document.getElementById("sandLevel");
 const roadSaltLevelInput = document.getElementById("saltLevel");
 const bioLevelInput = document.getElementById("bioLevel");
 const moldLevelInput = document.getElementById("moldLevel");
+function toggleExtraSeverityControls() {
+  if (!extrasFieldset) return;
+  const rows = Array.from(extrasFieldset.querySelectorAll(".extra-row"));
+  rows.forEach((row) => {
+    const checkbox = row.querySelector('input[type="checkbox"][name="extras"]');
+    const severityLabel = row.querySelector(".extra-sub");
+    const severitySelect = row.querySelector("select");
+    const enabled = Boolean(checkbox?.checked);
+    if (severityLabel) severityLabel.hidden = !enabled;
+    if (severitySelect) {
+      severitySelect.hidden = !enabled;
+      severitySelect.disabled = !enabled;
+    }
+  });
+}
+
 if (conditionLevelInput) conditionLevelInput.addEventListener("change", calculateEstimate);
 if (firstDetailDiscountInput) firstDetailDiscountInput.addEventListener("change", calculateEstimate);
 if (carCountInput) carCountInput.addEventListener("change", calculateEstimate);
@@ -559,7 +599,11 @@ if (roadSaltLevelInput) roadSaltLevelInput.addEventListener("change", calculateE
 if (bioLevelInput) bioLevelInput.addEventListener("change", calculateEstimate);
 if (moldLevelInput) moldLevelInput.addEventListener("change", calculateEstimate);
 if (extrasFieldset) {
-  extrasFieldset.addEventListener("change", calculateEstimate);
+  extrasFieldset.addEventListener("change", () => {
+    toggleExtraSeverityControls();
+    calculateEstimate();
+  });
+  toggleExtraSeverityControls();
 }
 calculateEstimate();
 
@@ -668,9 +712,9 @@ if (editLastQuoteButton) {
 if (quoteForm) {
   const QUOTE_TOTAL_STEPS = 3;
   const requiredByStep = {
-    1: ["vehicle", "zipCode", "vehicleType", "carCount", "conditionLevel"],
-    2: ["serviceFocus", "serviceScope", "package"],
-    3: ["name", "appointmentDate"]
+    1: ["name", "vehicle", "zipCode", "vehicleType"],
+    2: ["serviceFocus", "serviceScope", "package", "conditionLevel"],
+    3: ["appointmentDate"]
   };
 
   function showQuoteStep(step) {
@@ -692,6 +736,10 @@ if (quoteForm) {
     });
     if (quotePrevStepBtn) quotePrevStepBtn.disabled = currentQuoteStep === 1;
     if (quoteNextStepBtn) quoteNextStepBtn.hidden = currentQuoteStep === QUOTE_TOTAL_STEPS;
+    if (quoteProgressFill) {
+      const width = ((currentQuoteStep - 1) / (QUOTE_TOTAL_STEPS - 1)) * 100;
+      quoteProgressFill.style.width = `${width}%`;
+    }
   }
 
   function validateStep(step) {
@@ -728,6 +776,21 @@ if (quoteForm) {
     showQuoteStep(currentQuoteStep + 1);
   });
   showQuoteStep(1);
+
+  // Hide severity controls unless corresponding extra checkbox is checked.
+  const extraRows = Array.from(quoteForm.querySelectorAll(".extra-row"));
+  const toggleExtraSeverity = () => {
+    extraRows.forEach((row) => {
+      const checkbox = row.querySelector('input[type="checkbox"]');
+      const severityLabel = row.querySelector(".extra-sub");
+      const severitySelect = row.querySelector("select");
+      const active = Boolean(checkbox?.checked);
+      if (severityLabel) severityLabel.hidden = !active;
+      if (severitySelect) severitySelect.hidden = !active;
+    });
+  };
+  extrasFieldset?.addEventListener("change", toggleExtraSeverity);
+  toggleExtraSeverity();
 
   quoteForm.addEventListener("submit", async (event) => {
     event.preventDefault();
