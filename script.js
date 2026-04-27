@@ -748,9 +748,6 @@ if (quoteForm) {
       const input = quoteForm.elements.namedItem(name);
       const value = String(input?.value || "").trim();
       if (!value) {
-        if (step === 1 && (name === "phone" || name === "email")) {
-          continue;
-        }
         formMessage.textContent = "Please complete this step before moving on.";
         formMessage.style.color = "#b91c1c";
         input?.focus?.();
