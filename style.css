@@ -751,8 +751,8 @@ img {
 .ba-stage {
   position: relative;
   width: 100%;
-  max-width: 520px;
-  aspect-ratio: 4 / 5;
+  max-width: 100%;
+  aspect-ratio: 4 / 3;
   border-radius: 1rem;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -793,8 +793,8 @@ img {
   padding: 0.35rem 0.55rem;
   border-radius: 0.45rem;
   border: 1px solid rgba(255, 255, 255, 0.22);
-  background: rgba(8, 12, 20, 0.45);
-  backdrop-filter: blur(10px);
+  background: rgba(8, 12, 20, 0.58);
+  backdrop-filter: blur(12px);
   color: #f4f9ff;
   pointer-events: none;
 }
@@ -878,6 +878,24 @@ img {
 .ba-fullscreen {
   margin-top: 0.15rem;
   cursor: pointer;
+}
+
+.btn-spinner {
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: rgba(255, 255, 255, 1);
+  display: inline-block;
+  vertical-align: -2px;
+  margin-right: 0.45rem;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .gallery-video {
