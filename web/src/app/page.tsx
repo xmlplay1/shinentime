@@ -37,7 +37,7 @@ const packages: readonly PackageCard[] = [
   }
 ];
 
-const GALLERY_V = "5";
+const GALLERY_V = "6";
 
 const transformations = [
   {
