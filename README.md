@@ -2,19 +2,51 @@
 
 Minimal, modern, fast static website for Shine N Time Interior Detailing.
 
+## Next.js app (shinentime.net)
+
+The production-grade landing stack for **shinentime.net** lives in **`web/`** (Next.js + Tailwind + Framer Motion + Supabase). See [`web/README.md`](./web/README.md) for setup, env vars, and deploy notes. The static `index.html` site in the repo root remains for reference or legacy hosting.
+
 ## Features
 
 - Clean one-page layout (mobile + desktop)
+- Photo gallery (hero collage + gallery section) with lightbox zoom
 - Real business contact info
-- Quote form that sends to Formspree
+- Quote form: **Formspree** (primary, AJAX + JSON) plus a **Formspark** mirror when `data-formspark-endpoint` is set (same quote, two inboxes)
 - "Edit Last Quote" button that reloads previous submission from browser storage
 - Lightweight animations and fast load
 
 ## Business details currently set
 
-- Phone: `724-419-1846`
+- Phone: `734-419-1846`
 - Instagram: `@shine_n_time`
-- Form endpoint: `https://formspree.io/f/mgorzwbw`
+- **Formspree (default):** `https://formspree.io/f/mgorzwbw` — good free tier, simple setup, **AJAX** so visitors never leave your site after submit.
+- **Formspark (mirror):** `https://submit-form.com/1Ybov8mSM` — set on `data-formspark-endpoint`. After Formspree succeeds, the site tries Formspark in order: **full multipart fetch** (includes photos), then **sendBeacon** / fetch with **text fields only** plus a note that photos went to Formspree, then a **hidden iframe POST** as a last resort. Check the Formspark dashboard for at least one row per quote (photo files may only appear on Formspree unless the first step succeeds).
+
+### Formspark only (no Formspree)
+
+On the `<form id="quoteForm">` in `index.html`, set `data-quote-backend="formspark"` and point `action` or `data-formspark-endpoint` at Formspark.
+
+### Formspree only (no Formspark mirror)
+
+Remove `data-formspark-endpoint` from the form (or leave it empty).
+
+Photo uploads: Formspree handles file fields on the free tier; Formspark often wants [Uploadcare](https://documentation.formspark.io/setup/file-uploads.html) for reliable file links — either works with this form’s `multipart` POST.
+
+**Estimate extras:** pet hair, sand/mud, road salt, bio, and mold default to **light = no extra charge**; medium/heavy add to the estimate.
+
+## Logo files (optional)
+
+Add a square-ish **real logo** image (not the flyer) and commit it to the **same branch Vercel deploys** (usually `main`). The script tries `logo.webp` and similar names under repo root, `assets/`, `images/`, `img/`, `public/`. Branded PNG/JPEG filenames and flyer art (`IMG_2868`) are skipped so the header never shows the flyer as a “logo.”
+
+**Override (any filename):** in `index.html` head, uncomment and set:
+
+```html
+<meta name="site-logo" content="./assets/my-logo.png" />
+```
+
+If nothing loads, the header shows **SNT** (no random interior photo).
+
+**GitHub tip:** If your default branch is not `main`, either merge your changes into the branch Vercel uses or change Vercel’s production branch under **Settings → Git**.
 
 ## How "Edit Last Quote" works
 

@@ -3,98 +3,759 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Shine N Time interior detailing. Clean, honest service by a young local team. Quick quotes and easy booking." />
+  <meta name="description" content="Shine N Time interior detailing. Clean results, fair pricing, and easy quote booking." />
   <title>Shine N Time | Interior Detailing</title>
-  <link rel="preload" as="image" href="./IMG_2876.JPG" />
-  <link rel="stylesheet" href="./style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Montserrat:wght@600;700;800&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="preload" as="image" href="./EXPHOTO1.JPG" />
+  <link rel="preload" as="image" href="./INPHOTO1.PNG" />
+  <link rel="preload" as="image" href="./EXPHOTO2.JPG" />
+  <link rel="preload" as="image" href="./B4CHEV1.webp?v=8" />
+  <link rel="preload" as="image" href="./AFTCHEV4.webp?v=8" />
+  <link rel="preload" as="image" href="./B4CHEV2.webp?v=8" />
+  <link rel="preload" as="image" href="./AFTCHEV1.webp?v=8" />
+  <link rel="preload" as="image" href="./B4PAS2.webp?v=8" />
+  <link rel="preload" as="image" href="./AFTPAS2.webp?v=8" />
+  <link rel="stylesheet" href="./style.min.css" />
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
   <header class="site-header">
     <div class="container nav-wrap">
-      <a class="logo" href="#home"><span class="logo-dot" aria-hidden="true"></span>Shine N Time</a>
-      <button id="menuToggle" class="menu-toggle" aria-expanded="false" aria-controls="primaryNav">Menu</button>
+      <a class="logo" href="#home">
+        <span class="logo-mark" id="logoMark" aria-hidden="true">
+          <img id="siteLogo" alt="" width="40" height="40" decoding="async" style="display: none" />
+          <span class="logo-fallback" id="logoFallback">SNT</span>
+        </span>
+        <span class="logo-text">Shine N Time</span>
+      </a>
       <nav id="primaryNav" class="nav">
         <a href="#services">Services</a>
+        <a href="#how-pricing">How pricing</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#service-area">Area</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#reviews">Reviews</a>
         <a href="#quote">Quote</a>
         <a href="#contact">Contact</a>
       </nav>
+      <div class="header-ctas" aria-label="Quick actions">
+        <a class="btn btn-secondary btn-compact" href="tel:+17344191846">Call</a>
+        <a class="btn btn-primary btn-compact" href="#quote">Book</a>
+      </div>
+      <button id="menuToggle" class="menu-toggle" aria-expanded="false" aria-controls="primaryNav">Menu</button>
     </div>
   </header>
 
   <main id="main">
     <section class="hero" id="home">
-      <img class="hero-image" src="./IMG_2868.PNG" alt="Shine N Time flyer style branding" width="1200" height="900" loading="eager" decoding="async" />
-      <div class="hero-overlay"></div>
-      <div class="container hero-content">
-        <p class="eyebrow">Local Interior Detailing</p>
-        <h1>Real work. Real results. Clean interiors that feel new again.</h1>
-        <p>We are a young detailing team focused on quality, honest service, and quick response times.</p>
-        <div class="hero-actions">
-          <a class="btn btn-primary" href="#quote">Get a Quote</a>
-          <a class="btn btn-secondary" href="tel:+17244191846">Call 724-419-1846</a>
+      <div class="hero-bg parallax-layer" aria-hidden="true"></div>
+      <div class="container hero-layout">
+        <div class="hero-copy">
+          <p class="eyebrow">Mobile interior detailing · Canton area</p>
+          <h1>Canton’s Mobile Interior Detailers Who Actually Show Up.</h1>
+          <p class="hero-lead">We are young, hungry, and focused on quality work. Straight answers, fair estimates, and results you can see.</p>
+          <p class="hero-reply-note">We usually reply within a few hours (same day most days).</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary btn-pulse" id="heroQuoteBtn" href="#quote">Get a Quote</a>
+            <a class="btn btn-secondary" href="tel:+17344191846">Call 734-419-1846</a>
+            <a class="btn btn-ghost" href="sms:+17344191846">Text us</a>
+          </div>
         </div>
+        <div class="hero-visual card">
+          <div class="hero-collage" aria-hidden="true">
+            <div class="collage-main">
+              <img src="./IMG_2895.webp" alt="" loading="eager" decoding="async" />
+            </div>
+            <div class="collage-small top">
+              <img src="./IMG_2867.PNG" alt="" loading="lazy" decoding="async" />
+            </div>
+            <div class="collage-small bottom">
+              <img src="./IMG_2898.webp" alt="" loading="lazy" decoding="async" />
+            </div>
+          </div>
+          <div class="hero-visual-footer">
+            <p>Real photos from our work — tap <a href="#gallery">Gallery</a> to zoom any shot.</p>
+          </div>
+        </div>
+        <aside class="hero-aside card">
+          <h2>Book fast</h2>
+          <ul class="mini-list">
+            <li>Simple booking</li>
+            <li>Fair package pricing</li>
+            <li>Quick response</li>
+            <li>Respectful service</li>
+          </ul>
+          <div class="stack-btns">
+            <a class="btn btn-secondary" href="#quote">Request a time</a>
+            <a class="btn btn-ghost" href="https://instagram.com/shine_n_time" target="_blank" rel="noopener">DM @shine_n_time</a>
+          </div>
+        </aside>
       </div>
     </section>
 
-    <section id="services" class="section">
+    <section id="services" class="section services-shell">
       <div class="container">
+        <p class="section-tagline">What we do best</p>
         <h2>Services</h2>
-        <div class="cards">
-          <article class="card">
-            <h3>Interior Refresh</h3>
-            <p>Vacuum, wipe-down, windows, and quick interior reset.</p>
+        <div class="cards service-cards service-bento">
+          <article class="card service-card has-thumb thumb-a service-bento__wash">
+            <h3>Exterior Wash + Shine</h3>
+            <p>Foam wash, wheel and tire cleanup, glass finish, and paint-safe dry down.</p>
           </article>
-          <article class="card">
+          <article class="card service-card has-thumb thumb-b service-bento__interior">
             <h3>Deep Interior Detail</h3>
             <p>Steam cleaning, stain treatment, and odor-focused care.</p>
           </article>
-          <article class="card">
-            <h3>Full Interior Restore</h3>
-            <p>Deep multi-step clean for interiors needing serious recovery.</p>
+          <article class="card service-card has-thumb thumb-c service-bento__complete">
+            <h3>Interior + Exterior Complete</h3>
+            <p>Complete inside-out detail for cars that need a full reset and protection.</p>
           </article>
         </div>
       </div>
     </section>
 
-    <section id="quote" class="section section-alt">
-      <div class="container split">
-        <div>
-          <h2>Get Your Quote</h2>
-          <p>Leave at least one contact method (phone or email). We will reach out quickly.</p>
-          <p class="small-note">You can also DM us on Instagram: <a href="https://instagram.com/shine_n_time" target="_blank" rel="noopener">@shine_n_time</a></p>
+    <section id="gallery" class="section section-tight section-gallery" aria-label="Before and after gallery">
+      <div class="container">
+        <p class="section-tagline">Transformations</p>
+        <div class="strip-head">
+          <h2 class="strip-title">Before &amp; After</h2>
+          <p class="strip-sub">Drag the handle to compare — sliders animate until you touch them. Tap &quot;Full screen&quot; to zoom any shot.</p>
         </div>
-        <form class="quote-form" id="quoteForm" novalidate data-formspree-endpoint="https://formspree.io/f/mgorzwbw">
-          <label for="name">Full Name *</label>
-          <input id="name" name="name" type="text" required />
+        <div class="ba-gallery-grid">
+          <figure class="ba-compare" data-ba-index="0">
+            <div class="ba-stage" role="img" aria-label="Before and after comparison">
+              <img
+                class="ba-after"
+                src="./AFTCHEV4.webp?v=8"
+                alt="After — driver side deep clean"
+                loading="lazy"
+                decoding="async"
+              />
+              <div class="ba-before-wrap">
+                <img
+                  class="ba-before"
+                  src="./B4CHEV1.webp?v=8"
+                  alt="Before — driver side"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+              <span class="ba-badge ba-badge--before">Before</span>
+              <span class="ba-badge ba-badge--after">After</span>
+              <div class="ba-divider" aria-hidden="true"></div>
+              <button type="button" class="ba-handle" aria-label="Drag to compare before and after">
+                <span class="ba-handle-text">Drag</span>
+              </button>
+            </div>
+            <figcaption class="ba-label">Chevy Front Cabin Reset</figcaption>
+            <button type="button" class="ba-fullscreen btn btn-ghost btn-compact">Full screen</button>
+          </figure>
+          <figure class="ba-compare" data-ba-index="1">
+            <div class="ba-stage" role="img" aria-label="Before and after comparison">
+              <img
+                class="ba-after"
+                src="./AFTCHEV1.webp?v=8"
+                alt="After — rear floor extraction"
+                loading="lazy"
+                decoding="async"
+              />
+              <div class="ba-before-wrap">
+                <img
+                  class="ba-before"
+                  src="./B4CHEV2.webp?v=8"
+                  alt="Before — rear floor"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+              <span class="ba-badge ba-badge--before">Before</span>
+              <span class="ba-badge ba-badge--after">After</span>
+              <div class="ba-divider" aria-hidden="true"></div>
+              <button type="button" class="ba-handle" aria-label="Drag to compare before and after">
+                <span class="ba-handle-text">Drag</span>
+              </button>
+            </div>
+            <figcaption class="ba-label">Salt &amp; Sand Extraction</figcaption>
+            <button type="button" class="ba-fullscreen btn btn-ghost btn-compact">Full screen</button>
+          </figure>
+          <figure class="ba-compare" data-ba-index="2">
+            <div class="ba-stage" role="img" aria-label="Before and after comparison">
+              <img
+                class="ba-after"
+                src="./AFTPAS2.webp?v=8"
+                alt="After — full interior reset"
+                loading="lazy"
+                decoding="async"
+              />
+              <div class="ba-before-wrap">
+                <img
+                  class="ba-before"
+                  src="./B4PAS2.webp?v=8"
+                  alt="Before — full interior"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+              <span class="ba-badge ba-badge--before">Before</span>
+              <span class="ba-badge ba-badge--after">After</span>
+              <div class="ba-divider" aria-hidden="true"></div>
+              <button type="button" class="ba-handle" aria-label="Drag to compare before and after">
+                <span class="ba-handle-text">Drag</span>
+              </button>
+            </div>
+            <figcaption class="ba-label">SUV Interior Refresh</figcaption>
+            <button type="button" class="ba-fullscreen btn btn-ghost btn-compact">Full screen</button>
+          </figure>
+        </div>
+        <div class="gallery-video card">
+          <div class="gallery-video-bg">
+            <video autoplay muted loop playsinline preload="metadata" class="gallery-video-bg-media media-treatment" poster="./IMG_2895.webp" aria-hidden="true">
+              <source src="./walkthrough.mp4" type="video/mp4" />
+            </video>
+            <div class="gallery-video-bg-copy">
+              <h3>Walkthrough clip</h3>
+              <p>Real exterior rinse + finish pass from a recent job.</p>
+              <div class="gallery-video-bg-actions">
+                <a class="btn btn-secondary" href="#quote">Get this service</a>
+                <a class="btn btn-ghost" href="https://instagram.com/shine_n_time" target="_blank" rel="noopener">See more on IG</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-          <label for="phone">Phone (optional if email is provided)</label>
-          <input id="phone" name="phone" type="tel" placeholder="724-419-1846" />
+    <section id="service-area" class="section section-alt">
+      <div class="container">
+        <h2 class="section-title">Service Area (Canton, MI)</h2>
+        <p class="section-copy">
+          We are based around Canton, Michigan. If you are close by, we can usually make it work. Not sure? Text us your zip code.
+        </p>
+        <article class="card travel-note">
+          <h3>Mobile visits (important)</h3>
+          <ul class="mini-list">
+            <li>We may need access to <strong>water</strong> and <strong>electricity</strong> at your location for the best results.</li>
+            <li>If you are farther away, we may add a <strong>small travel fee</strong> (we will confirm before you pay anything).</li>
+            <li>Send your <strong>zip code</strong> in the quote form so we can check distance and scheduling.</li>
+          </ul>
+        </article>
+        <div class="area-grid">
+          <article class="card">
+            <h3>Core area</h3>
+            <ul class="mini-list">
+              <li>Canton</li>
+              <li>Plymouth</li>
+              <li>Westland</li>
+              <li>Livonia</li>
+              <li>Northville</li>
+              <li>Novi</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>Often available</h3>
+            <ul class="mini-list">
+              <li>Ann Arbor</li>
+              <li>Ypsilanti</li>
+              <li>Belleville</li>
+              <li>Van Buren Township</li>
+              <li>Romulus</li>
+              <li>Taylor</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>Map</h3>
+            <p class="section-copy" style="margin-bottom: 0.75rem">Quick reference map (Canton area).</p>
+            <div class="map-embed">
+              <iframe
+                title="Canton Michigan map"
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                src="https://www.google.com/maps?q=Canton%2C%20MI&output=embed"
+              ></iframe>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
 
-          <label for="email">Email (optional if phone is provided)</label>
-          <input id="email" name="email" type="email" placeholder="you@example.com" />
+    <section id="pricing" class="section section-alt section-pricing-luxury">
+      <div class="container">
+        <h2 class="section-title">Estimated Package Pricing</h2>
+        <p class="section-copy">Based on our package menu. Final price may change after in-person inspection and vehicle condition check.</p>
+        <div class="cards pricing-grid">
+          <article class="card">
+            <h3>Silver Package</h3>
+            <ul class="mini-list">
+              <li>Exterior hand wash</li>
+              <li>Clean windows</li>
+              <li>Tire and rim shine</li>
+              <li>Door jamb cleaning</li>
+            </ul>
+            <p class="price-tag">Sedan: $37 | SUV/Truck: $49</p>
+          </article>
+          <article class="card pricing-card pricing-card--featured">
+            <p class="package-badge">Most Popular</p>
+            <h3>Gold Package</h3>
+            <ul class="mini-list">
+              <li>Silver package plus</li>
+              <li>Full interior vacuum</li>
+              <li>Seat and carpet shampoo</li>
+              <li>Odor removal</li>
+            </ul>
+            <p class="price-tag">Sedan: $99 | SUV/Truck: $115</p>
+          </article>
+          <article class="card">
+            <h3>Platinum Package</h3>
+            <ul class="mini-list">
+              <li>Silver + Gold package plus</li>
+              <li>Steam cleaning</li>
+              <li>Clay bar treatment</li>
+              <li>Ceramic sealant</li>
+            </ul>
+            <p class="price-tag">Sedan: $129 | SUV/Truck: $149</p>
+          </article>
+        </div>
+      </div>
+    </section>
 
-          <label for="vehicle">Vehicle *</label>
-          <input id="vehicle" name="vehicle" type="text" required placeholder="Example: 2021 Honda Accord" />
+    <section id="how-pricing" class="section">
+      <div class="container">
+        <h2 class="section-title">How pricing works</h2>
+        <ul class="mini-list pricing-steps">
+          <li><strong>Estimate from the form</strong> — based on your package pick, vehicle size, condition, and selected extras.</li>
+          <li><strong>Final price after we see the car</strong> — we confirm the real scope on site before you pay.</li>
+          <li><strong>Travel fee if far</strong> — depends on distance from Canton (see table below).</li>
+          <li><strong>Extras only if needed</strong> — you only pay for what actually applies.</li>
+        </ul>
 
-          <label for="service">Service Needed *</label>
-          <select id="service" name="service" required>
-            <option value="">Select service</option>
-            <option>Interior Refresh</option>
-            <option>Deep Interior Detail</option>
-            <option>Full Interior Restore</option>
-            <option>Need Recommendation</option>
-          </select>
+        <div class="info-grid">
+          <article class="card">
+            <h3>Travel fee (example)</h3>
+            <p class="section-copy" style="margin-top: 0">
+              Miles are approximate from Canton, MI. Edit the dollar amounts anytime in <code>index.html</code> to match what you want to charge.
+            </p>
+            <div class="table-wrap">
+              <table class="fee-table">
+                <thead>
+                  <tr>
+                    <th>Distance</th>
+                    <th>Fee</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>0–10 miles</td>
+                    <td>$0</td>
+                  </tr>
+                  <tr>
+                    <td>10–20 miles</td>
+                    <td>$15</td>
+                  </tr>
+                  <tr>
+                    <td>20+ miles</td>
+                    <td>$30+</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="quote-helper">We will confirm travel fee before the appointment. Zip code in the quote form helps us check this fast.</p>
+          </article>
 
-          <label for="notes">Extra Details</label>
-          <textarea id="notes" name="notes" rows="4" placeholder="Stains, odors, timing, anything else..."></textarea>
+          <article class="card">
+            <h3>Weather + reschedule</h3>
+            <p class="section-copy" style="margin-top: 0">
+              For mobile work, heavy rain/snow or unsafe conditions can push the start time or move the appointment to the next open slot. If that happens, we message you ASAP and keep you updated.
+            </p>
+          </article>
 
-          <div class="btn-row">
-            <button type="submit" class="btn btn-primary" id="submitBtn">Send Quote Request</button>
-            <button type="button" class="btn btn-secondary" id="editLastQuoteBtn">Edit Last Quote</button>
+          <article class="card">
+            <h3>Aftercare (first 24 hours)</h3>
+            <ul class="mini-list">
+              <li>If seats/carpets were shampooed, keep windows cracked a little when safe.</li>
+              <li>Avoid slamming heavy floor mats back in until fully dry.</li>
+              <li>Light smells right after cleaning can be normal and usually fade quickly.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="reviews" class="section">
+      <div class="container">
+        <h2 class="section-title">What People Said</h2>
+        <div class="reviews-grid">
+          <article class="review-card">
+            <p>"Super respectful and easy to work with. My seats came out way cleaner than I expected."</p>
+            <span>- Mia T.</span>
+          </article>
+          <article class="review-card">
+            <p>"Quick response, fair price, and they showed up on time. I would book again."</p>
+            <span>- Chris J.</span>
+          </article>
+          <article class="review-card">
+            <p>"Got rid of old odor in my car and left everything looking fresh."</p>
+            <span>- Alonzo R.</span>
+          </article>
+          <article class="review-card">
+            <p>"These guys actually care. They explained everything before starting."</p>
+            <span>- Kayla M.</span>
+          </article>
+          <article class="review-card">
+            <p>"Interior detail was worth it. Good work and good communication."</p>
+            <span>- Evan P.</span>
+          </article>
+          <article class="review-card">
+            <p>"Booked through DM and the whole process was simple."</p>
+            <span>- Sara N.</span>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="quote" class="section section-alt section-quote">
+      <div class="container container-wide quote-page">
+        <div class="quote-layout">
+        <div class="quote-main">
+        <div class="quote-lead">
+          <div class="quote-intro">
+            <h2>Get Your Quote</h2>
+            <p>Fill this out for an estimated quote. We use package pricing from our menu plus condition/extras. This estimate is not the final price.</p>
+            <p class="small-note">You can also DM us on Instagram: <a href="https://instagram.com/shine_n_time" target="_blank" rel="noopener">@shine_n_time</a></p>
+          </div>
+          <div class="estimate-box" id="estimateBox" aria-live="polite">
+            <h3>Estimated Quote</h3>
+            <p id="estimateValue" class="estimate-value estimate-value--pending">—</p>
+            <p id="estimateBreakdown" class="estimate-disclaimer">Pick vehicle size and package to see a ballpark range.</p>
+            <small>*Estimated only. Final price may change after actual inspection.</small>
+          </div>
+          <article class="card what-expect">
+            <h3>What to expect</h3>
+            <ul class="mini-list">
+              <li>Most details take about 1.5 to 4 hours depending on package + condition.</li>
+              <li>Mobile jobs need access to water and electricity when possible.</li>
+              <li>Bad weather can move the appointment for safety and quality.</li>
+              <li>Need to reschedule? Message us at least 24 hours ahead when you can.</li>
+            </ul>
+          </article>
+        </div>
+        <form
+          class="quote-form"
+          id="quoteForm"
+          action="https://formspree.io/f/mgorzwbw"
+          method="post"
+          enctype="multipart/form-data"
+          data-quote-backend="formspree"
+          data-formspree-endpoint="https://formspree.io/f/mgorzwbw"
+          data-formspark-endpoint="https://submit-form.com/1Ybov8mSM"
+        >
+          <div class="quote-progress" aria-hidden="true">
+            <div class="quote-progress-track">
+              <div class="quote-progress-fill" id="quoteProgressFill"></div>
+            </div>
+          </div>
+          <div class="quote-steps-nav" role="tablist" aria-label="Quote steps">
+            <button type="button" class="quote-step-btn is-active" data-step-trigger="1" aria-current="step">1. Contact</button>
+            <button type="button" class="quote-step-btn" data-step-trigger="2">2. Service</button>
+            <button type="button" class="quote-step-btn" data-step-trigger="3">3. Visit</button>
+            <button type="button" class="quote-step-btn" data-step-trigger="4">4. Confirm</button>
+          </div>
+          <div class="quote-grid">
+            <div class="quote-section quote-span-2 quote-step-panel" data-step="1">
+              <h3 class="quote-section-title">Contact</h3>
+              <div class="quote-row-3">
+                <div class="field">
+                  <label for="name">Full Name *</label>
+                  <input id="name" name="name" type="text" required />
+                </div>
+                <div class="field">
+                  <label for="phone">Phone</label>
+                  <input id="phone" name="phone" type="tel" placeholder="734-419-1846" />
+                </div>
+                <div class="field">
+                  <label for="email">Email</label>
+                  <input id="email" name="email" type="email" placeholder="you@example.com" />
+                </div>
+              </div>
+              <p class="field-hint">Leave at least phone or email so we can reply.</p>
+            </div>
+
+            <div class="quote-section quote-span-2 quote-step-panel" data-step="2">
+              <h3 class="quote-section-title">Service type *</h3>
+              <div class="field">
+                <label class="visually-hidden" for="serviceFocus">Service type</label>
+                <select id="serviceFocus" name="serviceFocus" required>
+                  <option value="">Select service type</option>
+                  <option value="interior" selected>Deep Interior Detail</option>
+                  <option value="exterior">Exterior Wash + Shine</option>
+                  <option value="full">Interior + Exterior Complete</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="quote-section quote-span-2 quote-step-panel" data-step="2">
+              <h3 class="quote-section-title">Vehicle</h3>
+              <div class="quote-row-3">
+                <div class="field">
+                  <label for="vehicle">Vehicle *</label>
+                  <input id="vehicle" name="vehicle" type="text" required placeholder="2021 Honda Accord" />
+                </div>
+                <div class="field">
+                  <label for="zipCode">Zip *</label>
+                  <input id="zipCode" name="zipCode" type="text" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" required placeholder="48187" />
+                </div>
+                <div class="field">
+                  <label for="vehicleType">Size *</label>
+                  <select id="vehicleType" name="vehicleType" required>
+                    <option value="">Select</option>
+                    <option value="sedan">Sedan / Coupe</option>
+                    <option value="suv">SUV / Truck / Van</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="quote-section quote-step-panel" data-step="2">
+              <h3 class="quote-section-title">Cars *</h3>
+              <div class="field">
+                <label class="visually-hidden" for="carCount">Number of cars</label>
+                <select id="carCount" name="carCount" required>
+                  <option value="1" selected>1 car</option>
+                  <option value="2">2 cars (bundle discount)</option>
+                  <option value="3">3 cars</option>
+                  <option value="4">4 cars</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="quote-section quote-step-panel" data-step="2">
+              <h3 class="quote-section-title">Bundle</h3>
+              <p class="quote-helper" id="bundleNote">Book 2 cars at once and get 10% off the package portion.</p>
+            </div>
+
+            <div class="quote-section quote-span-2 quote-step-panel" data-step="2">
+              <h3 class="quote-section-title">Service Scope *</h3>
+              <div class="field">
+                <label class="visually-hidden" for="serviceScope">Service scope</label>
+                <select id="serviceScope" name="serviceScope" required>
+                  <option value="">Select scope</option>
+                  <option value="interior">Interior only</option>
+                  <option value="exterior">Exterior only</option>
+                  <option value="both">Interior + Exterior</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="quote-section quote-step-panel" data-step="2">
+              <h3 class="quote-section-title">Package *</h3>
+              <div class="field">
+                <label class="visually-hidden" for="package">Package</label>
+                <select id="package" name="package" required>
+                  <option value="">Select package</option>
+                  <option value="silver">Silver</option>
+                  <option value="gold">Gold</option>
+                  <option value="platinum">Platinum</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="quote-section quote-step-panel" data-step="2">
+              <h3 class="quote-section-title">Condition *</h3>
+              <div class="field">
+                <label class="visually-hidden" for="conditionLevel">Interior condition</label>
+                <select id="conditionLevel" name="conditionLevel" required>
+                  <option value="">Select</option>
+                  <option value="light">Light</option>
+                  <option value="medium">Medium</option>
+                  <option value="heavy">Heavy</option>
+                </select>
+              </div>
+            </div>
+
+            <fieldset class="extras-group quote-section quote-span-2 quote-step-panel" id="extrasFieldset" data-step="2">
+              <legend>Extras (if needed)</legend>
+              <p class="quote-helper">Light pet hair, sand, salt, bio, or mold is included in the estimate (no extra). Medium or heavy adds a fair add-on.</p>
+              <div class="extra-row">
+                <label class="extra-check"><input type="checkbox" name="extras" value="petHair" data-label="Pet hair removal" data-base="20" /> Pet hair</label>
+                <label class="extra-sub" for="petHairLevel">Severity</label>
+                <select id="petHairLevel" name="petHairLevel">
+                  <option value="light" selected>Light (no extra)</option>
+                  <option value="medium">Medium</option>
+                  <option value="heavy">Heavy</option>
+                </select>
+              </div>
+              <div class="extra-row">
+                <label class="extra-check"><input type="checkbox" name="extras" value="sandSalt" data-label="Sand/mud heavy cleanup" data-base="15" /> Sand/mud</label>
+                <label class="extra-sub" for="sandLevel">Severity</label>
+                <select id="sandLevel" name="sandLevel">
+                  <option value="light" selected>Light (no extra)</option>
+                  <option value="medium">Medium</option>
+                  <option value="heavy">Heavy</option>
+                </select>
+              </div>
+              <div class="extra-row">
+                <label class="extra-check"><input type="checkbox" name="extras" value="roadSalt" data-label="Road salt neutralizing wash" data-base="18" /> Road salt</label>
+                <label class="extra-sub" for="saltLevel">Severity</label>
+                <select id="saltLevel" name="saltLevel">
+                  <option value="light" selected>Light (no extra)</option>
+                  <option value="medium">Medium</option>
+                  <option value="heavy">Heavy</option>
+                </select>
+              </div>
+              <div class="extra-row">
+                <label class="extra-check"><input type="checkbox" name="extras" value="bioClean" data-label="Vomit/biological cleanup" data-base="35" /> Bio cleanup</label>
+                <label class="extra-sub" for="bioLevel">Severity</label>
+                <select id="bioLevel" name="bioLevel">
+                  <option value="light" selected>Light (no extra)</option>
+                  <option value="medium">Medium</option>
+                  <option value="heavy">Heavy</option>
+                </select>
+              </div>
+              <div class="extra-row">
+                <label class="extra-check"><input type="checkbox" name="extras" value="moldRisk" data-label="Surface mold treatment" data-base="60" /> Mold</label>
+                <label class="extra-sub" for="moldLevel">Severity</label>
+                <select id="moldLevel" name="moldLevel">
+                  <option value="light" selected>Light (no extra)</option>
+                  <option value="medium">Medium</option>
+                  <option value="heavy">Heavy</option>
+                </select>
+              </div>
+              <div class="extras-inline">
+                <label><input type="checkbox" name="extras" value="smokeOdor" data-label="Smoke odor treatment" data-base="25" /> Smoke (+$25)</label>
+              </div>
+            </fieldset>
+
+            <div class="quote-section quote-span-2 discount-row quote-step-panel" data-step="2">
+              <label class="discount-label"><input id="firstDetailDiscount" name="firstDetailDiscount" type="checkbox" checked /> First-time 20% off package</label>
+            </div>
+
+            <div class="quote-section quote-step-panel" data-step="3">
+              <h3 class="quote-section-title">Date *</h3>
+              <div class="field">
+                <label class="visually-hidden" for="appointmentDate">Preferred date</label>
+                <input id="appointmentDate" name="appointmentDate" type="date" required />
+              </div>
+            </div>
+
+            <div class="quote-section quote-step-panel" data-step="3">
+              <h3 class="quote-section-title">Time</h3>
+              <div class="field">
+                <label class="visually-hidden" for="timeWindow">Preferred time window</label>
+                <select id="timeWindow" name="timeWindow">
+                  <option value="">Any</option>
+                  <option>Morning (8am - 12pm)</option>
+                  <option>Afternoon (12pm - 4pm)</option>
+                  <option>Evening (4pm - 7pm)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="quote-section quote-span-2 quote-step-panel" data-step="3">
+              <h3 class="quote-section-title">Notes</h3>
+              <div class="field">
+                <label class="visually-hidden" for="notes">Extra details</label>
+                <textarea id="notes" name="notes" rows="3" placeholder="Pet situation, stain spots, smells, kid spills, etc."></textarea>
+              </div>
+            </div>
+
+            <fieldset class="prep-fieldset quote-section quote-span-2 quote-step-panel" id="prepFieldset" data-step="3">
+              <legend>Pre-visit checklist</legend>
+              <p class="quote-helper">Check what applies so we show up ready.</p>
+              <div class="check-grid">
+                <label><input type="checkbox" name="prep" value="garage_access" /> Driveway access</label>
+                <label><input type="checkbox" name="prep" value="pets_removed" /> Pets removed</label>
+                <label><input type="checkbox" name="prep" value="items_removed" /> Items removed</label>
+                <label><input type="checkbox" name="prep" value="keys_available" /> Keys ready</label>
+                <label><input type="checkbox" name="prep" value="hose_spigot" /> Hose ~50 ft</label>
+              </div>
+              <input type="hidden" id="prepSummary" name="prepSummary" value="" />
+            </fieldset>
+
+            <fieldset class="photo-upload quote-section quote-span-2 quote-step-panel" data-step="3">
+              <legend>Photos (optional, up to 3)</legend>
+              <p class="quote-helper">
+                Wide interior, worst spot close-up, trunk if messy. If upload fails on your plan, DM
+                <a href="https://instagram.com/shine_n_time" target="_blank" rel="noopener">@shine_n_time</a>.
+              </p>
+              <div class="photo-row">
+                <div class="field">
+                  <label for="photo1">1</label>
+                  <input id="photo1" name="photo1" type="file" accept="image/*" />
+                </div>
+                <div class="field">
+                  <label for="photo2">2</label>
+                  <input id="photo2" name="photo2" type="file" accept="image/*" />
+                </div>
+                <div class="field">
+                  <label for="photo3">3</label>
+                  <input id="photo3" name="photo3" type="file" accept="image/*" />
+                </div>
+              </div>
+            </fieldset>
+
+            <div class="quote-section quote-span-2 quote-step-panel" data-step="4" id="quoteConfirmPanel">
+              <h3 class="quote-section-title">Confirm your request</h3>
+              <p class="quote-helper">Review everything below. When it looks right, check the box and send your quote.</p>
+              <div class="quote-confirm-summary" id="quoteConfirmSummary" aria-live="polite"></div>
+              <label class="discount-label quote-confirm-check">
+                <input id="quoteConfirmAck" type="checkbox" value="1" />
+                I&apos;ve double-checked my details — send this quote request.
+              </label>
+            </div>
+          </div>
+
+          <input type="hidden" id="estimateSummary" name="estimateSummary" value="" />
+          <input type="hidden" id="emailEstimate" name="emailEstimate" value="" />
+
+          <div class="quote-step-actions quote-step-actions--nav">
+            <button type="button" class="btn btn-secondary" id="quotePrevStep" disabled>Back</button>
+            <button type="button" class="btn btn-primary btn-shine" id="quoteNextStep">Next</button>
+          </div>
+          <div class="btn-row btn-row--submit quote-step-panel" data-step="4">
+            <div class="submit-estimate-preview" id="submitEstimatePreview" aria-live="polite">
+              <p class="submit-estimate-label">Estimated quote</p>
+              <p class="submit-estimate-range" id="submitEstimateRange">—</p>
+              <p class="submit-estimate-hint" id="submitEstimateHint">Pick vehicle size + package to see range.</p>
+            </div>
+            <div class="btn-row-actions">
+              <button type="submit" class="btn btn-primary btn-shine" id="submitBtn">Send Quote Request</button>
+              <button type="button" class="btn btn-secondary" id="editLastQuoteBtn">Edit Last Quote</button>
+            </div>
           </div>
           <p id="formMessage" class="form-message" aria-live="polite"></p>
         </form>
+        </div>
+        <aside class="quote-rail" aria-label="Quick facts">
+          <div class="rail-card">
+            <p class="rail-kicker">Canton area</p>
+            <h3 class="rail-title">Mobile interior detailing</h3>
+            <p class="rail-copy">Fast replies, clear estimates, and work you can see.</p>
+          </div>
+          <div class="rail-stats">
+            <div class="rail-stat"><strong>Same day</strong><span>Replies most days</span></div>
+            <div class="rail-stat"><strong>Real photos</strong><span>Tap gallery to zoom</span></div>
+            <div class="rail-stat"><strong>Clear pricing</strong><span>Package tiers</span></div>
+          </div>
+          <div class="rail-links">
+            <a class="rail-link" href="#how-pricing">How pricing works</a>
+            <a class="rail-link" href="#pricing">Packages</a>
+            <a class="rail-link" href="#gallery">Gallery</a>
+            <a class="rail-link" href="#quote">Book a time</a>
+          </div>
+          <div class="rail-mini">
+            <figure class="rail-thumb">
+              <img src="./IMG_2866.PNG" alt="" loading="lazy" decoding="async" />
+            </figure>
+            <figure class="rail-thumb">
+              <img src="./IMG_2867.PNG" alt="" loading="lazy" decoding="async" />
+            </figure>
+          </div>
+        </aside>
+        </div>
       </div>
     </section>
   </main>
@@ -107,7 +768,7 @@
       </div>
       <div>
         <h3>Contact</h3>
-        <p><a href="tel:+17244191846">724-419-1846</a></p>
+        <p><a href="tel:+17344191846">734-419-1846</a></p>
         <p><a href="mailto:shine.n.time.detailing@gmail.com">shine.n.time.detailing@gmail.com</a></p>
         <p><a href="https://instagram.com/shine_n_time" target="_blank" rel="noopener">@shine_n_time</a></p>
       </div>
@@ -121,6 +782,27 @@
       <p>&copy; <span id="year"></span> Shine N Time. All rights reserved.</p>
     </div>
   </footer>
+
+  <div class="floating-action-bar" aria-label="Quick mobile actions">
+    <a class="btn btn-secondary" href="tel:+17344191846">Call Now</a>
+    <a class="btn btn-primary" href="#quote">Book Online</a>
+  </div>
+
+  <div class="lightbox" id="galleryLightbox" hidden aria-hidden="true">
+    <div class="lightbox-content">
+      <button class="btn btn-secondary" id="lightboxClose" type="button" aria-label="Close expanded image">Close</button>
+      <div class="lightbox-image-wrap">
+        <img id="lightboxImage" alt="Expanded past work photo" />
+      </div>
+      <p id="lightboxCaption" class="scroll-hint"></p>
+      <div class="lightbox-controls">
+        <button class="btn btn-secondary" id="lightboxPrev" type="button" aria-label="Previous photo">Prev</button>
+        <button class="btn btn-secondary" id="lightboxNext" type="button" aria-label="Next photo">Next</button>
+        <button class="btn btn-secondary" id="lightboxZoomOut" type="button" aria-label="Zoom out">Zoom -</button>
+        <button class="btn btn-secondary" id="lightboxZoomIn" type="button" aria-label="Zoom in">Zoom +</button>
+      </div>
+    </div>
+  </div>
 
   <script src="./script.js" defer></script>
 </body>
