@@ -971,7 +971,13 @@ if (quoteForm) {
       }
     });
     if (quotePrevStepBtn) quotePrevStepBtn.disabled = currentQuoteStep === 1;
-    if (quoteNextStepBtn) quoteNextStepBtn.hidden = currentQuoteStep === QUOTE_TOTAL_STEPS;
+    if (quoteNextStepBtn) {
+      const isConfirmStep = currentQuoteStep === QUOTE_TOTAL_STEPS;
+      quoteNextStepBtn.hidden = isConfirmStep;
+      quoteNextStepBtn.disabled = isConfirmStep;
+      quoteNextStepBtn.setAttribute("aria-hidden", isConfirmStep ? "true" : "false");
+      quoteNextStepBtn.tabIndex = isConfirmStep ? -1 : 0;
+    }
     if (quoteProgressFill) {
       const width = ((currentQuoteStep - 1) / (QUOTE_TOTAL_STEPS - 1)) * 100;
       quoteProgressFill.style.width = `${width}%`;
