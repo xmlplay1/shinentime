@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { DollarSign, FileClock, CheckCircle2 } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { adminLoginAction, adminLogoutAction } from "@/app/admin/actions";
+import { adminLoginAction, adminLogoutAction, updateJobStatusAction } from "@/app/admin/actions";
 import { DashboardCharts } from "@/app/admin/widgets";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 
@@ -12,6 +12,7 @@ type JobRow = {
   service_package?: string | null;
   status?: string | null;
   vehicle_type?: string | null;
+  price?: number | null;
   estimated_price?: number | null;
   final_price?: number | null;
   created_at?: string | null;
@@ -30,6 +31,7 @@ function inferVehicleType(job: JobRow): "sedan" | "suv" {
 }
 
 function inferPrice(job: JobRow): number {
+  if (typeof job.price === "number" && Number.isFinite(job.price) && job.price > 0) return job.price;
   if (typeof job.final_price === "number" && Number.isFinite(job.final_price) && job.final_price > 0) return job.final_price;
   if (typeof job.estimated_price === "number" && Number.isFinite(job.estimated_price) && job.estimated_price > 0) return job.estimated_price;
   const pkg = String(job.service_package || "").toLowerCase();
@@ -183,7 +185,29 @@ export default async function AdminPage() {
                           <td className="py-3 pr-4 text-slate-300">{job.car_make_model || "—"}</td>
                           <td className="py-3 pr-4 capitalize">{job.service_package || "—"}</td>
                           <td className="py-3">
-                            <span className={`inline-flex rounded-md border px-2 py-1 text-xs ${badgeForStatus(status)}`}>{status}</span>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className={`inline-flex rounded-md border px-2 py-1 text-xs ${badgeForStatus(status)}`}>{status}</span>
+                              {job.id != null ? (
+                                <form action={updateJobStatusAction} className="inline-flex items-center gap-2">
+                                  <input type="hidden" name="id" value={String(job.id)} />
+                                  <select
+                                    name="status"
+                                    defaultValue={status}
+                                    className="rounded-md border border-white/15 bg-black/60 px-2 py-1 text-xs capitalize text-slate-200"
+                                  >
+                                    <option value="pending">Pending</option>
+                                    <option value="confirmed">Confirmed</option>
+                                    <option value="completed">Completed</option>
+                                  </select>
+                                  <button
+                                    type="submit"
+                                    className="rounded-md border border-amber-400/30 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-200"
+                                  >
+                                    Save
+                                  </button>
+                                </form>
+                              ) : null}
+                            </div>
                           </td>
                         </tr>
                       );
