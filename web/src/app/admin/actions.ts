@@ -2,11 +2,11 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { ADMIN_COOKIE_NAME, expectedAdminToken } from "@/lib/admin-auth";
+import { ADMIN_COOKIE_NAME, expectedAdminToken, getAdminPassword } from "@/lib/admin-auth";
 
 export async function adminLoginAction(formData: FormData) {
   const submitted = String(formData.get("password") || "");
-  const expectedPassword = process.env.ADMIN_PASSWORD;
+  const expectedPassword = getAdminPassword();
   if (!expectedPassword || submitted !== expectedPassword) {
     redirect("/admin?error=invalid");
   }
