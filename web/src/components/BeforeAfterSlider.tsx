@@ -91,10 +91,10 @@ export function BeforeAfterSlider({ beforeSrc, afterSrc, altBefore, altAfter, la
           <img src={beforeSrc} alt={altBefore} className="h-full w-full object-cover" draggable={false} />
         </motion.div>
 
-        <div className="pointer-events-none absolute left-3 top-3 z-20 rounded-lg border border-white/20 bg-white/10 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white shadow-lg backdrop-blur-md">
+        <div className="pointer-events-none absolute left-1 top-1 z-20 rounded-lg border border-white/20 bg-white/10 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white shadow-lg backdrop-blur-md">
           Before
         </div>
-        <div className="pointer-events-none absolute right-3 top-3 z-20 rounded-lg border border-white/20 bg-white/10 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white shadow-lg backdrop-blur-md">
+        <div className="pointer-events-none absolute right-1 top-1 z-20 rounded-lg border border-white/20 bg-white/10 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white shadow-lg backdrop-blur-md">
           After
         </div>
 

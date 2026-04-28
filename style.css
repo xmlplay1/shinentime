@@ -784,7 +784,7 @@ img {
 
 .ba-badge {
   position: absolute;
-  top: 0.65rem;
+  top: 4px;
   z-index: 4;
   font-size: 0.62rem;
   font-weight: 800;
@@ -800,11 +800,11 @@ img {
 }
 
 .ba-badge--before {
-  left: 0.65rem;
+  left: 4px;
 }
 
 .ba-badge--after {
-  right: 0.65rem;
+  right: 4px;
 }
 
 .ba-divider {
