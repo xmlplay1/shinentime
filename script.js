@@ -1157,6 +1157,15 @@ if (quoteForm) {
       return;
     }
 
+    const submitBtn = document.getElementById("submitBtn");
+    const editBtn = document.getElementById("editLastQuoteBtn");
+    const originalSubmitText = submitBtn?.textContent || "Send Quote Request";
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML =
+        '<span class="btn-spinner" aria-hidden="true"></span><span>Sending to Shine N Time System...</span>';
+    }
+    if (editBtn) editBtn.disabled = true;
     formMessage.textContent = "Sending your request…";
     formMessage.style.color = "#0f766e";
 
@@ -1179,11 +1188,28 @@ if (quoteForm) {
         }
       }
 
-      formMessage.textContent = "Thanks! Quote sent. We will reach out soon.";
-      formMessage.style.color = "#0f766e";
+      const quoteShell = quoteForm.closest(".quote-shell") || quoteForm.parentElement;
+      if (quoteShell) {
+        quoteShell.innerHTML = `
+          <div class="quote-success card reveal visible" role="status" aria-live="polite">
+            <p class="section-tagline">Request Received</p>
+            <h3>Request Received! Our system is reviewing your car&apos;s condition—we will text you shortly.</h3>
+            <p>Need immediate help? <a href="tel:+17344191846">Call 734-419-1846</a>.</p>
+          </div>
+        `;
+      } else {
+        formMessage.textContent =
+          "Request Received! Our system is reviewing your car's condition—we will text you shortly.";
+        formMessage.style.color = "#0f766e";
+      }
     } catch (error) {
       formMessage.textContent = "Could not send right now. Call 734-419-1846 or DM @shine_n_time.";
       formMessage.style.color = "#b91c1c";
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalSubmitText;
+      }
+      if (editBtn) editBtn.disabled = false;
     }
   });
 }
