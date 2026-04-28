@@ -344,9 +344,7 @@ function packageMenuLineFromForm(form) {
   const label =
     pkg === "silver" ? "Silver" : pkg === "gold" ? "Gold" : pkg === "platinum" ? "Platinum" : pkg;
   const sizeLabel = vehicle === "suv" ? "SUV / truck / van" : "Sedan / coupe";
-  const sedan = row.sedan;
-  const suv = row.suvTruck;
-  return `${label} menu: sedan $${sedan} · SUV/truck $${suv} (your pick: ${sizeLabel} → $${row[priceKey]} base)`;
+  return `Package: ${label} (${sizeLabel}) — $${row[priceKey]}`;
 }
 
 const TWO_CAR_BUNDLE_DISCOUNT = 0.1;

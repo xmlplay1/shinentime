@@ -1178,7 +1178,7 @@ h3 {
   flex: 1 1 200px;
   min-width: min(100%, 200px);
   max-width: 320px;
-  padding: 0.68rem 0.85rem;
+  padding: 1rem;
   border-radius: 0.75rem;
   border: 1px solid transparent;
   background:
@@ -1198,11 +1198,12 @@ h3 {
 
 .submit-estimate-range {
   margin: 0.15rem 0 0;
-  font-size: 1.42rem;
-  font-weight: 800;
+  font-size: 1.75rem;
+  font-weight: 900;
   color: #ffd766;
   text-shadow: 0 0 14px rgba(212, 175, 55, 0.35);
   line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .submit-estimate-range.estimate-value--pending {
@@ -1217,6 +1218,7 @@ h3 {
   font-size: 0.72rem;
   color: #c5d6ec;
   line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 760px) {
