@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { animate, motion, useMotionValue, useTransform } from "framer-motion";
 
@@ -9,9 +10,10 @@ type Props = {
   altBefore: string;
   altAfter: string;
   label: string;
+  priority?: boolean;
 };
 
-export function BeforeAfterSlider({ beforeSrc, afterSrc, altBefore, altAfter, label }: Props) {
+export function BeforeAfterSlider({ beforeSrc, afterSrc, altBefore, altAfter, label, priority = false }: Props) {
   const split = useMotionValue(50);
   const clipBefore = useTransform(split, (v) => `inset(0 ${100 - v}% 0 0)`);
   const dividerLeft = useTransform(split, (v) => `${v}%`);
@@ -85,10 +87,31 @@ export function BeforeAfterSlider({ beforeSrc, afterSrc, altBefore, altAfter, la
         onPointerUp={onPointerUpTrack}
         onPointerCancel={onPointerUpTrack}
       >
-        <img src={afterSrc} alt={altAfter} className="absolute inset-0 h-full w-full object-cover" draggable={false} />
+        <Image
+          src={afterSrc}
+          alt={altAfter}
+          fill
+          priority={priority}
+          loading={priority ? "eager" : "lazy"}
+          sizes="(max-width: 768px) 100vw, 33vw"
+          placeholder="blur"
+          blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE2IiBoZWlnaHQ9IjEyIiBmaWxsPSIjMTIxMjEyIi8+PC9zdmc+"
+          className="absolute inset-0 h-full w-full object-cover"
+          draggable={false}
+        />
 
         <motion.div className="absolute inset-0 overflow-hidden" style={{ clipPath: clipBefore }}>
-          <img src={beforeSrc} alt={altBefore} className="h-full w-full object-cover" draggable={false} />
+          <Image
+            src={beforeSrc}
+            alt={altBefore}
+            fill
+            loading={priority ? "eager" : "lazy"}
+            sizes="(max-width: 768px) 100vw, 33vw"
+            placeholder="blur"
+            blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE2IiBoZWlnaHQ9IjEyIiBmaWxsPSIjMTIxMjEyIi8+PC9zdmc+"
+            className="h-full w-full object-cover"
+            draggable={false}
+          />
         </motion.div>
 
         <div className="pointer-events-none absolute left-1 top-1 z-20 rounded-lg border border-white/20 bg-white/10 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white shadow-lg backdrop-blur-md">

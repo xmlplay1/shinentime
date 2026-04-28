@@ -39,22 +39,22 @@ const packages: readonly PackageCard[] = [
 
 const transformations = [
   {
-    before: "/B4CHEV1.webp",
-    after: "/AFTCHEV4.webp",
+    before: "/B4CHEV1_sm.webp",
+    after: "/AFTCHEV4_sm.webp",
     altBefore: "Before — driver area interior",
     altAfter: "After — driver area interior",
     label: "Chevy Front Cabin Reset"
   },
   {
-    before: "/B4CHEV2.webp",
-    after: "/AFTCHEV1.webp",
+    before: "/B4CHEV2_sm.webp",
+    after: "/AFTCHEV1_sm.webp",
     altBefore: "Before — rear cargo area",
     altAfter: "After — rear cargo area",
     label: "Salt & Sand Extraction"
   },
   {
-    before: "/B4PAS2.webp",
-    after: "/AFTPAS2.webp",
+    before: "/B4PAS2_sm.webp",
+    after: "/AFTPAS2_sm.webp",
     altBefore: "Before — dash and console",
     altAfter: "After — dash and console",
     label: "SUV Interior Refresh"

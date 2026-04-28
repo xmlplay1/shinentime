@@ -2380,6 +2380,11 @@ body.lightbox-open {
   margin-top: 0.75rem;
 }
 
+/* Final summary step is submit-only; hide nav row to avoid NEXT confusion. */
+.quote-form[data-quote-step="4"] .quote-step-actions--nav {
+  display: none;
+}
+
 .quote-step-btn {
   min-height: 40px;
   border-radius: 0.65rem;

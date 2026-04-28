@@ -14,12 +14,8 @@
   <link rel="preload" as="image" href="./EXPHOTO1.JPG" />
   <link rel="preload" as="image" href="./INPHOTO1.PNG" />
   <link rel="preload" as="image" href="./EXPHOTO2.JPG" />
-  <link rel="preload" as="image" href="./B4CHEV1.webp?v=13" />
-  <link rel="preload" as="image" href="./AFTCHEV4.webp?v=13" />
-  <link rel="preload" as="image" href="./B4CHEV2.webp?v=13" />
-  <link rel="preload" as="image" href="./AFTCHEV1.webp?v=13" />
-  <link rel="preload" as="image" href="./B4PAS2.webp?v=13" />
-  <link rel="preload" as="image" href="./AFTPAS2.webp?v=13" />
+  <link rel="preload" as="image" href="./B4CHEV1_sm.webp?v=17" />
+  <link rel="preload" as="image" href="./AFTCHEV4_sm.webp?v=17" />
   <link rel="stylesheet" href="./style.min.css" />
 </head>
 <body>
@@ -131,18 +127,22 @@
             <div class="ba-stage" role="img" aria-label="Before and after comparison">
               <img
                 class="ba-after"
-                src="./AFTCHEV4.webp?v=13"
+                src="./AFTCHEV4_sm.webp?v=17"
                 alt="After — driver side deep clean"
-                loading="lazy"
+                loading="eager"
+                fetchpriority="high"
                 decoding="async"
+                data-fullres-src="./AFTCHEV4.webp?v=17"
               />
               <div class="ba-before-wrap">
                 <img
                   class="ba-before"
-                  src="./B4CHEV1.webp?v=13"
+                  src="./B4CHEV1_sm.webp?v=17"
                   alt="Before — driver side"
-                  loading="lazy"
+                  loading="eager"
+                  fetchpriority="high"
                   decoding="async"
+                  data-fullres-src="./B4CHEV1.webp?v=17"
                 />
               </div>
               <span class="ba-badge ba-badge--before">Before</span>
@@ -158,18 +158,20 @@
             <div class="ba-stage" role="img" aria-label="Before and after comparison">
               <img
                 class="ba-after"
-                src="./AFTCHEV1.webp?v=13"
+                src="./AFTCHEV1_sm.webp?v=17"
                 alt="After — rear floor extraction"
                 loading="lazy"
                 decoding="async"
+                data-fullres-src="./AFTCHEV1.webp?v=17"
               />
               <div class="ba-before-wrap">
                 <img
                   class="ba-before"
-                  src="./B4CHEV2.webp?v=13"
+                  src="./B4CHEV2_sm.webp?v=17"
                   alt="Before — rear floor"
                   loading="lazy"
                   decoding="async"
+                  data-fullres-src="./B4CHEV2.webp?v=17"
                 />
               </div>
               <span class="ba-badge ba-badge--before">Before</span>
@@ -185,18 +187,20 @@
             <div class="ba-stage" role="img" aria-label="Before and after comparison">
               <img
                 class="ba-after"
-                src="./AFTPAS2.webp?v=13"
+                src="./AFTPAS2_sm.webp?v=17"
                 alt="After — full interior reset"
                 loading="lazy"
                 decoding="async"
+                data-fullres-src="./AFTPAS2.webp?v=17"
               />
               <div class="ba-before-wrap">
                 <img
                   class="ba-before"
-                  src="./B4PAS2.webp?v=13"
+                  src="./B4PAS2_sm.webp?v=17"
                   alt="Before — full interior"
                   loading="lazy"
                   decoding="async"
+                  data-fullres-src="./B4PAS2.webp?v=17"
                 />
               </div>
               <span class="ba-badge ba-badge--before">Before</span>
@@ -695,7 +699,6 @@
 
           <div class="quote-step-actions quote-step-actions--nav">
             <button type="button" class="btn btn-secondary" id="quotePrevStep" disabled>Back</button>
-            <button type="button" class="btn btn-primary btn-shine" id="quoteNextStep">Next</button>
           </div>
           <div class="btn-row btn-row--submit quote-step-panel" data-step="4">
             <div class="submit-estimate-preview" id="submitEstimatePreview" aria-live="polite">

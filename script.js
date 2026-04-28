@@ -524,6 +524,10 @@ function initBeforeAfterSliders() {
     const afterImg = fig.querySelector(".ba-after");
     const beforeImg = fig.querySelector(".ba-before");
     const fsBtn = fig.querySelector(".ba-fullscreen");
+    const afterFullSrc = String(afterImg.getAttribute("data-full-src") || "").trim();
+    const beforeFullSrc = String(beforeImg.getAttribute("data-full-src") || "").trim();
+    if (afterFullSrc) afterImg.src = afterFullSrc;
+    if (beforeFullSrc) beforeImg.src = beforeFullSrc;
     if (!stage || !wrap || !handle || !afterImg || !beforeImg) return;
 
     let pct = 50;
@@ -599,7 +603,7 @@ function initBeforeAfterSliders() {
         stopAuto();
         currentGalleryIndex = figIndex;
         currentZoom = 1;
-        lightboxImage.src = afterImg.currentSrc || afterImg.src;
+        lightboxImage.src = (afterImg.getAttribute("data-full-src") || "").trim() || afterImg.currentSrc || afterImg.src;
         lightboxImage.alt = afterImg.alt || "After photo";
         if (lightboxCaption) {
           lightboxCaption.textContent = `${fig.querySelector(".ba-label")?.textContent || "Before & After"} — after view (${figIndex + 1}/3)`;
