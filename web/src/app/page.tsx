@@ -53,8 +53,8 @@ const transformations = [
     label: "Salt & Sand Extraction"
   },
   {
-    before: "/B4PAS2_U.webp",
-    after: "/AFTPAS2_U.webp",
+    before: "/B4PAS2.webp",
+    after: "/AFTPAS2.webp",
     altBefore: "Before — dash and console",
     altAfter: "After — dash and console",
     label: "SUV Interior Refresh"
