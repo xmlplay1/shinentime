@@ -58,7 +58,7 @@ function badgeForStatus(status: string): string {
 }
 
 export default async function AdminPage() {
-  const adminPassword = process.env.ADMIN_PASSWORD;
+  const adminPassword = process.env.ADMIN_PASSWORD || "shinentime2009";
   if (!adminPassword) {
     return (
       <main className="min-h-screen bg-black px-5 py-16 text-white md:px-10">
