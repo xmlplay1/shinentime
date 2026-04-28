@@ -119,9 +119,7 @@ export function BeforeAfterSlider({ beforeSrc, afterSrc, altBefore, altAfter, la
           <span className="mt-1.5 block h-10 w-1 rounded-full bg-gradient-to-b from-blue-400 to-amber-400" aria-hidden />
         </motion.div>
       </div>
-      <figcaption className="mt-3 text-center text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-        {label}
-      </figcaption>
+      <figcaption className="sr-only">{label}</figcaption>
     </figure>
   );
 }
