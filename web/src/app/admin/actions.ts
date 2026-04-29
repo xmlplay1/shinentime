@@ -59,3 +59,35 @@ export async function updateJobStatusAction(formData: FormData) {
   }
   redirect("/admin");
 }
+
+export async function createTestJobAction() {
+  const expectedPassword = getAdminPassword();
+  if (!expectedPassword) {
+    redirect("/admin");
+  }
+
+  const jar = await cookies();
+  const session = jar.get(ADMIN_COOKIE_NAME)?.value;
+  if (!session || session !== expectedAdminToken()) {
+    redirect("/admin?error=invalid");
+  }
+
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const payload = {
+    name: "Test Customer",
+    phone: "7340000000",
+    service_package: "gold",
+    status: "Pending",
+    price: 99
+  };
+
+  const { error } = await supabase.from("jobs").insert(payload);
+  if (error) {
+    console.error("[admin] create test job error", error);
+    redirect("/admin?error=create");
+  }
+  redirect("/admin");
+}

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
-import { DollarSign, FileClock, CheckCircle2 } from "lucide-react";
+import { DollarSign, FileClock, CheckCircle2, Clock3, CircleCheckBig } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { adminLoginAction, adminLogoutAction, updateJobStatusAction } from "@/app/admin/actions";
+import { adminLoginAction, adminLogoutAction, createTestJobAction, updateJobStatusAction } from "@/app/admin/actions";
 import { DashboardCharts } from "@/app/admin/widgets";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 
@@ -54,9 +54,9 @@ async function fetchJobs(): Promise<JobRow[]> {
 
 function badgeForStatus(status: string): string {
   const s = status.toLowerCase();
-  if (s === "completed") return "border-emerald-400/30 bg-emerald-500/10 text-emerald-200";
-  if (s === "pending" || s === "quote" || s === "new") return "border-amber-400/30 bg-amber-500/10 text-amber-200";
-  return "border-slate-500/30 bg-slate-500/10 text-slate-300";
+  if (s === "completed") return "border-emerald-400/45 bg-emerald-500/12 text-emerald-200 shadow-[0_0_18px_rgba(16,185,129,0.35)]";
+  if (s === "confirmed") return "border-blue-400/45 bg-blue-500/12 text-blue-200 shadow-[0_0_18px_rgba(59,130,246,0.3)]";
+  return "border-amber-400/45 bg-amber-500/12 text-amber-200 shadow-[0_0_18px_rgba(245,158,11,0.28)]";
 }
 
 export default async function AdminPage() {
@@ -113,12 +113,12 @@ export default async function AdminPage() {
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 md:grid-cols-[240px_1fr] md:px-6">
-        <aside className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 md:min-h-[84vh]">
+      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 md:grid-cols-[220px_1fr] md:px-6">
+        <aside className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-md md:min-h-[84vh] md:border-r md:border-white/10">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">Shine N Time</p>
           <h2 className="mt-2 text-lg font-semibold">Admin Dashboard</h2>
           <nav className="mt-6 grid gap-2 text-sm">
-            <a className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2" href="#overview">
+            <a className="rounded-lg border border-amber-400/50 bg-amber-500/15 px-3 py-2 font-semibold text-amber-200 shadow-[0_0_14px_rgba(245,158,11,0.22)]" href="#overview">
               Overview
             </a>
             <a className="rounded-lg border border-white/10 px-3 py-2 text-slate-300 hover:bg-white/[0.04]" href="#active-jobs">
@@ -128,10 +128,10 @@ export default async function AdminPage() {
               Revenue
             </a>
           </nav>
-          <form action={adminLogoutAction} className="mt-8">
+          <form action={adminLogoutAction} className="mt-8 md:mt-auto md:pt-6">
             <button
               type="submit"
-              className="w-full rounded-lg border border-amber-400/35 bg-amber-500/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-amber-200"
+              className="w-full rounded-lg border border-white/15 bg-transparent px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-300 hover:bg-white/[0.05]"
             >
               Lock
             </button>
@@ -140,21 +140,21 @@ export default async function AdminPage() {
 
         <section className="space-y-6">
           <div id="overview" className="grid gap-4 md:grid-cols-3">
-            <article className="rounded-2xl border border-amber-400/25 bg-amber-500/10 p-4">
+            <article className="rounded-2xl border border-white/10 bg-gradient-to-br from-amber-500/18 to-white/[0.03] p-4 backdrop-blur-md">
               <p className="text-xs uppercase tracking-[0.2em] text-amber-200">Total Revenue</p>
               <p className="mt-2 text-3xl font-bold">${totalRevenue.toLocaleString()}</p>
               <div className="mt-3 inline-flex items-center gap-2 text-xs text-amber-100">
                 <DollarSign className="size-4" /> completed jobs only
               </div>
             </article>
-            <article className="rounded-2xl border border-emerald-400/25 bg-emerald-500/10 p-4">
+            <article className="rounded-2xl border border-white/10 bg-gradient-to-br from-emerald-500/18 to-white/[0.03] p-4 backdrop-blur-md">
               <p className="text-xs uppercase tracking-[0.2em] text-emerald-200">Jobs Completed</p>
               <p className="mt-2 text-3xl font-bold">{completed.length}</p>
               <div className="mt-3 inline-flex items-center gap-2 text-xs text-emerald-100">
                 <CheckCircle2 className="size-4" /> status: completed
               </div>
             </article>
-            <article className="rounded-2xl border border-blue-400/25 bg-blue-500/10 p-4">
+            <article className="rounded-2xl border border-white/10 bg-gradient-to-br from-blue-500/18 to-white/[0.03] p-4 backdrop-blur-md">
               <p className="text-xs uppercase tracking-[0.2em] text-blue-200">Pending Quotes</p>
               <p className="mt-2 text-3xl font-bold">{pending.length}</p>
               <div className="mt-3 inline-flex items-center gap-2 text-xs text-blue-100">
@@ -164,7 +164,7 @@ export default async function AdminPage() {
           </div>
 
           <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-            <section id="active-jobs" className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+            <section id="active-jobs" className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-md">
               <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-300">Recent Activity</h3>
               <div className="mt-4 overflow-x-auto">
                 <table className="min-w-full text-left text-sm">
@@ -180,7 +180,7 @@ export default async function AdminPage() {
                     {recent.map((job, i) => {
                       const status = String(job.status || "pending");
                       return (
-                        <tr key={job.id || `${job.name || "job"}-${i}`}>
+                        <tr key={job.id || `${job.name || "job"}-${i}`} className="transition-colors hover:bg-white/5">
                           <td className="py-3 pr-4">{job.name || "—"}</td>
                           <td className="py-3 pr-4 text-slate-300">{job.car_make_model || "—"}</td>
                           <td className="py-3 pr-4 capitalize">{job.service_package || "—"}</td>
@@ -195,9 +195,9 @@ export default async function AdminPage() {
                                     defaultValue={status}
                                     className="rounded-md border border-white/15 bg-black/60 px-2 py-1 text-xs capitalize text-slate-200"
                                   >
-                                    <option value="pending">Pending</option>
-                                    <option value="confirmed">Confirmed</option>
-                                    <option value="completed">Completed</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Confirmed">Confirmed</option>
+                                    <option value="Completed">Completed</option>
                                   </select>
                                   <button
                                     type="submit"
@@ -214,8 +214,19 @@ export default async function AdminPage() {
                     })}
                     {!recent.length ? (
                       <tr>
-                        <td className="py-4 text-slate-400" colSpan={4}>
-                          No jobs found yet.
+                        <td className="py-6 text-center text-slate-400" colSpan={4}>
+                          <div className="mx-auto flex max-w-sm flex-col items-center gap-3">
+                            <Clock3 className="size-8 text-slate-500" />
+                            <p>No jobs found yet.</p>
+                            <form action={createTestJobAction}>
+                              <button
+                                type="submit"
+                                className="rounded-lg border border-amber-400/40 bg-amber-500/12 px-3 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-amber-200 hover:bg-amber-500/20"
+                              >
+                                Create Test Job
+                              </button>
+                            </form>
+                          </div>
                         </td>
                       </tr>
                     ) : null}
@@ -224,9 +235,15 @@ export default async function AdminPage() {
               </div>
             </section>
 
-            <section id="revenue" className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+            <section id="revenue" className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-md">
               <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-300">Sedan vs SUV volume</h3>
               <DashboardCharts sedanCount={sedanCount} suvCount={suvCount} />
+              {!sedanCount && !suvCount ? (
+                <div className="mt-4 rounded-xl border border-white/10 bg-black/25 p-6 text-center text-sm text-slate-400">
+                  <CircleCheckBig className="mx-auto mb-2 size-6 text-slate-500" />
+                  No vehicle data yet. Add jobs to populate this chart.
+                </div>
+              ) : null}
             </section>
           </div>
         </section>
