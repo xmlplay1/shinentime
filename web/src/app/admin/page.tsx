@@ -1,13 +1,14 @@
 import { redirect } from "next/navigation";
 import { DollarSign, FileClock, CheckCircle2, Clock3, CircleCheckBig } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { adminLoginAction, adminLogoutAction, createTestJobAction, updateJobStatusAction } from "@/app/admin/actions";
+import { adminLoginAction, adminLogoutAction, createTestJobAction, sendReviewEmailAction, updateJobStatusAction } from "@/app/admin/actions";
 import { DashboardCharts } from "@/app/admin/widgets";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 
 type JobRow = {
   id?: string;
   name?: string | null;
+  email?: string | null;
   car_make_model?: string | null;
   service_package?: string | null;
   status?: string | null;
@@ -46,6 +47,9 @@ function isCompletedStatus(status: string | null | undefined): boolean {
 async function fetchJobs(): Promise<JobRow[]> {
   const supabase = createAdminClient();
   if (!supabase) return [];
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.error("[admin] missing SUPABASE_SERVICE_ROLE_KEY; admin view may be incomplete under RLS");
+  }
   const { data, error } = await supabase
     .from("jobs")
     .select("*")
@@ -107,10 +111,7 @@ export default async function AdminPage() {
 
   const jobs = await fetchJobs();
   const completed = jobs.filter((j) => isCompletedStatus(j.status));
-  const pending = jobs.filter((j) => {
-    const s = String(j.status || "pending").toLowerCase();
-    return s === "pending" || s === "new" || s === "quote";
-  });
+  const pending = jobs.filter((j) => !isCompletedStatus(j.status));
   const totalRevenue = completed.reduce((sum, j) => sum + inferPrice(j), 0);
   const sedanCount = jobs.filter((j) => inferVehicleType(j) === "sedan").length;
   const suvCount = jobs.filter((j) => inferVehicleType(j) === "suv").length;
@@ -178,7 +179,8 @@ export default async function AdminPage() {
                       <th className="rounded-l-lg bg-white/[0.04] px-4 py-3 pr-4">Customer</th>
                       <th className="bg-white/[0.04] px-4 py-3 pr-4">Vehicle</th>
                       <th className="bg-white/[0.04] px-4 py-3 pr-4">Package</th>
-                      <th className="rounded-r-lg bg-white/[0.04] px-4 py-3">Status</th>
+                      <th className="bg-white/[0.04] px-4 py-3">Status</th>
+                      <th className="rounded-r-lg bg-white/[0.04] px-4 py-3">Follow Up</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -198,7 +200,7 @@ export default async function AdminPage() {
                           <td className="border-y border-white/5 bg-white/[0.02] px-4 py-3 pr-3 capitalize transition group-hover:border-amber-400/15 group-hover:bg-white/[0.04]">
                             {job.service_package || "—"}
                           </td>
-                          <td className="rounded-r-xl border border-white/5 border-l-0 bg-white/[0.02] px-4 py-3 transition group-hover:border-amber-400/15 group-hover:bg-white/[0.04]">
+                          <td className="border-y border-white/5 bg-white/[0.02] px-4 py-3 transition group-hover:border-amber-400/15 group-hover:bg-white/[0.04]">
                             <div className="flex flex-wrap items-center gap-2">
                               <span className={`inline-flex rounded-md border px-2 py-1 text-xs ${badgeForStatus(status)}`}>{status}</span>
                               {job.id != null ? (
@@ -223,12 +225,29 @@ export default async function AdminPage() {
                               ) : null}
                             </div>
                           </td>
+                          <td className="rounded-r-xl border border-white/5 border-l-0 bg-white/[0.02] px-4 py-3 transition group-hover:border-amber-400/15 group-hover:bg-white/[0.04]">
+                            {isCompletedStatus(status) && job.id != null && job.email ? (
+                              <form action={sendReviewEmailAction}>
+                                <input type="hidden" name="id" value={String(job.id)} />
+                                <input type="hidden" name="name" value={String(job.name || "")} />
+                                <input type="hidden" name="email" value={String(job.email || "")} />
+                                <button
+                                  type="submit"
+                                  className="rounded-md border border-blue-400/35 bg-blue-500/12 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-blue-200 hover:bg-blue-500/20"
+                                >
+                                  Send Review Email
+                                </button>
+                              </form>
+                            ) : (
+                              <span className="text-[11px] text-slate-500">—</span>
+                            )}
+                          </td>
                         </tr>
                       );
                     })}
                     {!recent.length ? (
                       <tr>
-                        <td className="py-6 text-center text-slate-400" colSpan={4}>
+                        <td className="py-6 text-center text-slate-400" colSpan={5}>
                           <div className="mx-auto flex max-w-sm flex-col items-center gap-3">
                             <Clock3 className="size-8 text-slate-500" />
                             <p>No jobs found yet.</p>
