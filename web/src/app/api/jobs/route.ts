@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizePhone } from "@/lib/phone";
 import { priceFor, type PackageId, type VehicleCategory } from "@/lib/package-pricing";
 import { adminNewQuoteText, quoteReceiptHtml, quoteReceiptText } from "@/lib/email-templates";
-import { createResendClient, getResendFrom } from "@/lib/resend";
+import { sendMail } from "@/lib/mailer";
 
 export async function POST(req: Request) {
   const supabase = createAdminClient();
@@ -97,16 +97,15 @@ export async function POST(req: Request) {
     );
   }
 
-  // Send confirmation + admin alert when RESEND_API_KEY is configured.
-  const resend = createResendClient();
-  if (resend) {
+  const gmailUser = process.env.GMAIL_USER;
+  const gmailPass = process.env.GMAIL_APP_PASSWORD;
+  if (gmailUser && gmailPass) {
     const packageLabel = String(service_package).charAt(0).toUpperCase() + String(service_package).slice(1);
     const vehicleLabel = vehicle_category === "suv" ? "SUV / truck / van" : "Sedan / coupe";
     const prepSummary = "Prep requirements: driveway access, ~50ft hose reach, and keys ready.";
 
     await Promise.allSettled([
-      resend.emails.send({
-        from: getResendFrom(),
+      sendMail({
         to: email,
         subject: "Your Shine N Time Detail is Requested!",
         html: quoteReceiptHtml({
@@ -132,8 +131,7 @@ export async function POST(req: Request) {
           estimatedPrice: price
         })
       }),
-      resend.emails.send({
-        from: getResendFrom(),
+      sendMail({
         to: process.env.ADMIN_NOTIFICATION_EMAIL || "tawfiqalshara424@gmail.com",
         subject: `New quote: ${name} · ${packageLabel} (${vehicleLabel})`,
         html: `<pre style="font-family:Inter,Arial,sans-serif;white-space:pre-wrap">${adminNewQuoteText({

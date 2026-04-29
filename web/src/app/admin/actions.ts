@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { ADMIN_COOKIE_NAME, expectedAdminToken, getAdminPassword } from "@/lib/admin-auth";
 import { priceFor } from "@/lib/package-pricing";
 import { reviewRequestHtml, reviewRequestText } from "@/lib/email-templates";
-import { createResendClient, getResendFrom } from "@/lib/resend";
+import { sendMail } from "@/lib/mailer";
 
 export async function adminLoginAction(formData: FormData) {
   const submitted = String(formData.get("password") || "");
@@ -143,11 +143,11 @@ export async function sendReviewEmailAction(formData: FormData) {
     "https://g.page/r/CWfVxB8UuvgHEBM/review";
   const customerName = providedName || String(job.name || "there");
 
-  const resend = createResendClient();
-  if (!resend) redirect("/admin?error=resend-not-configured");
+  const gmailUser = process.env.GMAIL_USER;
+  const gmailPass = process.env.GMAIL_APP_PASSWORD;
+  if (!gmailUser || !gmailPass) redirect("/admin?error=mailer-not-configured");
   try {
-    await resend.emails.send({
-      from: getResendFrom(),
+    await sendMail({
       to: email,
       subject: "Thank you from Shine N Time - would you leave us a quick review?",
       html: reviewRequestHtml(customerName, reviewLink),
