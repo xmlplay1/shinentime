@@ -35,10 +35,25 @@ const TEMPLATES: ScriptTemplate[] = [
 type Props = {
   customerName?: string | null;
   packageName?: string | null;
+  jobStatus?: string | null;
   reviewLink: string;
 };
 
-export function ScriptSidebar({ customerName, packageName, reviewLink }: Props) {
+function priorityScore(status: string, id: string): number {
+  const s = String(status || "").toLowerCase();
+  if (s === "pending") {
+    if (id === "quote-confirmation") return 100;
+    if (id === "hose-reminder") return 80;
+  }
+  if (s === "confirmed") {
+    if (id === "arrival-notice") return 100;
+    if (id === "hose-reminder") return 90;
+  }
+  if (s === "completed" && id === "review-request") return 100;
+  return 10;
+}
+
+export function ScriptSidebar({ customerName, packageName, jobStatus, reviewLink }: Props) {
   const [open, setOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -47,12 +62,13 @@ export function ScriptSidebar({ customerName, packageName, reviewLink }: Props) 
     const pkg = (packageName || "detail package").trim();
     return TEMPLATES.map((item) => ({
       ...item,
+      score: priorityScore(String(jobStatus || ""), item.id),
       text: item.body
         .replaceAll("[Customer Name]", name)
         .replaceAll("[Package]", pkg)
         .replaceAll("[Review Link]", reviewLink)
-    }));
-  }, [customerName, packageName, reviewLink]);
+    })).sort((a, b) => b.score - a.score);
+  }, [customerName, packageName, reviewLink, jobStatus]);
 
   async function copyScript(id: string, text: string) {
     try {
@@ -75,38 +91,41 @@ export function ScriptSidebar({ customerName, packageName, reviewLink }: Props) 
         Scripts
       </button>
 
-      <aside
-        className={`fixed right-0 top-0 z-50 h-full w-[22rem] max-w-[90vw] border-l border-white/10 bg-black/90 p-4 shadow-2xl backdrop-blur-xl transition-transform ${
-          open ? "translate-x-0" : "translate-x-full"
-        }`}
-      >
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-200">Outreach Scripts</h3>
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="rounded-md border border-white/15 px-2 py-1 text-xs text-slate-300"
-          >
-            Close
-          </button>
-        </div>
-        <div className="grid gap-3">
-          {resolved.map((item) => (
-            <article key={item.id} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-200">{item.title}</p>
-              <p className="mt-2 whitespace-pre-wrap text-sm text-slate-200">{item.text}</p>
+      {open ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/60 p-3 backdrop-blur-sm">
+          <aside className="h-[90vh] w-[22rem] max-w-[95vw] overflow-y-auto rounded-xl border border-white/10 bg-black/90 p-4 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-200">Outreach Scripts</h3>
+                <p className="mt-1 text-[11px] text-slate-400">Prioritized for {jobStatus || "lead"} status</p>
+              </div>
               <button
                 type="button"
-                onClick={() => copyScript(item.id, item.text)}
-                className="mt-3 inline-flex items-center gap-2 rounded-md border border-emerald-400/35 bg-emerald-500/15 px-2.5 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-emerald-200"
+                onClick={() => setOpen(false)}
+                className="rounded-md border border-white/15 px-2 py-1 text-xs text-slate-300"
               >
-                <Copy className="size-3.5" />
-                {copiedId === item.id ? "Copied" : "Copy"}
+                Close
               </button>
-            </article>
-          ))}
+            </div>
+            <div className="grid gap-3">
+              {resolved.map((item) => (
+                <article key={item.id} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-200">{item.title}</p>
+                  <p className="mt-2 whitespace-pre-wrap text-sm text-slate-200">{item.text}</p>
+                  <button
+                    type="button"
+                    onClick={() => copyScript(item.id, item.text)}
+                    className="mt-3 inline-flex items-center gap-2 rounded-md border border-emerald-400/35 bg-emerald-500/15 px-2.5 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-emerald-200"
+                  >
+                    <Copy className="size-3.5" />
+                    {copiedId === item.id ? "Copied" : "Copy"}
+                  </button>
+                </article>
+              ))}
+            </div>
+          </aside>
         </div>
-      </aside>
+      ) : null}
     </>
   );
 }

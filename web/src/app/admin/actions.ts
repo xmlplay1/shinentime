@@ -203,3 +203,28 @@ export async function claimJobAction(formData: FormData) {
   }
   redirect("/admin");
 }
+
+export async function autoLogContactAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const jobId = Number.parseInt(String(formData.get("job_id") || ""), 10);
+  const channelRaw = String(formData.get("channel") || "").toLowerCase();
+  const customer = String(formData.get("customer") || "customer");
+  if (!Number.isFinite(jobId) || !(channelRaw === "sms" || channelRaw === "call")) {
+    redirect("/admin");
+  }
+
+  const note = channelRaw === "sms" ? `SMS sent to ${customer}` : `Call initiated to ${customer}`;
+  const { error } = await supabase.from("job_communication_logs").insert({
+    job_id: jobId,
+    channel: channelRaw,
+    note,
+    created_by: "auto"
+  });
+  if (error) {
+    console.error("[admin] auto log error", error);
+  }
+  redirect("/admin");
+}

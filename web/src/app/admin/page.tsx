@@ -3,6 +3,7 @@ import {
   addCommunicationLogAction,
   adminLoginAction,
   adminLogoutAction,
+  autoLogContactAction,
   claimJobAction,
   createTeamMemberAction,
   createTestJobAction,
@@ -15,7 +16,7 @@ import { DashboardCharts } from "@/app/admin/widgets";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { formatPhoneUs, inferMonthlyProfit, monthKey, normalizeEmail } from "@/lib/admin-format";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { CircleCheckBig, Clock3, DollarSign, FileClock, TrendingUp } from "lucide-react";
+import { Car, CircleCheckBig, Clock3, DollarSign, FileClock, Truck, TrendingUp } from "lucide-react";
 
 type Role = "ADMIN" | "SERVICE_REP";
 type JobStatus = "Pending" | "Confirmed" | "Completed";
@@ -167,6 +168,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   }
 
   const params = await searchParams;
+  const activeView = typeof params.view === "string" ? params.view : "calendar";
   const actorEmail = normalizeEmail(typeof params.as === "string" ? params.as : "") || "shine.n.time.detailing@gmail.com";
   const data = await loadData(actorEmail);
   if (!data) {
@@ -193,6 +195,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   }
 
   const sortedReps = reps.filter((r) => r.role === "SERVICE_REP" || isAdmin);
+  const loadingPipeline = typeof params.loading === "string" && params.loading === "1";
 
   return (
     <main className="min-h-screen bg-black text-white">
@@ -202,14 +205,23 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           <h2 className="mt-2 text-lg font-semibold">Ultimate Command Center</h2>
           <p className="mt-2 text-xs text-slate-400">Role: {profile.role}</p>
           <nav className="mt-6 grid gap-2 text-sm">
-            <a className="rounded-lg border border-amber-400/50 bg-amber-500/15 px-3 py-2 font-semibold text-amber-200" href="#calendar">
+            <a
+              className={`rounded-lg border px-3 py-2 font-semibold ${activeView === "calendar" ? "border-amber-400/50 bg-amber-500/15 text-amber-200" : "border-white/10 text-slate-300 hover:bg-white/[0.04]"}`}
+              href="/admin?view=calendar"
+            >
               Calendar
             </a>
-            <a className="rounded-lg border border-white/10 px-3 py-2 text-slate-300 hover:bg-white/[0.04]" href="#pipeline">
+            <a
+              className={`rounded-lg border px-3 py-2 ${activeView === "pipeline" ? "border-blue-400/45 bg-blue-500/12 font-semibold text-blue-200" : "border-white/10 text-slate-300 hover:bg-white/[0.04]"}`}
+              href="/admin?view=pipeline"
+            >
               Lead Pipeline
             </a>
             {isAdmin ? (
-              <a className="rounded-lg border border-white/10 px-3 py-2 text-slate-300 hover:bg-white/[0.04]" href="#team">
+              <a
+                className={`rounded-lg border px-3 py-2 ${activeView === "team" ? "border-emerald-400/45 bg-emerald-500/12 font-semibold text-emerald-200" : "border-white/10 text-slate-300 hover:bg-white/[0.04]"}`}
+                href="/admin?view=team"
+              >
                 Team Settings
               </a>
             ) : null}
@@ -257,6 +269,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             <ScriptSidebar
               customerName={jobs[0]?.name || "Customer"}
               packageName={jobs[0]?.service_package || "Detail Package"}
+              jobStatus={jobs[0]?.status || "pending"}
               reviewLink={process.env.REVIEW_REQUEST_URL || "https://www.google.com/search?q=Shine+N+Time+detailing+reviews"}
             />
           </div>
@@ -271,17 +284,30 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
               </form>
             </div>
             <div className="mt-4 grid gap-3">
-              {jobs.map((job) => {
+              {loadingPipeline
+                ? Array.from({ length: 3 }).map((_, idx) => (
+                    <article key={`skeleton-${idx}`} className="animate-pulse rounded-xl border border-white/10 bg-black/25 p-4">
+                      <div className="h-4 w-1/3 rounded bg-white/10" />
+                      <div className="mt-2 h-3 w-1/2 rounded bg-white/10" />
+                      <div className="mt-2 h-3 w-2/3 rounded bg-white/10" />
+                      <div className="mt-3 h-8 w-full rounded bg-white/10" />
+                    </article>
+                  ))
+                : jobs.map((job) => {
                 const status = toStatus(job.status);
                 const mapQuery = encodeURIComponent([job.address, job.city, job.state, job.zip].filter(Boolean).join(", "));
                 const jobLogs = logsByJob.get(job.id) || [];
+                const isSuv = String(job.vehicle_type || "").toLowerCase() === "suv";
                 return (
                   <article key={job.id} className="rounded-xl border border-white/10 bg-black/25 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
                         <p className="text-sm font-semibold">{job.name || "Unknown Customer"}</p>
                         <p className="text-xs text-slate-400">{formatPhoneUs(job.phone)} · {normalizeEmail(job.email) || "no email"}</p>
-                        <p className="text-xs text-slate-400">{job.car_make_model || "Vehicle TBD"} · {(job.service_package || "package").toUpperCase()}</p>
+                        <p className="inline-flex items-center gap-1 text-xs text-slate-400">
+                          {isSuv ? <Truck className="size-3.5 text-blue-300" /> : <Car className="size-3.5 text-amber-300" />}
+                          {job.car_make_model || "Vehicle TBD"} · {(job.service_package || "package").toUpperCase()}
+                        </p>
                       </div>
                       <span className={`inline-flex rounded-md border px-2 py-1 text-xs ${statusClass(status)}`}>{status}</span>
                     </div>
@@ -300,12 +326,18 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                       >
                         Navigate
                       </a>
-                      <a href={`tel:${job.phone || ""}`} className="rounded-lg border border-white/15 px-3 py-1.5 text-xs">
-                        Call
-                      </a>
-                      <a href={`sms:${job.phone || ""}`} className="rounded-lg border border-white/15 px-3 py-1.5 text-xs">
-                        SMS
-                      </a>
+                      <form action={autoLogContactAction} className="inline-flex">
+                        <input type="hidden" name="job_id" value={job.id} />
+                        <input type="hidden" name="channel" value="call" />
+                        <input type="hidden" name="phone" value={job.phone || ""} />
+                        <button className="rounded-lg border border-white/15 px-3 py-1.5 text-xs">Call</button>
+                      </form>
+                      <form action={autoLogContactAction} className="inline-flex">
+                        <input type="hidden" name="job_id" value={job.id} />
+                        <input type="hidden" name="channel" value="sms" />
+                        <input type="hidden" name="phone" value={job.phone || ""} />
+                        <button className="rounded-lg border border-white/15 px-3 py-1.5 text-xs">SMS</button>
+                      </form>
 
                       <form action={uploadJobImageAction} className="flex items-center gap-1 rounded-lg border border-white/15 px-2 py-1">
                         <input type="hidden" name="job_id" value={job.id} />
@@ -359,9 +391,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                       </form>
                     </div>
 
-                    <div className="mt-3 rounded-md border border-white/10 bg-black/35 p-2 text-[11px] text-slate-400">
+                    <div className="mt-3 max-h-24 overflow-y-auto rounded-md border border-white/10 bg-black/35 p-2 text-[11px] text-slate-400">
                       {jobLogs.length ? (
-                        jobLogs.slice(0, 3).map((log) => (
+                        jobLogs.map((log) => (
                           <p key={log.id}>
                             <span className="uppercase text-slate-500">{log.channel}</span>: {log.note}
                           </p>
