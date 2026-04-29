@@ -4,8 +4,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ADMIN_COOKIE_NAME, expectedAdminToken, getAdminPassword } from "@/lib/admin-auth";
 import { priceFor } from "@/lib/package-pricing";
-import { createResendClient, getResendFrom } from "@/lib/resend";
 import { reviewRequestHtml, reviewRequestText } from "@/lib/email-templates";
+import { sendMail } from "@/lib/mailer";
 
 export async function adminLoginAction(formData: FormData) {
   const submitted = String(formData.get("password") || "");
@@ -51,8 +51,8 @@ export async function updateJobStatusAction(formData: FormData) {
   const allowed = new Set(["Pending", "Confirmed", "Completed"]);
   if (!allowed.has(nextStatus)) redirect("/admin");
 
-  const { createAdminClient } = await import("@/lib/supabase/admin");
-  const supabase = createAdminClient();
+  const { createServiceRoleClient } = await import("@/lib/supabase/admin");
+  const supabase = createServiceRoleClient();
   if (!supabase) redirect("/admin?error=db");
 
   const { error } = await supabase.from("jobs").update({ status: nextStatus }).eq("id", id);
@@ -75,8 +75,8 @@ export async function createTestJobAction() {
     redirect("/admin?error=invalid");
   }
 
-  const { createAdminClient } = await import("@/lib/supabase/admin");
-  const supabase = createAdminClient();
+  const { createServiceRoleClient } = await import("@/lib/supabase/admin");
+  const supabase = createServiceRoleClient();
   if (!supabase) redirect("/admin?error=db");
 
   const testPrice = priceFor("gold", "sedan");
@@ -118,8 +118,8 @@ export async function sendReviewEmailAction(formData: FormData) {
   const providedName = String(formData.get("name") || "").trim();
   const providedEmail = String(formData.get("email") || "").trim().toLowerCase();
 
-  const { createAdminClient } = await import("@/lib/supabase/admin");
-  const supabase = createAdminClient();
+  const { createServiceRoleClient } = await import("@/lib/supabase/admin");
+  const supabase = createServiceRoleClient();
   if (!supabase) redirect("/admin?error=db");
 
   const { data: job, error } = await supabase
@@ -136,17 +136,15 @@ export async function sendReviewEmailAction(formData: FormData) {
   if (!email) redirect("/admin?error=review-no-email");
   if (status !== "completed") redirect("/admin?error=review-not-completed");
 
-  const resend = createResendClient();
-  if (!resend) redirect("/admin?error=resend-not-configured");
   const reviewLink =
     process.env.SNT_REVIEW_GOOGLE_URL ||
     process.env.SNT_REVIEW_FACEBOOK_URL ||
+    process.env.REVIEW_REQUEST_URL ||
     "https://g.page/r/CWfVxB8UuvgHEBM/review";
   const customerName = providedName || String(job.name || "there");
 
   try {
-    await resend.emails.send({
-      from: getResendFrom(),
+    await sendMail({
       to: email,
       subject: "Thank you from Shine N Time - would you leave us a quick review?",
       html: reviewRequestHtml(customerName, reviewLink),

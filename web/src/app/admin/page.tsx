@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { DollarSign, FileClock, CheckCircle2, Clock3, CircleCheckBig } from "lucide-react";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { adminLoginAction, adminLogoutAction, createTestJobAction, sendReviewEmailAction, updateJobStatusAction } from "@/app/admin/actions";
 import { DashboardCharts } from "@/app/admin/widgets";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
@@ -45,11 +45,8 @@ function isCompletedStatus(status: string | null | undefined): boolean {
 }
 
 async function fetchJobs(): Promise<JobRow[]> {
-  const supabase = createAdminClient();
+  const supabase = createServiceRoleClient();
   if (!supabase) return [];
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    console.error("[admin] missing SUPABASE_SERVICE_ROLE_KEY; admin view may be incomplete under RLS");
-  }
   const { data, error } = await supabase
     .from("jobs")
     .select("*")
