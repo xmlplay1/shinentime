@@ -3,9 +3,23 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ADMIN_COOKIE_NAME, expectedAdminToken, getAdminPassword } from "@/lib/admin-auth";
-import { priceFor } from "@/lib/package-pricing";
-import { reviewRequestHtml, reviewRequestText } from "@/lib/email-templates";
-import { sendMail } from "@/lib/mailer";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { normalizePhone } from "@/lib/phone";
+
+function ensureAdminSession() {
+  const expectedPassword = getAdminPassword();
+  if (!expectedPassword) redirect("/admin");
+  return expectedPassword;
+}
+
+async function requireAdminCookie() {
+  ensureAdminSession();
+  const jar = await cookies();
+  const session = jar.get(ADMIN_COOKIE_NAME)?.value;
+  if (!session || session !== expectedAdminToken()) {
+    redirect("/admin?error=invalid");
+  }
+}
 
 export async function adminLoginAction(formData: FormData) {
   const submitted = String(formData.get("password") || "");
@@ -32,16 +46,7 @@ export async function adminLogoutAction() {
 }
 
 export async function updateJobStatusAction(formData: FormData) {
-  const expectedPassword = getAdminPassword();
-  if (!expectedPassword) {
-    redirect("/admin");
-  }
-
-  const jar = await cookies();
-  const session = jar.get(ADMIN_COOKIE_NAME)?.value;
-  if (!session || session !== expectedAdminToken()) {
-    redirect("/admin?error=invalid");
-  }
+  await requireAdminCookie();
 
   const idRaw = String(formData.get("id") || "").trim();
   const nextStatus = String(formData.get("status") || "Pending").trim();
@@ -51,8 +56,7 @@ export async function updateJobStatusAction(formData: FormData) {
   const allowed = new Set(["Pending", "Confirmed", "Completed"]);
   if (!allowed.has(nextStatus)) redirect("/admin");
 
-  const { createServiceRoleClient } = await import("@/lib/supabase/admin");
-  const supabase = createServiceRoleClient();
+  const supabase = createAdminClient();
   if (!supabase) redirect("/admin?error=db");
 
   const { error } = await supabase.from("jobs").update({ status: nextStatus }).eq("id", id);
@@ -64,31 +68,22 @@ export async function updateJobStatusAction(formData: FormData) {
 }
 
 export async function createTestJobAction() {
-  const expectedPassword = getAdminPassword();
-  if (!expectedPassword) {
-    redirect("/admin");
-  }
+  await requireAdminCookie();
 
-  const jar = await cookies();
-  const session = jar.get(ADMIN_COOKIE_NAME)?.value;
-  if (!session || session !== expectedAdminToken()) {
-    redirect("/admin?error=invalid");
-  }
-
-  const { createServiceRoleClient } = await import("@/lib/supabase/admin");
-  const supabase = createServiceRoleClient();
+  const supabase = createAdminClient();
   if (!supabase) redirect("/admin?error=db");
 
-  const testPrice = priceFor("gold", "sedan");
   const payload = {
     name: "Test Customer",
-    phone: "7345550100",
-    car_make_model: "Honda Civic",
+    phone: "7340000000",
     service_package: "gold",
-    vehicle_type: "sedan",
+    car_make_model: "Honda CR-V",
+    preferred_date: new Date().toISOString().slice(0, 10),
+    preferred_time: "afternoon",
     status: "Pending",
-    price: testPrice,
-    estimated_price: testPrice
+    vehicle_type: "suv",
+    price: 99,
+    email: "test@example.com"
   };
 
   const { error } = await supabase.from("jobs").insert(payload);
@@ -99,64 +94,112 @@ export async function createTestJobAction() {
   redirect("/admin");
 }
 
-export async function sendReviewEmailAction(formData: FormData) {
-  const expectedPassword = getAdminPassword();
-  if (!expectedPassword) {
-    redirect("/admin");
-  }
-
-  const jar = await cookies();
-  const session = jar.get(ADMIN_COOKIE_NAME)?.value;
-  if (!session || session !== expectedAdminToken()) {
-    redirect("/admin?error=invalid");
-  }
-
-  const idRaw = String(formData.get("id") || "").trim();
-  const id = Number.parseInt(idRaw, 10);
-  if (!Number.isFinite(id)) redirect("/admin?error=review-id");
-
-  const providedName = String(formData.get("name") || "").trim();
-  const providedEmail = String(formData.get("email") || "").trim().toLowerCase();
-
-  const { createServiceRoleClient } = await import("@/lib/supabase/admin");
-  const supabase = createServiceRoleClient();
+export async function addCommunicationLogAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
   if (!supabase) redirect("/admin?error=db");
 
-  const { data: job, error } = await supabase
+  const jobId = Number.parseInt(String(formData.get("job_id") || ""), 10);
+  const channel = String(formData.get("channel") || "internal").toLowerCase();
+  const note = String(formData.get("note") || "").trim();
+  const createdBy = String(formData.get("created_by") || "team").trim();
+  if (!Number.isFinite(jobId) || !note) redirect("/admin");
+
+  const allowed = new Set(["sms", "call", "email", "internal"]);
+  if (!allowed.has(channel)) redirect("/admin");
+
+  const { error } = await supabase.from("job_communication_logs").insert({
+    job_id: jobId,
+    channel,
+    note,
+    created_by: createdBy
+  });
+  if (error) {
+    console.error("[admin] log insert error", error);
+    redirect("/admin?error=log");
+  }
+  redirect("/admin");
+}
+
+export async function uploadJobImageAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const jobId = Number.parseInt(String(formData.get("job_id") || ""), 10);
+  const type = String(formData.get("type") || "before").toLowerCase();
+  const file = formData.get("image");
+  if (!Number.isFinite(jobId) || !(file instanceof File) || file.size === 0) redirect("/admin");
+
+  const ext = file.name.split(".").pop() || "jpg";
+  const safeType = type === "after" ? "after" : "before";
+  const path = `job-${jobId}/${safeType}-${Date.now()}.${ext}`;
+
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const { error } = await supabase.storage.from("job-images").upload(path, bytes, {
+    contentType: file.type || "image/jpeg",
+    upsert: true
+  });
+  if (error) {
+    console.error("[admin] image upload error", error);
+    redirect("/admin?error=upload");
+  }
+  redirect("/admin");
+}
+
+export async function createTeamMemberAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const email = String(formData.get("email") || "").trim().toLowerCase();
+  const fullName = String(formData.get("full_name") || "").trim();
+  const role = String(formData.get("role") || "SERVICE_REP").trim().toUpperCase();
+  const allowedRoles = new Set(["ADMIN", "SERVICE_REP"]);
+  if (!email.includes("@") || !allowedRoles.has(role)) redirect("/admin?error=team-input");
+
+  const temporaryPassword = `Snt!${Math.random().toString(36).slice(2, 10)}A1`;
+  const { data: created, error: authError } = await supabase.auth.admin.createUser({
+    email,
+    password: temporaryPassword,
+    email_confirm: true,
+    user_metadata: { full_name: fullName, role }
+  });
+  if (authError || !created.user) {
+    console.error("[admin] create user error", authError);
+    redirect("/admin?error=team-auth");
+  }
+
+  const { error: profileError } = await supabase.from("profiles").upsert({
+    id: created.user.id,
+    email,
+    full_name: fullName || null,
+    role
+  });
+  if (profileError) {
+    console.error("[admin] profile upsert error", profileError);
+    redirect("/admin?error=team-profile");
+  }
+
+  redirect("/admin?team=created");
+}
+
+export async function claimJobAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+  const id = Number.parseInt(String(formData.get("id") || ""), 10);
+  const rep = String(formData.get("rep") || "").trim();
+  if (!Number.isFinite(id) || !rep) redirect("/admin");
+
+  const { error } = await supabase
     .from("jobs")
-    .select("id, name, email, car_make_model, service_package, status")
-    .eq("id", id)
-    .maybeSingle();
-  if (error || !job) {
-    console.error("[admin] review email lookup error", error);
-    redirect("/admin?error=review-lookup");
+    .update({ claimed_by: rep, assigned_rep: rep, phone: normalizePhone(String(formData.get("phone") || "")) || undefined })
+    .eq("id", id);
+
+  if (error) {
+    console.error("[admin] claim job error", error);
+    redirect("/admin?error=claim");
   }
-  const email = providedEmail || String(job.email || "").trim().toLowerCase();
-  const status = String(job.status || "").toLowerCase();
-  if (!email) redirect("/admin?error=review-no-email");
-  if (status !== "completed") redirect("/admin?error=review-not-completed");
-
-  const reviewLink =
-    process.env.SNT_REVIEW_GOOGLE_URL ||
-    process.env.SNT_REVIEW_FACEBOOK_URL ||
-    process.env.REVIEW_REQUEST_URL ||
-    "https://g.page/r/CWfVxB8UuvgHEBM/review";
-  const customerName = providedName || String(job.name || "there");
-
-  const gmailUser = process.env.GMAIL_USER;
-  const gmailPass = process.env.GMAIL_APP_PASSWORD;
-  if (!gmailUser || !gmailPass) redirect("/admin?error=mailer-not-configured");
-  try {
-    await sendMail({
-      to: email,
-      subject: "Thank you from Shine N Time - would you leave us a quick review?",
-      html: reviewRequestHtml(customerName, reviewLink),
-      text: reviewRequestText(customerName, reviewLink)
-    });
-  } catch (sendError) {
-    console.error("[admin] review email send error", sendError);
-    redirect("/admin?error=review-send");
-  }
-
-  redirect("/admin?sent=review");
+  redirect("/admin");
 }
