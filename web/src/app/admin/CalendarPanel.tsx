@@ -119,7 +119,7 @@ export function CalendarPanel({ jobs, rescheduleAction, cancelAction }: Calendar
                   </p>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     <form action={rescheduleAction} className="inline-flex items-center gap-2 rounded-md border border-white/15 px-2 py-1">
-                      <input type="hidden" name="job_id" value={job.id} />
+                      <input type="hidden" name="id" value={job.id} />
                       <input
                         name="preferred_date"
                         type="date"
@@ -139,7 +139,7 @@ export function CalendarPanel({ jobs, rescheduleAction, cancelAction }: Calendar
                       <button className="text-[11px] font-semibold uppercase">Reschedule</button>
                     </form>
                     <form action={cancelAction}>
-                      <input type="hidden" name="job_id" value={job.id} />
+                      <input type="hidden" name="id" value={job.id} />
                       <button className="rounded-md border border-rose-400/35 bg-rose-500/10 px-2 py-1 text-[11px] font-semibold uppercase text-rose-100">
                         Cancel
                       </button>

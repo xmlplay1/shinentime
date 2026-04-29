@@ -4,6 +4,9 @@ import { normalizePhone } from "@/lib/phone";
 import { priceFor, type PackageId, type VehicleCategory } from "@/lib/package-pricing";
 import { adminNewQuoteText, quoteReceiptHtml, quoteReceiptText } from "@/lib/email-templates";
 import { sendMail } from "@/lib/mailer";
+import { normalizeCustomerEmail, isStrictEmail } from "@/lib/email-validation";
+import { upsertCustomerRecord } from "@/lib/customers-db";
+import { createReferralIfApplicable } from "@/lib/referral-service";
 
 export async function POST(req: Request) {
   const supabase = createAdminClient();
@@ -24,7 +27,9 @@ export async function POST(req: Request) {
   const b = body as Record<string, unknown>;
   const name = String(b.name || "").trim();
   const phone = normalizePhone(String(b.phone || ""));
-  const email = String(b.email || "").trim().toLowerCase();
+  const phoneOrNull = phone.length >= 10 ? phone : null;
+  const email = normalizeCustomerEmail(String(b.email || ""));
+  const emailConfirm = normalizeCustomerEmail(String(b.email_confirm || ""));
   const car_make_model = String(b.car_make_model || "").trim();
   const service_package = String(b.service_package || "").toLowerCase();
   const vehicle_type_raw = String(b.vehicle_type || "").toLowerCase();
@@ -34,13 +39,18 @@ export async function POST(req: Request) {
   const state = String(b.state || "").trim();
   const zip = String(b.zip || "").trim();
   const notes = String(b.notes || "").trim();
-  const referred_by_phone = b.referred_by_phone ? normalizePhone(String(b.referred_by_phone)) : null;
+  const referred_by_code = String(b.referred_by_code || "")
+    .trim()
+    .toUpperCase();
+  const signup_ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || null;
+  const signup_fingerprint = String(b.client_fingerprint || "").trim() || null;
   const preferred_date_raw = b.preferred_date != null ? String(b.preferred_date).trim() : "";
   const preferred_time_raw = b.preferred_time != null ? String(b.preferred_time).trim().toLowerCase() : "";
 
   if (name.length < 2) return NextResponse.json({ error: "Name is required." }, { status: 400 });
-  if (phone.length < 10) return NextResponse.json({ error: "Valid phone is required." }, { status: 400 });
-  if (!email || !email.includes("@")) return NextResponse.json({ error: "Valid email is required." }, { status: 400 });
+  if (!isStrictEmail(email) || email !== emailConfirm) {
+    return NextResponse.json({ error: "Emails must match and use a valid address." }, { status: 400 });
+  }
   if (car_make_model.length < 2) return NextResponse.json({ error: "Vehicle is required." }, { status: 400 });
   if (!["silver", "gold", "platinum"].includes(service_package)) {
     return NextResponse.json({ error: "Invalid service package." }, { status: 400 });
@@ -79,10 +89,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Preferred time is required." }, { status: 400 });
   }
 
+  const customer = await upsertCustomerRecord(supabase, email, {
+    fullName: name,
+    phone: phoneOrNull,
+    signupIp: signup_ip,
+    signupFingerprint: signup_fingerprint || null
+  });
+  if (!customer) return NextResponse.json({ error: "Could not save customer profile." }, { status: 500 });
+
+  let insertId: number | null = null;
   const row = {
     name,
-    phone,
+    phone: phoneOrNull,
     email,
+    customer_id: customer.id,
     car_make_model,
     service_package,
     vehicle_type: vehicle_category,
@@ -96,12 +116,14 @@ export async function POST(req: Request) {
     price,
     preferred_date: preferred_date_raw,
     preferred_time: preferred_time_raw,
-    referred_by_phone: referred_by_phone && referred_by_phone.length >= 10 ? referred_by_phone : null,
+    referred_by_phone: null,
     status: "Pending",
     created_at: new Date().toISOString()
   };
 
-  const { error } = await supabase.from("jobs").insert(row);
+  const { data: inserted, error } = await supabase.from("jobs").insert(row).select("id").maybeSingle();
+
+  if (!error && inserted && typeof inserted.id === "number") insertId = inserted.id;
 
   if (error) {
     console.error("[jobs] insert error", error);
@@ -113,6 +135,16 @@ export async function POST(req: Request) {
       },
       { status: 500 }
     );
+  }
+
+  if (insertId != null && referred_by_code.length >= 4) {
+    await createReferralIfApplicable(supabase, {
+      refereeCustomerId: customer.id,
+      refereeJobId: insertId,
+      referredByCode: referred_by_code,
+      signupIp: signup_ip,
+      signupFingerprint: signup_fingerprint || null
+    });
   }
 
   const gmailUser = process.env.GMAIL_USER;
@@ -129,7 +161,7 @@ export async function POST(req: Request) {
         html: quoteReceiptHtml({
           customerName: name,
           customerEmail: email,
-          phone,
+          phone: phoneOrNull || "",
           carMakeModel: car_make_model,
           vehicleType: vehicle_category,
           servicePackage: service_package,
@@ -140,7 +172,7 @@ export async function POST(req: Request) {
         text: quoteReceiptText({
           customerName: name,
           customerEmail: email,
-          phone,
+          phone: phoneOrNull || "",
           carMakeModel: car_make_model,
           vehicleType: vehicle_category,
           servicePackage: service_package,
@@ -166,7 +198,7 @@ export async function POST(req: Request) {
         text: `${adminNewQuoteText({
           customerName: name,
           customerEmail: email,
-          phone,
+          phone: phoneOrNull || "",
           carMakeModel: car_make_model,
           vehicleType: vehicle_category,
           servicePackage: service_package,
@@ -182,5 +214,8 @@ export async function POST(req: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({
+    ok: true,
+    referral_code: customer.referral_code
+  });
 }

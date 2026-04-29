@@ -5,6 +5,10 @@ import { redirect } from "next/navigation";
 import { ADMIN_COOKIE_NAME, expectedAdminToken, getAdminPassword } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizePhone } from "@/lib/phone";
+import { normalizeCustomerEmail, isStrictEmail } from "@/lib/email-validation";
+import { upsertCustomerRecord } from "@/lib/customers-db";
+import { validateReferralsWhenJobCompleted } from "@/lib/referral-service";
+import { priceFor, type PackageId, type VehicleCategory } from "@/lib/package-pricing";
 
 function ensureAdminSession() {
   const expectedPassword = getAdminPassword();
@@ -59,10 +63,80 @@ export async function updateJobStatusAction(formData: FormData) {
   const supabase = createAdminClient();
   if (!supabase) redirect("/admin?error=db");
 
+  const { data: existing } = await supabase.from("jobs").select("id,customer_id,email,status").eq("id", id).maybeSingle();
+  const custId = typeof existing?.customer_id === "string" ? existing.customer_id : null;
+  const emailNorm = existing?.email ? normalizeCustomerEmail(String(existing.email)) : null;
+
   const { error } = await supabase.from("jobs").update({ status: nextStatus }).eq("id", id);
   if (error) {
     console.error("[admin] update status error", error);
     redirect("/admin?error=update");
+  }
+
+  if (nextStatus === "Completed") {
+    let resolvedId = custId;
+    if (!resolvedId && emailNorm) {
+      const { data: cust } = await supabase.from("customers").select("id").eq("email", emailNorm).maybeSingle();
+      resolvedId = cust?.id || null;
+    }
+    if (resolvedId) await validateReferralsWhenJobCompleted(supabase, id, resolvedId);
+  }
+
+  redirect("/admin");
+}
+
+export async function createJobAdminAction(formData: FormData) {
+  await requireAdminCookie();
+
+  const name = String(formData.get("name") || "").trim();
+  const email = normalizeCustomerEmail(String(formData.get("email") || ""));
+  const emailConfirm = normalizeCustomerEmail(String(formData.get("email_confirm") || ""));
+  const phoneRaw = normalizePhone(String(formData.get("phone") || ""));
+  const phone = phoneRaw.length >= 10 ? phoneRaw : null;
+  const car_make_model = String(formData.get("car_make_model") || "").trim();
+  const service_package = String(formData.get("service_package") || "").toLowerCase();
+  const vehicle_type = String(formData.get("vehicle_type") || "").toLowerCase();
+  const preferred_date = String(formData.get("preferred_date") || "").trim();
+  const preferred_time = String(formData.get("preferred_time") || "").trim().toLowerCase();
+
+  if (name.length < 2 || !isStrictEmail(email) || email !== emailConfirm) redirect("/admin?error=create-job-invalid");
+  if (car_make_model.length < 2) redirect("/admin?error=create-job-invalid");
+  if (!["silver", "gold", "platinum"].includes(service_package) || !["sedan", "suv"].includes(vehicle_type)) redirect("/admin?error=create-job-invalid");
+
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const customer = await upsertCustomerRecord(supabase, email, { fullName: name, phone });
+  if (!customer) redirect("/admin?error=create-job-customer");
+
+  const price = priceFor(service_package as PackageId, vehicle_type as VehicleCategory);
+
+  const preferredDateObj = new Date(`${preferred_date}T12:00:00`);
+  if (!preferred_date || Number.isNaN(preferredDateObj.getTime())) redirect("/admin?error=create-job-invalid");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (preferredDateObj < today || preferredDateObj.getDay() === 0) redirect("/admin?error=create-job-invalid");
+  if (!["morning", "afternoon", "evening"].includes(preferred_time)) redirect("/admin?error=create-job-invalid");
+
+  const { error } = await supabase.from("jobs").insert({
+    name,
+    phone,
+    email,
+    customer_id: customer.id,
+    car_make_model,
+    service_package,
+    vehicle_type,
+    estimated_price: price,
+    price,
+    preferred_date,
+    preferred_time,
+    status: "Pending",
+    created_at: new Date().toISOString()
+  });
+
+  if (error) {
+    console.error("[admin] create job error", error);
+    redirect("/admin?error=create-job");
   }
   redirect("/admin");
 }
@@ -84,9 +158,13 @@ export async function rescheduleJobAction(formData: FormData) {
   today.setHours(0, 0, 0, 0);
   if (dateObj < today || dateObj.getDay() === 0) redirect("/admin");
 
+  const { data: jobRow } = await supabase.from("jobs").select("status").eq("id", id).maybeSingle();
+  const prev = String(jobRow?.status || "").toLowerCase();
+  const nextBookingStatus = prev === "cancelled" ? "Pending" : "Confirmed";
+
   const { error } = await supabase
     .from("jobs")
-    .update({ preferred_date: preferredDate, preferred_time: preferredTime, status: "Confirmed" })
+    .update({ preferred_date: preferredDate, preferred_time: preferredTime, status: nextBookingStatus })
     .eq("id", id);
 
   if (error) {
@@ -104,7 +182,19 @@ export async function cancelJobAction(formData: FormData) {
   const id = Number.parseInt(String(formData.get("id") || ""), 10);
   if (!Number.isFinite(id)) redirect("/admin");
 
-  const { error } = await supabase.from("jobs").update({ status: "Cancelled" }).eq("id", id);
+  const extra = String(formData.get("cancel_note") || "").trim();
+  const stamp = `Cancelled · ${new Date().toISOString().slice(0, 16).replace("T", " ")}`;
+  let notesPatch: string | null = null;
+  if (extra) {
+    const { data: row } = await supabase.from("jobs").select("notes").eq("id", id).maybeSingle();
+    const prev = row?.notes ? String(row.notes) : "";
+    notesPatch = prev ? `${prev}\n${stamp}: ${extra}` : `${stamp}: ${extra}`;
+  }
+
+  const { error } = await supabase
+    .from("jobs")
+    .update({ status: "Cancelled", ...(notesPatch ? { notes: notesPatch } : {}) })
+    .eq("id", id);
   if (error) {
     console.error("[admin] cancel job error", error);
     redirect("/admin?error=cancel");
@@ -118,17 +208,24 @@ export async function createTestJobAction() {
   const supabase = createAdminClient();
   if (!supabase) redirect("/admin?error=db");
 
+  const testEmail = "test@example.com";
+  const cust = await upsertCustomerRecord(supabase, testEmail, { fullName: "Test Customer", phone: "7340000000" });
+  if (!cust) redirect("/admin?error=create");
+
+  const price = priceFor("gold", "suv");
   const payload = {
     name: "Test Customer",
     phone: "7340000000",
+    email: testEmail,
+    customer_id: cust.id,
     service_package: "gold",
     car_make_model: "Honda CR-V",
     preferred_date: new Date().toISOString().slice(0, 10),
     preferred_time: "afternoon",
     status: "Pending",
     vehicle_type: "suv",
-    price: 99,
-    email: "test@example.com"
+    estimated_price: price,
+    price
   };
 
   const { error } = await supabase.from("jobs").insert(payload);

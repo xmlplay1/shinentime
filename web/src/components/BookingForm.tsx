@@ -5,11 +5,22 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import { ClipboardCheck, Loader2 } from "lucide-react";
-import { formatSharePath, normalizePhone } from "@/lib/phone";
+import { normalizePhone } from "@/lib/phone";
 import { PreferredDateTime, type PreferredTime } from "@/components/PreferredDateTime";
 import { PACKAGE_PRICING, priceFor, type PackageId, type VehicleCategory } from "@/lib/package-pricing";
+import { isStrictEmail, normalizeCustomerEmail } from "@/lib/email-validation";
 
-const STEPS = ["name", "phone", "email", "address", "car", "vehicle", "condition", "service", "schedule", "referral", "review"] as const;
+const STEPS = ["name", "email", "email2", "phone", "address", "car", "vehicle", "condition", "service", "schedule", "referral", "review"] as const;
+
+function clientFingerprint(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    const raw = `${navigator.userAgent}|${navigator.language}|${Intl.DateTimeFormat().resolvedOptions().timeZone}`;
+    return btoa(unescape(encodeURIComponent(raw))).slice(0, 120);
+  } catch {
+    return "";
+  }
+}
 
 const services: readonly {
   readonly id: PackageId;
@@ -34,6 +45,7 @@ export function BookingForm() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [emailConfirm, setEmailConfirm] = useState("");
   const [streetAddress, setStreetAddress] = useState("");
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
@@ -52,7 +64,7 @@ export function BookingForm() {
 
   useEffect(() => {
     const ref = searchParams.get("ref");
-    if (ref) setReferredBy((prev) => prev || ref);
+    if (ref) setReferredBy((prev) => prev || ref.trim().toUpperCase());
   }, [searchParams]);
 
   const step = STEPS[stepIndex];
@@ -61,8 +73,13 @@ export function BookingForm() {
 
   const canNext = () => {
     if (step === "name") return name.trim().length >= 2;
-    if (step === "phone") return normalizePhone(phone).length >= 10;
-    if (step === "email") return /\S+@\S+\.\S+/.test(email.trim());
+    if (step === "email") return isStrictEmail(email);
+    if (step === "email2") {
+      const a = normalizeCustomerEmail(email);
+      const b = normalizeCustomerEmail(emailConfirm);
+      return isStrictEmail(emailConfirm) && a === b && a.length > 0;
+    }
+    if (step === "phone") return true;
     if (step === "address") {
       return (
         streetAddress.trim().length >= 4 &&
@@ -96,6 +113,11 @@ export function BookingForm() {
   }, [stepIndex, isReviewStep]);
 
   const submit = async () => {
+    if (normalizeCustomerEmail(email) !== normalizeCustomerEmail(emailConfirm)) {
+      setErrorMsg("Email addresses must match.");
+      setStatus("error");
+      return;
+    }
     if (!confirmed) {
       setErrorMsg("Please confirm your details before sending.");
       setStatus("error");
@@ -105,13 +127,15 @@ export function BookingForm() {
     setErrorMsg("");
     try {
       const preferred_date = preferredDate ? preferredDate.toISOString().slice(0, 10) : null;
+      const pn = normalizePhone(phone);
       const res = await fetch("/api/jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
-          phone: normalizePhone(phone),
-          email: email.trim(),
+          phone: pn.length >= 10 ? pn : "",
+          email: normalizeCustomerEmail(email),
+          email_confirm: normalizeCustomerEmail(emailConfirm),
           address: streetAddress.trim(),
           city: city.trim(),
           state: state.trim(),
@@ -122,14 +146,15 @@ export function BookingForm() {
           service_package: service,
           preferred_date,
           preferred_time: preferredTime || null,
-          referred_by_phone: referredBy.trim() ? normalizePhone(referredBy) : null
+          referred_by_code: referredBy.trim().toUpperCase() || null,
+          client_fingerprint: clientFingerprint()
         })
       });
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      const data = (await res.json().catch(() => ({}))) as { error?: string; referral_code?: string };
       if (!res.ok) throw new Error(data.error || "Could not submit booking.");
       const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const path = formatSharePath(phone);
-      setShareUrl(path ? `${origin}${path}` : origin);
+      const code = typeof data.referral_code === "string" && data.referral_code.length > 2 ? data.referral_code : "";
+      setShareUrl(code ? `${origin}/share/${encodeURIComponent(code)}` : origin);
       setStatus("success");
     } catch (e) {
       setStatus("error");
@@ -205,9 +230,40 @@ export function BookingForm() {
               />
             </div>
           )}
+          {step === "email" && (
+            <div>
+              <label className="block text-sm font-medium text-slate-300">Email for confirmations & receipt</label>
+              <input
+                autoFocus
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="mt-3 w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-4 text-lg text-white outline-none ring-blue-500/40 transition focus:ring-2"
+              />
+              <p className="mt-2 text-xs text-slate-500">Required — this is our primary way to reach you.</p>
+            </div>
+          )}
+          {step === "email2" && (
+            <div>
+              <label className="block text-sm font-medium text-slate-300">Confirm email (type it again)</label>
+              <input
+                autoFocus
+                type="email"
+                value={emailConfirm}
+                onChange={(e) => setEmailConfirm(e.target.value)}
+                placeholder={normalizeCustomerEmail(email) || "repeat@example.com"}
+                className="mt-3 w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-4 text-lg text-white outline-none ring-blue-500/40 transition focus:ring-2"
+              />
+              <p className="mt-2 text-xs text-slate-500">
+                Without a phone fallback, typos hurt — we&apos;ll compare both fields letter-for-letter.
+              </p>
+            </div>
+          )}
           {step === "phone" && (
             <div>
-              <label className="block text-sm font-medium text-slate-300">Best number to reach you</label>
+              <label className="block text-sm font-medium text-slate-300">Phone (optional)</label>
               <input
                 autoFocus
                 type="tel"
@@ -216,20 +272,7 @@ export function BookingForm() {
                 placeholder="7344191846"
                 className="mt-3 w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-4 text-lg text-white outline-none ring-blue-500/40 transition focus:ring-2"
               />
-            </div>
-          )}
-          {step === "email" && (
-            <div>
-              <label className="block text-sm font-medium text-slate-300">Best email for your receipt</label>
-              <input
-                autoFocus
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="mt-3 w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-4 text-lg text-white outline-none ring-blue-500/40 transition focus:ring-2"
-              />
-              <p className="mt-2 text-xs text-slate-500">We send your quote receipt and prep checklist here.</p>
+              <p className="mt-2 text-xs text-slate-500">Optional — we primarily use email for confirmations.</p>
             </div>
           )}
           {step === "address" && (
@@ -377,15 +420,16 @@ export function BookingForm() {
           )}
           {step === "referral" && (
             <div>
-              <label className="block text-sm font-medium text-slate-300">Were you referred by a friend?</label>
-              <p className="mt-1 text-xs text-slate-500">Optional — enter their phone number.</p>
+              <label className="block text-sm font-medium text-slate-300">Referral code (optional)</label>
+              <p className="mt-1 text-xs text-slate-500">
+                Reward unlocks after your friend completes their first paid detail — codes are capped to prevent gaming.
+              </p>
               <input
                 autoFocus
-                type="tel"
                 value={referredBy}
-                onChange={(e) => setReferredBy(e.target.value)}
-                placeholder="Friend's phone"
-                className="mt-3 w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-4 text-lg text-white outline-none ring-blue-500/40 transition focus:ring-2"
+                onChange={(e) => setReferredBy(e.target.value.toUpperCase())}
+                placeholder="TAWFIQ10"
+                className="mt-3 w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-4 font-mono text-lg uppercase text-white outline-none ring-blue-500/40 transition focus:ring-2"
               />
             </div>
           )}
@@ -461,10 +505,8 @@ export function BookingForm() {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Referral</dt>
-                  <dd className="mt-1 font-mono text-slate-200">
-                    {referredBy.trim() ? normalizePhone(referredBy) : "None"}
-                  </dd>
+                  <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Referral code</dt>
+                  <dd className="mt-1 font-mono text-slate-200">{referredBy.trim() ? referredBy.trim().toUpperCase() : "None"}</dd>
                 </div>
               </dl>
               <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-slate-300">

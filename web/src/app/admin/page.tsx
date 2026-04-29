@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   addCommunicationLogAction,
@@ -12,6 +13,7 @@ import {
   updateJobStatusAction,
   uploadJobImageAction
 } from "@/app/admin/actions";
+import { CreateJobForm } from "@/app/admin/CreateJobForm";
 import { CalendarPanel } from "@/app/admin/CalendarPanel";
 import { ScriptSidebar } from "@/app/admin/ScriptSidebar";
 import { DashboardCharts } from "@/app/admin/widgets";
@@ -25,6 +27,7 @@ type JobStatus = "Pending" | "Confirmed" | "Completed" | "Cancelled";
 
 type JobRow = {
   id: number;
+  customer_id: string | null;
   name: string | null;
   email: string | null;
   phone: string | null;
@@ -222,6 +225,12 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             >
               Lead Pipeline
             </a>
+            <Link
+              href="/admin/customers"
+              className="rounded-lg border border-white/10 px-3 py-2 text-slate-300 hover:bg-white/[0.04]"
+            >
+              Customers
+            </Link>
             {isAdmin ? (
               <a
                 className={`rounded-lg border px-3 py-2 ${activeView === "team" ? "border-emerald-400/45 bg-emerald-500/12 font-semibold text-emerald-200" : "border-white/10 text-slate-300 hover:bg-white/[0.04]"}`}
@@ -280,13 +289,16 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           </div>
 
           <section id="pipeline" className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-300">Lead Pipeline</h3>
-              <form action={createTestJobAction}>
-                <button className="rounded-lg border border-amber-400/40 bg-amber-500/12 px-3 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-amber-200">
-                  Create Test Job
-                </button>
-              </form>
+              <div className="flex flex-wrap items-end gap-4">
+                <CreateJobForm />
+                <form action={createTestJobAction}>
+                  <button type="submit" className="rounded-lg border border-amber-400/40 bg-amber-500/12 px-3 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-amber-200 whitespace-nowrap">
+                    Create Test Job
+                  </button>
+                </form>
+              </div>
             </div>
             <div className="mt-4 grid gap-3">
               {loadingPipeline
@@ -303,11 +315,21 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                 const mapQuery = encodeURIComponent([job.address, job.city, job.state, job.zip].filter(Boolean).join(", "));
                 const jobLogs = logsByJob.get(job.id) || [];
                 const isSuv = String(job.vehicle_type || "").toLowerCase() === "suv";
+                const profileHref =
+                  job.email ? `/admin/customers?email=${encodeURIComponent(normalizeEmail(job.email) || "")}` : null;
                 return (
                   <article key={job.id} className="rounded-xl border border-white/10 bg-black/25 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
-                        <p className="text-sm font-semibold">{job.name || "Unknown Customer"}</p>
+                        <p className="text-sm font-semibold">
+                          {profileHref ? (
+                            <Link href={profileHref} className="text-white underline-offset-4 hover:text-amber-200 hover:underline">
+                              {job.name || "Unknown Customer"}
+                            </Link>
+                          ) : (
+                            job.name || "Unknown Customer"
+                          )}
+                        </p>
                         <p className="text-xs text-slate-400">{formatPhoneUs(job.phone)} · {normalizeEmail(job.email) || "no email"}</p>
                         <p className="inline-flex items-center gap-1 text-xs text-slate-400">
                           {isSuv ? <Truck className="size-3.5 text-blue-300" /> : <Car className="size-3.5 text-amber-300" />}
@@ -335,12 +357,14 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                         <input type="hidden" name="job_id" value={job.id} />
                         <input type="hidden" name="channel" value="call" />
                         <input type="hidden" name="phone" value={job.phone || ""} />
+                        <input type="hidden" name="customer" value={job.name || job.email || "customer"} />
                         <button className="rounded-lg border border-white/15 px-3 py-1.5 text-xs">Call</button>
                       </form>
                       <form action={autoLogContactAction} className="inline-flex">
                         <input type="hidden" name="job_id" value={job.id} />
                         <input type="hidden" name="channel" value="sms" />
                         <input type="hidden" name="phone" value={job.phone || ""} />
+                        <input type="hidden" name="customer" value={job.name || job.email || "customer"} />
                         <button className="rounded-lg border border-white/15 px-3 py-1.5 text-xs">SMS</button>
                       </form>
 
@@ -371,6 +395,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                           <option value="Pending">Pending</option>
                           <option value="Confirmed">Confirmed</option>
                           <option value="Completed">Completed</option>
+                          <option value="Cancelled">Cancelled</option>
                         </select>
                         <button type="submit" className="rounded-md border border-amber-400/30 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold uppercase">
                           Update
@@ -394,8 +419,13 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                           Reschedule
                         </button>
                       </form>
-                      <form action={cancelJobAction} className="inline-flex">
+                      <form action={cancelJobAction} className="inline-flex flex-wrap items-center gap-2">
                         <input type="hidden" name="id" value={job.id} />
+                        <input
+                          name="cancel_note"
+                          placeholder="Cancel reason (optional)"
+                          className="min-w-[8rem] rounded border border-white/15 bg-black px-2 py-1 text-[10px]"
+                        />
                         <button type="submit" className="rounded border border-red-400/40 bg-red-500/10 px-2 py-1 text-[10px] uppercase text-red-200">
                           Cancel
                         </button>
