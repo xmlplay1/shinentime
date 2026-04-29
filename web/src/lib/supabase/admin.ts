@@ -6,9 +6,9 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
  * Falls back to anon key if service role is not set (requires permissive RLS on `jobs`).
  */
 export function createAdminClient(): SupabaseClient | null {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://tjqbvafjhtwlujreluxr.supabase.co";
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_p8c1CjfR13s_Ba7E6f3G2g_nga15FHa";
   const key = serviceKey || anonKey;
   if (!url || !key) return null;
   return createClient(url, key, {
