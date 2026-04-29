@@ -91,6 +91,7 @@ export function BeforeAfterSlider({ beforeSrc, afterSrc, altBefore, altAfter, la
           src={afterSrc}
           alt={altAfter}
           fill
+          unoptimized
           priority={priority}
           loading={priority ? "eager" : "lazy"}
           sizes="(max-width: 768px) 100vw, 33vw"
@@ -105,6 +106,7 @@ export function BeforeAfterSlider({ beforeSrc, afterSrc, altBefore, altAfter, la
             src={beforeSrc}
             alt={altBefore}
             fill
+            unoptimized
             loading={priority ? "eager" : "lazy"}
             sizes="(max-width: 768px) 100vw, 33vw"
             placeholder="blur"

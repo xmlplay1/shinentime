@@ -16,11 +16,13 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Before / after gallery assets
 
-The gallery expects these files in `web/public/` (same names, case-sensitive, **WebP**):
+The gallery expects these files in `web/public/` (same names, case-sensitive, **WebP**). The Next.js app references them as **root paths** (e.g. `src="/B4CHEV1.webp"`):
 
 - `B4CHEV1.webp`, `AFTCHEV4.webp` — Driver Side Deep Clean  
 - `B4CHEV2.webp`, `AFTCHEV1.webp` — Rear Floor Extraction  
 - `B4PAS2.webp`, `AFTPAS2.webp` — Full Interior Reset  
+
+Optional smaller `*_sm.webp` copies can live in `public/` for faster loads; the app uses full-size files by default so production never 404s if only `.webp` (not `_sm`) is deployed.
 
 Replace these WebPs with your real **B4\*** / **AFT\*** exports when you have them. Until then, the repo may ship **interior** placeholders derived from the `IMG_286*.PNG` set so the comparison strip stays on-message.
 
@@ -59,9 +61,13 @@ alter table public.jobs enable row level security;
 
 2. Set environment variables in **Vercel** (or `.env.local`):
 
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY` (recommended for `/api/jobs` inserts)
+- `NEXT_PUBLIC_SUPABASE_URL` — project API URL (e.g. `https://tjqbvafjhtwlujreluxr.supabase.co`)
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — **anon** (legacy JWT) or **publishable** key from Supabase → Settings → API
+- `SUPABASE_SERVICE_ROLE_KEY` — **service_role** secret from the same screen (server-only; never expose to the client). Required for `/api/jobs` and `/admin` server actions to insert/update reliably under RLS.
+
+**If production shows** “Server is missing Supabase configuration”, the Vercel project is missing one of the above (usually `NEXT_PUBLIC_SUPABASE_URL` or `SUPABASE_SERVICE_ROLE_KEY`). In Vercel: **Project → Settings → Environment Variables** → add all three for **Production** (and Preview if you use preview deploys) → **Redeploy**.
+
+Automated sync from this repo to Vercel env is not available in the agent environment; use the Vercel dashboard or `vercel env add` locally with a `VERCEL_TOKEN`.
 
 3. Referral progress in the footer counts rows in `jobs` where `referred_by_phone` matches the entered phone (goal: 5 for the progress bar UI).
 
@@ -69,7 +75,7 @@ alter table public.jobs enable row level security;
 
 - Root directory: **`web`**
 - Framework: Next.js
-- Add the same env vars in Project Settings → Environment Variables.
+- Add the same env vars in Project Settings → Environment Variables (Production + Preview).
 
 ## Static site in repo root
 

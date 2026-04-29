@@ -5,6 +5,12 @@ import { Suspense } from "react";
 import { motion } from "framer-motion";
 import { BeforeAfterGallery } from "@/components/BeforeAfterGallery";
 import { BookingForm } from "@/components/BookingForm";
+import {
+  PackageDetailCallout,
+  PrepRequirementsSection,
+  ReviewsSection,
+  ServiceAreaSection
+} from "@/components/LandingInfoSections";
 import { ReferralStatus } from "@/components/ReferralStatus";
 
 type PackageCard = {
@@ -19,42 +25,63 @@ const packages: readonly PackageCard[] = [
   {
     id: "silver",
     name: "Silver",
-    price: "From $37",
-    bullets: ["Hand wash", "Windows", "Tires shined", "Door jambs"]
+    price: "From $37 sedan · $49 SUV",
+    bullets: [
+      "Exterior hand wash & rinse",
+      "Windows cleaned inside & out",
+      "Tire & rim shine",
+      "Door jambs wiped down",
+      "Light interior dust-down of hard surfaces",
+      "Pet hair — light pickup (heavy shedding may need an add-on)"
+    ]
   },
   {
     id: "gold",
     name: "Gold",
-    price: "From $99",
+    price: "From $99 sedan · $115 SUV",
     popular: true,
-    bullets: ["Everything in Silver", "Full vacuum", "Shampoo seats & carpets", "Odor treatment"]
+    bullets: [
+      "Everything in Silver",
+      "Full interior vacuum (seats, carpets, crevices)",
+      "Seat & carpet shampoo / extraction",
+      "Odor neutralization treatment",
+      "Pet hair removal (moderate)",
+      "Salt & sand extraction from carpets & mats",
+      "Spot treatment on stains (within reason)"
+    ]
   },
   {
     id: "platinum",
     name: "Platinum",
-    price: "From $129",
-    bullets: ["Silver + Gold depth", "Steam cleaning", "Clay bar", "Ceramic sealant"]
+    price: "From $129 sedan · $149 SUV",
+    bullets: [
+      "Silver + Gold-level interior depth",
+      "Steam cleaning on appropriate surfaces",
+      "Clay bar treatment (paint decontamination)",
+      "Ceramic-style sealant for gloss & UV protection on treated panels",
+      "Finishing wipe-down & final inspection walkthrough"
+    ]
   }
 ];
 
 const transformations = [
   {
-    before: "/B4CHEV1_sm.webp",
-    after: "/AFTCHEV4_sm.webp",
+    before: "/B4CHEV1.webp",
+    after: "/AFTCHEV4.webp",
     altBefore: "Before — driver area interior",
     altAfter: "After — driver area interior",
     label: "Chevy Front Cabin Reset"
   },
   {
-    before: "/B4CHEV2_sm.webp",
-    after: "/AFTCHEV1_sm.webp",
+    before: "/B4CHEV2.webp",
+    after: "/AFTCHEV1.webp",
     altBefore: "Before — rear cargo area",
     altAfter: "After — rear cargo area",
     label: "Salt & Sand Extraction"
   },
   {
-    before: "/B4PAS2_sm.webp",
-    after: "/AFTPAS2_sm.webp",
+    before: "/B4PAS2.webp",
+    after: "/AFTPAS2.webp",
     altBefore: "Before — dash and console",
     altAfter: "After — dash and console",
     label: "SUV Interior Refresh"
@@ -64,32 +91,53 @@ const transformations = [
 export default function Home() {
   return (
     <div className="min-h-screen overflow-x-hidden bg-black text-white">
-      <header className="sticky top-0 z-50 border-b border-white/5 bg-black/75 shadow-[0_12px_40px_-18px_rgba(0,0,0,0.85)] backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-black/55">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 md:px-8">
-          <span className="text-sm font-semibold tracking-[0.2em] text-slate-300">SHINE N TIME</span>
-          <nav className="hidden gap-8 text-xs font-semibold uppercase tracking-[0.15em] text-slate-400 md:flex">
-            <a href="#gallery" className="transition hover:text-white">
+      <header className="sticky top-0 z-50 border-b border-amber-400/10 bg-black/80 shadow-[0_12px_40px_-18px_rgba(0,0,0,0.85)] backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-black/55">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-5 md:px-8">
+          <a href="#home" className="group shrink-0">
+            <span className="bg-gradient-to-r from-amber-200 via-amber-400 to-amber-300 bg-clip-text text-sm font-extrabold tracking-[0.22em] text-transparent drop-shadow-[0_0_24px_rgba(212,175,55,0.35)] md:text-base">
+              SHINE N TIME
+            </span>
+          </a>
+          <nav className="hidden flex-1 justify-center gap-6 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 lg:flex xl:gap-8">
+            <a href="#gallery" className="transition hover:text-amber-200">
               Gallery
             </a>
-            <a href="#packages" className="transition hover:text-white">
+            <a href="#packages" className="transition hover:text-amber-200">
               Packages
             </a>
-            <a href="#book" className="transition hover:text-white">
+            <a href="#service-area" className="transition hover:text-amber-200">
+              Area
+            </a>
+            <a href="#prep" className="transition hover:text-amber-200">
+              Prep
+            </a>
+            <a href="#reviews" className="transition hover:text-amber-200">
+              Reviews
+            </a>
+            <a href="#book" className="transition hover:text-amber-200">
               Book
             </a>
           </nav>
-          <Link
-            href="#book"
-            className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white transition hover:border-blue-400/40 hover:bg-blue-500/10"
-          >
-            Quote
-          </Link>
+          <div className="flex shrink-0 items-center gap-2">
+            <a
+              href="#reviews"
+              className="hidden rounded-full border border-amber-400/35 bg-amber-500/10 px-3 py-2 text-[9px] font-bold uppercase tracking-[0.12em] text-amber-100 shadow-[0_0_20px_-8px_rgba(212,175,55,0.5)] transition hover:border-amber-400/55 hover:bg-amber-500/20 sm:inline-flex"
+            >
+              Check our Reviews
+            </a>
+            <Link
+              href="#book"
+              className="rounded-full border border-white/15 bg-white/5 px-3 py-2 text-[9px] font-bold uppercase tracking-[0.18em] text-white transition hover:border-blue-400/40 hover:bg-blue-500/10 md:px-4"
+            >
+              Quote
+            </Link>
+          </div>
         </div>
       </header>
 
       <main>
         {/* Hero */}
-        <section className="relative overflow-x-hidden px-5 pb-24 pt-12 md:px-8 md:pb-32 md:pt-16">
+        <section id="home" className="relative overflow-x-hidden px-5 pb-24 pt-12 md:px-8 md:pb-32 md:pt-16">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(59,130,246,0.12),transparent_55%)]" />
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_80%_60%,rgba(212,175,55,0.06),transparent_50%)]" />
           <div className="relative mx-auto max-w-4xl text-center">
@@ -133,6 +181,8 @@ export default function Home() {
           </div>
         </section>
 
+        <ServiceAreaSection />
+
         {/* Before & After gallery */}
         <section id="gallery" className="border-t border-white/5 bg-gradient-to-b from-black to-zinc-950 px-5 py-20 md:px-8 md:py-28">
           <div className="mx-auto max-w-6xl">
@@ -167,20 +217,25 @@ export default function Home() {
                     </span>
                   ) : null}
                   <h3 className="text-lg font-semibold tracking-wide text-white">{pkg.name}</h3>
-                  <p className="mt-2 text-sm text-blue-300">{pkg.price}</p>
+                  <p className="mt-2 text-sm font-medium text-amber-200/90">{pkg.price}</p>
                   <ul className="mt-6 space-y-3 text-sm text-slate-400">
                     {pkg.bullets.map((b) => (
                       <li key={b} className="flex gap-2">
-                        <span className="text-blue-500">✓</span>
-                        {b}
+                        <span className="mt-0.5 text-amber-500">✓</span>
+                        <span>{b}</span>
                       </li>
                     ))}
                   </ul>
                 </motion.article>
               ))}
             </div>
+            <PackageDetailCallout />
           </div>
         </section>
+
+        <PrepRequirementsSection />
+
+        <ReviewsSection />
 
         {/* Booking */}
         <section id="book" className="border-t border-white/5 bg-black px-5 py-20 md:px-8 md:py-28">
