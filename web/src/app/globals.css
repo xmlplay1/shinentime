@@ -11,4 +11,11 @@ html {
 
 body {
   font-family: var(--font-sans);
+  overflow-x: clip;
+}
+
+@supports not (overflow: clip) {
+  body {
+    overflow-x: hidden;
+  }
 }

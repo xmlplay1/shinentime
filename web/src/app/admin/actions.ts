@@ -3,6 +3,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ADMIN_COOKIE_NAME, expectedAdminToken, getAdminPassword } from "@/lib/admin-auth";
+import { priceFor } from "@/lib/package-pricing";
 
 export async function adminLoginAction(formData: FormData) {
   const submitted = String(formData.get("password") || "");
@@ -76,12 +77,16 @@ export async function createTestJobAction() {
   const supabase = createAdminClient();
   if (!supabase) redirect("/admin?error=db");
 
+  const testPrice = priceFor("gold", "sedan");
   const payload = {
     name: "Test Customer",
-    phone: "7340000000",
+    phone: "7345550100",
+    car_make_model: "Honda Civic",
     service_package: "gold",
+    vehicle_type: "sedan",
     status: "Pending",
-    price: 99
+    price: testPrice,
+    estimated_price: testPrice
   };
 
   const { error } = await supabase.from("jobs").insert(payload);

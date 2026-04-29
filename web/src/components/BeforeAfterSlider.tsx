@@ -81,7 +81,7 @@ export function BeforeAfterSlider({ beforeSrc, afterSrc, altBefore, altAfter, la
     <figure className="w-full">
       <div
         ref={trackRef}
-        className="relative aspect-[4/5] w-full max-w-lg touch-pan-y select-none overflow-hidden rounded-2xl border border-white/10 bg-zinc-950 shadow-2xl md:max-w-none"
+        className="relative aspect-video w-full max-w-none touch-pan-y select-none overflow-hidden rounded-2xl border border-white/10 bg-zinc-950 shadow-2xl"
         onPointerDown={onPointerDownTrack}
         onPointerMove={onPointerMoveTrack}
         onPointerUp={onPointerUpTrack}
@@ -91,6 +91,7 @@ export function BeforeAfterSlider({ beforeSrc, afterSrc, altBefore, altAfter, la
           src={afterSrc}
           alt={altAfter}
           fill
+          unoptimized
           priority={priority}
           loading={priority ? "eager" : "lazy"}
           sizes="(max-width: 768px) 100vw, 33vw"
@@ -105,6 +106,7 @@ export function BeforeAfterSlider({ beforeSrc, afterSrc, altBefore, altAfter, la
             src={beforeSrc}
             alt={altBefore}
             fill
+            unoptimized
             loading={priority ? "eager" : "lazy"}
             sizes="(max-width: 768px) 100vw, 33vw"
             placeholder="blur"

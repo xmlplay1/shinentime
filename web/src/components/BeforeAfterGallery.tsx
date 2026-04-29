@@ -20,7 +20,7 @@ type Props = {
  */
 export function BeforeAfterGallery({ items }: Props) {
   return (
-    <div className="mt-14 -mx-5 px-5 lg:mx-0 lg:px-0">
+    <div className="mt-14 w-full max-w-full overflow-x-hidden px-0 lg:px-0">
       <div className="flex flex-col gap-14 lg:flex-row lg:flex-nowrap lg:gap-8 lg:overflow-x-auto lg:overflow-y-visible lg:pb-4 lg:snap-x lg:snap-mandatory lg:[scrollbar-width:thin]">
         {items.map((c, i) => (
           <motion.div
@@ -37,6 +37,7 @@ export function BeforeAfterGallery({ items }: Props) {
               altBefore={c.altBefore}
               altAfter={c.altAfter}
               label={c.label}
+              priority={i === 0}
             />
           </motion.div>
         ))}
