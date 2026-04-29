@@ -94,7 +94,7 @@ export function BeforeAfterSlider({ beforeSrc, afterSrc, altBefore, altAfter, la
           unoptimized
           priority={priority}
           loading={priority ? "eager" : "lazy"}
-          sizes="(max-width: 768px) 100vw, 33vw"
+          sizes="(max-width: 768px) 100vw, 50vw"
           placeholder="blur"
           blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE2IiBoZWlnaHQ9IjEyIiBmaWxsPSIjMTIxMjEyIi8+PC9zdmc+"
           className="absolute inset-0 h-full w-full object-cover"
@@ -108,7 +108,7 @@ export function BeforeAfterSlider({ beforeSrc, afterSrc, altBefore, altAfter, la
             fill
             unoptimized
             loading={priority ? "eager" : "lazy"}
-            sizes="(max-width: 768px) 100vw, 33vw"
+            sizes="(max-width: 768px) 100vw, 50vw"
             placeholder="blur"
             blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE2IiBoZWlnaHQ9IjEyIiBmaWxsPSIjMTIxMjEyIi8+PC9zdmc+"
             className="h-full w-full object-cover"

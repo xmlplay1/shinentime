@@ -37,7 +37,7 @@ export function BeforeAfterGallery({ items }: Props) {
               altBefore={c.altBefore}
               altAfter={c.altAfter}
               label={c.label}
-              priority={i === 0}
+              priority={i < 2}
             />
           </motion.div>
         ))}
