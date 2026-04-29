@@ -52,7 +52,20 @@ export async function sendMail(payload: MailPayload): Promise<boolean> {
     });
     return true;
   } catch (error) {
-    console.error("[mail] send failed", error);
+    const e = error as {
+      message?: string;
+      code?: string;
+      response?: string;
+      responseCode?: number;
+      command?: string;
+    };
+    console.error("[mail] send failed", {
+      message: e?.message,
+      code: e?.code,
+      responseCode: e?.responseCode,
+      response: e?.response,
+      command: e?.command
+    });
     return false;
   }
 }
