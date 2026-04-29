@@ -7,14 +7,20 @@ import { format } from "date-fns";
 import { ClipboardCheck, Loader2 } from "lucide-react";
 import { formatSharePath, normalizePhone } from "@/lib/phone";
 import { PreferredDateTime, type PreferredTime } from "@/components/PreferredDateTime";
+import { PACKAGE_PRICING, priceFor, type PackageId, type VehicleCategory } from "@/lib/package-pricing";
 
-const STEPS = ["name", "phone", "car", "service", "schedule", "referral", "review"] as const;
+const STEPS = ["name", "phone", "car", "vehicle", "service", "schedule", "referral", "review"] as const;
 
-const services = [
-  { id: "silver", label: "Silver", price: "From $37" },
-  { id: "gold", label: "Gold", price: "From $99" },
-  { id: "platinum", label: "Platinum", price: "From $129" }
-] as const;
+const services: readonly {
+  readonly id: PackageId;
+  readonly label: string;
+}[] = [
+  { id: "silver", label: "Silver" },
+  { id: "gold", label: "Gold" },
+  { id: "platinum", label: "Platinum" }
+];
+
+const pkgLabel = (id: PackageId) => services.find((s) => s.id === id)?.label ?? id;
 
 const timeLabels: Record<PreferredTime, string> = {
   morning: "Morning (8am – 12pm)",
@@ -28,7 +34,8 @@ export function BookingForm() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [car, setCar] = useState("");
-  const [service, setService] = useState<(typeof services)[number]["id"] | "">("");
+  const [vehicleCategory, setVehicleCategory] = useState<VehicleCategory | "">("");
+  const [service, setService] = useState<PackageId | "">("");
   const [preferredDate, setPreferredDate] = useState<Date | undefined>(undefined);
   const [preferredTime, setPreferredTime] = useState<PreferredTime | "">("");
   const [referredBy, setReferredBy] = useState("");
@@ -50,6 +57,7 @@ export function BookingForm() {
     if (step === "name") return name.trim().length >= 2;
     if (step === "phone") return normalizePhone(phone).length >= 10;
     if (step === "car") return car.trim().length >= 2;
+    if (step === "vehicle") return vehicleCategory === "sedan" || vehicleCategory === "suv";
     if (step === "service") return Boolean(service);
     if (step === "schedule") return Boolean(preferredDate) && Boolean(preferredTime);
     if (step === "referral") return true;
@@ -88,6 +96,7 @@ export function BookingForm() {
           name: name.trim(),
           phone: normalizePhone(phone),
           car_make_model: car.trim(),
+          vehicle_type: vehicleCategory,
           service_package: service,
           preferred_date,
           preferred_time: preferredTime || null,
@@ -106,9 +115,9 @@ export function BookingForm() {
     }
   };
 
-  const serviceMeta = services.find((s) => s.id === service);
-  const serviceLabel = serviceMeta?.label ?? "—";
-  const servicePrice = serviceMeta?.price ?? "";
+  const serviceLabel = service ? pkgLabel(service as PackageId) : "—";
+  const quotedTotal =
+    service && vehicleCategory ? priceFor(service as PackageId, vehicleCategory as VehicleCategory) : null;
 
   if (status === "success") {
     return (
@@ -141,7 +150,7 @@ export function BookingForm() {
   }
 
   return (
-    <div id="book" className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 shadow-2xl backdrop-blur-xl md:p-10">
+    <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 shadow-2xl backdrop-blur-xl md:p-10">
       <div className="mb-8 h-1 w-full overflow-hidden rounded-full bg-white/10">
         <motion.div
           className="h-full rounded-full bg-gradient-to-r from-blue-500 to-amber-400"
@@ -199,6 +208,38 @@ export function BookingForm() {
               />
             </div>
           )}
+          {step === "vehicle" && (
+            <div>
+              <p className="text-sm font-medium text-slate-300">What size vehicle?</p>
+              <p className="mt-1 text-xs text-slate-500">We price by sedan vs. larger SUVs, trucks & vans.</p>
+              <div className="mt-4 grid gap-3">
+                {(
+                  [
+                    { id: "sedan" as const, title: "Sedan / coupe", hint: `Silver from $${PACKAGE_PRICING.silver.sedan}` },
+                    {
+                      id: "suv" as const,
+                      title: "SUV / truck / van",
+                      hint: `Silver from $${PACKAGE_PRICING.silver.suv}`
+                    }
+                  ] as const
+                ).map((v) => (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => setVehicleCategory(v.id)}
+                    className={`rounded-2xl border px-4 py-4 text-left transition ${
+                      vehicleCategory === v.id
+                        ? "border-blue-400/60 bg-blue-500/15 text-white"
+                        : "border-white/10 bg-black/40 text-slate-300 hover:border-white/20"
+                    }`}
+                  >
+                    <span className="block text-sm font-semibold uppercase tracking-widest">{v.title}</span>
+                    <span className="mt-1 block text-xs font-normal capitalize tracking-normal text-slate-500">{v.hint}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           {step === "service" && (
             <div>
               <p className="text-sm font-medium text-slate-300">Which package?</p>
@@ -214,7 +255,12 @@ export function BookingForm() {
                         : "border-white/10 bg-black/40 text-slate-300 hover:border-white/20"
                     }`}
                   >
-                    {s.label}
+                    <span className="block">{s.label}</span>
+                    {vehicleCategory ? (
+                      <span className="mt-1 block text-xs font-normal normal-case tracking-normal text-slate-500">
+                        From ${priceFor(s.id, vehicleCategory)}
+                      </span>
+                    ) : null}
                   </button>
                 ))}
               </div>
@@ -246,6 +292,26 @@ export function BookingForm() {
             <div>
               <h3 className="text-lg font-semibold text-white">Confirm your request</h3>
               <p className="mt-2 text-sm text-slate-400">Double-check everything before we receive your booking.</p>
+              {quotedTotal != null && service ? (
+                <aside
+                  className="mt-6 rounded-2xl border border-amber-400/35 bg-gradient-to-br from-amber-500/12 to-black/60 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md"
+                  aria-label="Estimated quote"
+                >
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-200/95">Estimated quote</p>
+                  <div className="mt-2 flex flex-wrap items-baseline justify-between gap-3">
+                    <p className="text-sm font-medium text-slate-300">
+                      {serviceLabel}{" "}
+                      <span className="text-slate-500">
+                        · {vehicleCategory === "suv" ? "SUV / truck / van" : "Sedan / coupe"}
+                      </span>
+                    </p>
+                    <span className="inline-flex items-center gap-1.5 text-2xl font-bold tabular-nums tracking-tight text-white">
+                      <ClipboardCheck className="size-5 text-amber-300" aria-hidden />
+                      ${quotedTotal}
+                    </span>
+                  </div>
+                </aside>
+              ) : null}
               <dl className="mt-6 space-y-4 rounded-2xl border border-white/10 bg-black/40 p-4 text-sm">
                 <div>
                   <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Name</dt>
@@ -260,16 +326,14 @@ export function BookingForm() {
                   <dd className="mt-1 text-slate-200">{car || "—"}</dd>
                 </div>
                 <div>
-                  <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Package</dt>
-                  <dd className="mt-1 flex flex-wrap items-center gap-2 text-slate-200">
-                    <span>{serviceLabel}</span>
-                    {servicePrice ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-md border border-amber-400/25 bg-amber-400/10 px-2 py-0.5 text-xs font-semibold text-amber-100">
-                        <ClipboardCheck className="size-3.5 text-amber-300" aria-hidden />
-                        {servicePrice}
-                      </span>
-                    ) : null}
+                  <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Size</dt>
+                  <dd className="mt-1 text-slate-200">
+                    {vehicleCategory === "suv" ? "SUV / truck / van" : vehicleCategory === "sedan" ? "Sedan / coupe" : "—"}
                   </dd>
+                </div>
+                <div>
+                  <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Package</dt>
+                  <dd className="mt-1 text-slate-200">{serviceLabel}</dd>
                 </div>
                 <div>
                   <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Preferred</dt>

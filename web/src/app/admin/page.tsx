@@ -38,6 +38,11 @@ function inferPrice(job: JobRow): number {
   return PACKAGE_BASE[pkg] || 0;
 }
 
+/** Revenue only includes rows whose status is exactly Completed (case-insensitive). */
+function isCompletedStatus(status: string | null | undefined): boolean {
+  return String(status || "").trim().toLowerCase() === "completed";
+}
+
 async function fetchJobs(): Promise<JobRow[]> {
   const supabase = createAdminClient();
   if (!supabase) return [];
@@ -101,7 +106,7 @@ export default async function AdminPage() {
   }
 
   const jobs = await fetchJobs();
-  const completed = jobs.filter((j) => String(j.status || "").toLowerCase() === "completed");
+  const completed = jobs.filter((j) => isCompletedStatus(j.status));
   const pending = jobs.filter((j) => {
     const s = String(j.status || "pending").toLowerCase();
     return s === "pending" || s === "new" || s === "quote";
@@ -166,25 +171,34 @@ export default async function AdminPage() {
           <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
             <section id="active-jobs" className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-md">
               <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-300">Recent Activity</h3>
-              <div className="mt-4 overflow-x-auto">
-                <table className="min-w-full text-left text-sm">
+              <div className="mt-4 overflow-x-auto rounded-xl border border-white/8 bg-black/25 p-1 shadow-inner shadow-black/40">
+                <table className="min-w-full border-separate border-spacing-y-1 text-left text-sm">
                   <thead className="text-xs uppercase tracking-[0.15em] text-slate-500">
                     <tr>
-                      <th className="pb-3 pr-4">Customer</th>
-                      <th className="pb-3 pr-4">Vehicle</th>
-                      <th className="pb-3 pr-4">Package</th>
-                      <th className="pb-3">Status</th>
+                      <th className="rounded-l-lg bg-white/[0.04] px-4 py-3 pr-4">Customer</th>
+                      <th className="bg-white/[0.04] px-4 py-3 pr-4">Vehicle</th>
+                      <th className="bg-white/[0.04] px-4 py-3 pr-4">Package</th>
+                      <th className="rounded-r-lg bg-white/[0.04] px-4 py-3">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/10">
+                  <tbody>
                     {recent.map((job, i) => {
                       const status = String(job.status || "pending");
                       return (
-                        <tr key={job.id || `${job.name || "job"}-${i}`} className="transition-colors hover:bg-white/5">
-                          <td className="py-3 pr-4">{job.name || "—"}</td>
-                          <td className="py-3 pr-4 text-slate-300">{job.car_make_model || "—"}</td>
-                          <td className="py-3 pr-4 capitalize">{job.service_package || "—"}</td>
-                          <td className="py-3">
+                        <tr
+                          key={job.id || `${job.name || "job"}-${i}`}
+                          className="group transition-[background-color,box-shadow] hover:bg-white/[0.05]"
+                        >
+                          <td className="rounded-l-xl border border-white/5 border-r-0 bg-white/[0.02] px-4 py-3 pr-3 text-slate-100 transition group-hover:border-amber-400/15 group-hover:bg-white/[0.04]">
+                            {job.name || "—"}
+                          </td>
+                          <td className="border-y border-white/5 bg-white/[0.02] px-4 py-3 pr-3 text-slate-300 transition group-hover:border-amber-400/15 group-hover:bg-white/[0.04]">
+                            {job.car_make_model || "—"}
+                          </td>
+                          <td className="border-y border-white/5 bg-white/[0.02] px-4 py-3 pr-3 capitalize transition group-hover:border-amber-400/15 group-hover:bg-white/[0.04]">
+                            {job.service_package || "—"}
+                          </td>
+                          <td className="rounded-r-xl border border-white/5 border-l-0 bg-white/[0.02] px-4 py-3 transition group-hover:border-amber-400/15 group-hover:bg-white/[0.04]">
                             <div className="flex flex-wrap items-center gap-2">
                               <span className={`inline-flex rounded-md border px-2 py-1 text-xs ${badgeForStatus(status)}`}>{status}</span>
                               {job.id != null ? (

@@ -63,8 +63,8 @@ const transformations = [
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-black text-white">
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-white/5 bg-black/70 backdrop-blur-xl">
+    <div className="min-h-screen overflow-x-hidden bg-black text-white">
+      <header className="sticky top-0 z-50 border-b border-white/5 bg-black/75 shadow-[0_12px_40px_-18px_rgba(0,0,0,0.85)] backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-black/55">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 md:px-8">
           <span className="text-sm font-semibold tracking-[0.2em] text-slate-300">SHINE N TIME</span>
           <nav className="hidden gap-8 text-xs font-semibold uppercase tracking-[0.15em] text-slate-400 md:flex">
@@ -89,7 +89,7 @@ export default function Home() {
 
       <main>
         {/* Hero */}
-        <section className="relative overflow-hidden px-5 pb-24 pt-32 md:px-8 md:pb-32 md:pt-40">
+        <section className="relative overflow-x-hidden px-5 pb-24 pt-12 md:px-8 md:pb-32 md:pt-16">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(59,130,246,0.12),transparent_55%)]" />
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_80%_60%,rgba(212,175,55,0.06),transparent_50%)]" />
           <div className="relative mx-auto max-w-4xl text-center">

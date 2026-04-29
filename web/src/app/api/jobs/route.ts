@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizePhone } from "@/lib/phone";
+import { priceFor, type PackageId, type VehicleCategory } from "@/lib/package-pricing";
 
 export async function POST(req: Request) {
   const supabase = createAdminClient();
@@ -23,6 +24,7 @@ export async function POST(req: Request) {
   const phone = normalizePhone(String(b.phone || ""));
   const car_make_model = String(b.car_make_model || "").trim();
   const service_package = String(b.service_package || "").toLowerCase();
+  const vehicle_type_raw = String(b.vehicle_type || "").toLowerCase();
   const referred_by_phone = b.referred_by_phone ? normalizePhone(String(b.referred_by_phone)) : null;
   const preferred_date_raw = b.preferred_date != null ? String(b.preferred_date).trim() : "";
   const preferred_time_raw = b.preferred_time != null ? String(b.preferred_time).trim().toLowerCase() : "";
@@ -33,6 +35,13 @@ export async function POST(req: Request) {
   if (!["silver", "gold", "platinum"].includes(service_package)) {
     return NextResponse.json({ error: "Invalid service package." }, { status: 400 });
   }
+
+  if (vehicle_type_raw !== "sedan" && vehicle_type_raw !== "suv") {
+    return NextResponse.json({ error: "Vehicle size is required (sedan or suv)." }, { status: 400 });
+  }
+  const vehicle_category: VehicleCategory = vehicle_type_raw;
+
+  const price = priceFor(service_package as PackageId, vehicle_category);
 
   if (!preferred_date_raw) {
     return NextResponse.json({ error: "Preferred date is required." }, { status: 400 });
@@ -59,9 +68,13 @@ export async function POST(req: Request) {
     phone,
     car_make_model,
     service_package,
+    vehicle_type: vehicle_category,
+    estimated_price: price,
+    price,
     preferred_date: preferred_date_raw,
     preferred_time: preferred_time_raw,
     referred_by_phone: referred_by_phone && referred_by_phone.length >= 10 ? referred_by_phone : null,
+    status: "Pending",
     created_at: new Date().toISOString()
   };
 
