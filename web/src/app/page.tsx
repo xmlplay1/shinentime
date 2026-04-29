@@ -111,6 +111,9 @@ export default function Home() {
             <a href="#prep" className="transition hover:text-amber-200">
               Prep
             </a>
+            <Link href="/prep" className="transition hover:text-amber-200">
+              Prep Page
+            </Link>
             <a href="#reviews" className="transition hover:text-amber-200">
               Reviews
             </a>
@@ -130,6 +133,12 @@ export default function Home() {
               className="rounded-full border border-white/15 bg-white/5 px-3 py-2 text-[9px] font-bold uppercase tracking-[0.18em] text-white transition hover:border-blue-400/40 hover:bg-blue-500/10 md:px-4"
             >
               Quote
+            </Link>
+            <Link
+              href="/prep"
+              className="hidden rounded-full border border-white/15 bg-white/[0.03] px-3 py-2 text-[9px] font-bold uppercase tracking-[0.18em] text-slate-200 transition hover:border-amber-400/35 hover:text-amber-100 lg:inline-flex"
+            >
+              Prep & Area
             </Link>
           </div>
         </div>

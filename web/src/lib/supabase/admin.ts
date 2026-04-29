@@ -15,3 +15,13 @@ export function createAdminClient(): SupabaseClient | null {
     auth: { persistSession: false, autoRefreshToken: false }
   });
 }
+
+/** Strict server client for admin surfaces: requires service-role style key. */
+export function createServiceRoleClient(): SupabaseClient | null {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://tjqbvafjhtwlujreluxr.supabase.co";
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceKey) return null;
+  return createClient(url, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+}

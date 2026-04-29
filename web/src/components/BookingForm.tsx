@@ -9,7 +9,7 @@ import { formatSharePath, normalizePhone } from "@/lib/phone";
 import { PreferredDateTime, type PreferredTime } from "@/components/PreferredDateTime";
 import { PACKAGE_PRICING, priceFor, type PackageId, type VehicleCategory } from "@/lib/package-pricing";
 
-const STEPS = ["name", "phone", "car", "vehicle", "service", "schedule", "referral", "review"] as const;
+const STEPS = ["name", "phone", "email", "car", "vehicle", "service", "schedule", "referral", "review"] as const;
 
 const services: readonly {
   readonly id: PackageId;
@@ -33,6 +33,7 @@ export function BookingForm() {
   const [stepIndex, setStepIndex] = useState(0);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [car, setCar] = useState("");
   const [vehicleCategory, setVehicleCategory] = useState<VehicleCategory | "">("");
   const [service, setService] = useState<PackageId | "">("");
@@ -56,6 +57,7 @@ export function BookingForm() {
   const canNext = () => {
     if (step === "name") return name.trim().length >= 2;
     if (step === "phone") return normalizePhone(phone).length >= 10;
+    if (step === "email") return /\S+@\S+\.\S+/.test(email.trim());
     if (step === "car") return car.trim().length >= 2;
     if (step === "vehicle") return vehicleCategory === "sedan" || vehicleCategory === "suv";
     if (step === "service") return Boolean(service);
@@ -95,6 +97,7 @@ export function BookingForm() {
         body: JSON.stringify({
           name: name.trim(),
           phone: normalizePhone(phone),
+          email: email.trim(),
           car_make_model: car.trim(),
           vehicle_type: vehicleCategory,
           service_package: service,
@@ -194,6 +197,20 @@ export function BookingForm() {
                 placeholder="7344191846"
                 className="mt-3 w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-4 text-lg text-white outline-none ring-blue-500/40 transition focus:ring-2"
               />
+            </div>
+          )}
+          {step === "email" && (
+            <div>
+              <label className="block text-sm font-medium text-slate-300">Best email for your receipt</label>
+              <input
+                autoFocus
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="mt-3 w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-4 text-lg text-white outline-none ring-blue-500/40 transition focus:ring-2"
+              />
+              <p className="mt-2 text-xs text-slate-500">We send your quote receipt and prep checklist here.</p>
             </div>
           )}
           {step === "car" && (
@@ -320,6 +337,10 @@ export function BookingForm() {
                 <div>
                   <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Phone</dt>
                   <dd className="mt-1 font-mono text-slate-200">{normalizePhone(phone) || "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Email</dt>
+                  <dd className="mt-1 text-slate-200">{email || "—"}</dd>
                 </div>
                 <div>
                   <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Vehicle</dt>

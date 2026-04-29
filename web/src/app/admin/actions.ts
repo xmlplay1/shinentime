@@ -4,6 +4,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ADMIN_COOKIE_NAME, expectedAdminToken, getAdminPassword } from "@/lib/admin-auth";
 import { priceFor } from "@/lib/package-pricing";
+import { createResendClient, getResendFrom } from "@/lib/resend";
+import { reviewRequestHtml, reviewRequestText } from "@/lib/email-templates";
 
 export async function adminLoginAction(formData: FormData) {
   const submitted = String(formData.get("password") || "");
@@ -95,4 +97,65 @@ export async function createTestJobAction() {
     redirect("/admin?error=create");
   }
   redirect("/admin");
+}
+
+export async function sendReviewEmailAction(formData: FormData) {
+  const expectedPassword = getAdminPassword();
+  if (!expectedPassword) {
+    redirect("/admin");
+  }
+
+  const jar = await cookies();
+  const session = jar.get(ADMIN_COOKIE_NAME)?.value;
+  if (!session || session !== expectedAdminToken()) {
+    redirect("/admin?error=invalid");
+  }
+
+  const idRaw = String(formData.get("id") || "").trim();
+  const id = Number.parseInt(idRaw, 10);
+  if (!Number.isFinite(id)) redirect("/admin?error=review-id");
+
+  const providedName = String(formData.get("name") || "").trim();
+  const providedEmail = String(formData.get("email") || "").trim().toLowerCase();
+
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const { data: job, error } = await supabase
+    .from("jobs")
+    .select("id, name, email, car_make_model, service_package, status")
+    .eq("id", id)
+    .maybeSingle();
+  if (error || !job) {
+    console.error("[admin] review email lookup error", error);
+    redirect("/admin?error=review-lookup");
+  }
+  const email = providedEmail || String(job.email || "").trim().toLowerCase();
+  const status = String(job.status || "").toLowerCase();
+  if (!email) redirect("/admin?error=review-no-email");
+  if (status !== "completed") redirect("/admin?error=review-not-completed");
+
+  const resend = createResendClient();
+  if (!resend) redirect("/admin?error=resend-not-configured");
+  const reviewLink =
+    process.env.SNT_REVIEW_GOOGLE_URL ||
+    process.env.SNT_REVIEW_FACEBOOK_URL ||
+    "https://g.page/r/CWfVxB8UuvgHEBM/review";
+  const customerName = providedName || String(job.name || "there");
+
+  try {
+    await resend.emails.send({
+      from: getResendFrom(),
+      to: email,
+      subject: "Thank you from Shine N Time - would you leave us a quick review?",
+      html: reviewRequestHtml(customerName, reviewLink),
+      text: reviewRequestText(customerName, reviewLink)
+    });
+  } catch (sendError) {
+    console.error("[admin] review email send error", sendError);
+    redirect("/admin?error=review-send");
+  }
+
+  redirect("/admin?sent=review");
 }
