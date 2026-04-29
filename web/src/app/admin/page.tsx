@@ -4,9 +4,11 @@ import {
   adminLoginAction,
   adminLogoutAction,
   autoLogContactAction,
+  cancelJobAction,
   claimJobAction,
   createTeamMemberAction,
   createTestJobAction,
+  rescheduleJobAction,
   updateJobStatusAction,
   uploadJobImageAction
 } from "@/app/admin/actions";
@@ -19,7 +21,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { Car, CircleCheckBig, Clock3, DollarSign, FileClock, Truck, TrendingUp } from "lucide-react";
 
 type Role = "ADMIN" | "SERVICE_REP";
-type JobStatus = "Pending" | "Confirmed" | "Completed";
+type JobStatus = "Pending" | "Confirmed" | "Completed" | "Cancelled";
 
 type JobRow = {
   id: number;
@@ -36,6 +38,7 @@ type JobRow = {
   created_at: string | null;
   preferred_date: string | null;
   preferred_time: string | null;
+  vehicle_condition: string | null;
   claimed_by: string | null;
   address: string | null;
   city: string | null;
@@ -79,6 +82,7 @@ function statusClass(status: string | null | undefined): string {
   const s = String(status || "").toLowerCase();
   if (s === "completed") return "border-emerald-400/45 bg-emerald-500/12 text-emerald-200";
   if (s === "confirmed") return "border-blue-400/45 bg-blue-500/12 text-blue-200";
+  if (s === "cancelled") return "border-rose-400/45 bg-rose-500/12 text-rose-200";
   return "border-amber-400/45 bg-amber-500/12 text-amber-200";
 }
 
@@ -86,6 +90,7 @@ function toStatus(status: string | null | undefined): JobStatus {
   const s = String(status || "").toLowerCase();
   if (s === "completed") return "Completed";
   if (s === "confirmed") return "Confirmed";
+  if (s === "cancelled") return "Cancelled";
   return "Pending";
 }
 
@@ -265,7 +270,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           )}
 
           <div id="calendar" className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-            <CalendarPanel jobs={jobs} />
+            <CalendarPanel jobs={jobs} rescheduleAction={rescheduleJobAction} cancelAction={cancelJobAction} />
             <ScriptSidebar
               customerName={jobs[0]?.name || "Customer"}
               packageName={jobs[0]?.service_package || "Detail Package"}
@@ -369,6 +374,30 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                         </select>
                         <button type="submit" className="rounded-md border border-amber-400/30 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold uppercase">
                           Update
+                        </button>
+                      </form>
+                      <form action={rescheduleJobAction} className="inline-flex items-center gap-2 rounded-md border border-white/15 px-2 py-1">
+                        <input type="hidden" name="id" value={job.id} />
+                        <input
+                          type="date"
+                          name="preferred_date"
+                          required
+                          defaultValue={job.preferred_date || ""}
+                          className="rounded bg-black px-2 py-1 text-[10px]"
+                        />
+                        <select name="preferred_time" defaultValue={job.preferred_time || "morning"} className="rounded bg-black px-2 py-1 text-[10px]">
+                          <option value="morning">morning</option>
+                          <option value="afternoon">afternoon</option>
+                          <option value="evening">evening</option>
+                        </select>
+                        <button type="submit" className="rounded border border-blue-400/40 bg-blue-500/10 px-2 py-1 text-[10px] uppercase">
+                          Reschedule
+                        </button>
+                      </form>
+                      <form action={cancelJobAction} className="inline-flex">
+                        <input type="hidden" name="id" value={job.id} />
+                        <button type="submit" className="rounded border border-red-400/40 bg-red-500/10 px-2 py-1 text-[10px] uppercase text-red-200">
+                          Cancel
                         </button>
                       </form>
 

@@ -9,7 +9,7 @@ import { formatSharePath, normalizePhone } from "@/lib/phone";
 import { PreferredDateTime, type PreferredTime } from "@/components/PreferredDateTime";
 import { PACKAGE_PRICING, priceFor, type PackageId, type VehicleCategory } from "@/lib/package-pricing";
 
-const STEPS = ["name", "phone", "email", "car", "vehicle", "service", "schedule", "referral", "review"] as const;
+const STEPS = ["name", "phone", "email", "address", "car", "vehicle", "condition", "service", "schedule", "referral", "review"] as const;
 
 const services: readonly {
   readonly id: PackageId;
@@ -34,8 +34,13 @@ export function BookingForm() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [streetAddress, setStreetAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [zip, setZip] = useState("");
   const [car, setCar] = useState("");
   const [vehicleCategory, setVehicleCategory] = useState<VehicleCategory | "">("");
+  const [vehicleCondition, setVehicleCondition] = useState<"light" | "moderate" | "heavy" | "">("");
   const [service, setService] = useState<PackageId | "">("");
   const [preferredDate, setPreferredDate] = useState<Date | undefined>(undefined);
   const [preferredTime, setPreferredTime] = useState<PreferredTime | "">("");
@@ -58,8 +63,17 @@ export function BookingForm() {
     if (step === "name") return name.trim().length >= 2;
     if (step === "phone") return normalizePhone(phone).length >= 10;
     if (step === "email") return /\S+@\S+\.\S+/.test(email.trim());
+    if (step === "address") {
+      return (
+        streetAddress.trim().length >= 4 &&
+        city.trim().length >= 2 &&
+        state.trim().length >= 2 &&
+        zip.trim().length >= 5
+      );
+    }
     if (step === "car") return car.trim().length >= 2;
     if (step === "vehicle") return vehicleCategory === "sedan" || vehicleCategory === "suv";
+    if (step === "condition") return Boolean(vehicleCondition);
     if (step === "service") return Boolean(service);
     if (step === "schedule") return Boolean(preferredDate) && Boolean(preferredTime);
     if (step === "referral") return true;
@@ -98,8 +112,13 @@ export function BookingForm() {
           name: name.trim(),
           phone: normalizePhone(phone),
           email: email.trim(),
+          address: streetAddress.trim(),
+          city: city.trim(),
+          state: state.trim(),
+          zip: zip.trim(),
           car_make_model: car.trim(),
           vehicle_type: vehicleCategory,
+          vehicle_condition: vehicleCondition,
           service_package: service,
           preferred_date,
           preferred_time: preferredTime || null,
@@ -213,6 +232,42 @@ export function BookingForm() {
               <p className="mt-2 text-xs text-slate-500">We send your quote receipt and prep checklist here.</p>
             </div>
           )}
+          {step === "address" && (
+            <div>
+              <label className="block text-sm font-medium text-slate-300">Service address for accurate quote</label>
+              <div className="mt-3 grid gap-3">
+                <input
+                  autoFocus
+                  value={streetAddress}
+                  onChange={(e) => setStreetAddress(e.target.value)}
+                  placeholder="Street address"
+                  className="w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-base text-white outline-none ring-blue-500/40 transition focus:ring-2"
+                />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <input
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="City"
+                    className="w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-base text-white outline-none ring-blue-500/40 transition focus:ring-2"
+                  />
+                  <input
+                    value={state}
+                    onChange={(e) => setState(e.target.value.toUpperCase())}
+                    placeholder="State (MI)"
+                    maxLength={2}
+                    className="w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-base uppercase text-white outline-none ring-blue-500/40 transition focus:ring-2"
+                  />
+                </div>
+                <input
+                  value={zip}
+                  onChange={(e) => setZip(e.target.value.replace(/\D/g, "").slice(0, 5))}
+                  placeholder="ZIP code"
+                  inputMode="numeric"
+                  className="w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-base text-white outline-none ring-blue-500/40 transition focus:ring-2"
+                />
+              </div>
+            </div>
+          )}
           {step === "car" && (
             <div>
               <label className="block text-sm font-medium text-slate-300">Vehicle make & model</label>
@@ -252,6 +307,35 @@ export function BookingForm() {
                   >
                     <span className="block text-sm font-semibold uppercase tracking-widest">{v.title}</span>
                     <span className="mt-1 block text-xs font-normal capitalize tracking-normal text-slate-500">{v.hint}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {step === "condition" && (
+            <div>
+              <p className="text-sm font-medium text-slate-300">Current interior condition</p>
+              <p className="mt-1 text-xs text-slate-500">Helps us estimate labor time and final quote accuracy.</p>
+              <div className="mt-4 grid gap-3">
+                {(
+                  [
+                    { id: "light" as const, label: "Light", hint: "Dust + minor crumbs" },
+                    { id: "moderate" as const, label: "Moderate", hint: "Stains / visible dirt" },
+                    { id: "heavy" as const, label: "Heavy", hint: "Pet hair / salt / deep extraction" }
+                  ] as const
+                ).map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setVehicleCondition(c.id)}
+                    className={`rounded-2xl border px-4 py-4 text-left transition ${
+                      vehicleCondition === c.id
+                        ? "border-blue-400/60 bg-blue-500/15 text-white"
+                        : "border-white/10 bg-black/40 text-slate-300 hover:border-white/20"
+                    }`}
+                  >
+                    <span className="block text-sm font-semibold uppercase tracking-widest">{c.label}</span>
+                    <span className="mt-1 block text-xs font-normal capitalize tracking-normal text-slate-500">{c.hint}</span>
                   </button>
                 ))}
               </div>
@@ -347,10 +431,23 @@ export function BookingForm() {
                   <dd className="mt-1 text-slate-200">{car || "—"}</dd>
                 </div>
                 <div>
+                  <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Address</dt>
+                  <dd className="mt-1 text-slate-200">
+                    {streetAddress || "—"}
+                    {city ? `, ${city}` : ""}
+                    {state ? `, ${state}` : ""}
+                    {zip ? ` ${zip}` : ""}
+                  </dd>
+                </div>
+                <div>
                   <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Size</dt>
                   <dd className="mt-1 text-slate-200">
                     {vehicleCategory === "suv" ? "SUV / truck / van" : vehicleCategory === "sedan" ? "Sedan / coupe" : "—"}
                   </dd>
+                </div>
+                <div>
+                  <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Condition</dt>
+                  <dd className="mt-1 text-slate-200">{vehicleCondition || "—"}</dd>
                 </div>
                 <div>
                   <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Package</dt>

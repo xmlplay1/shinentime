@@ -28,6 +28,12 @@ export async function POST(req: Request) {
   const car_make_model = String(b.car_make_model || "").trim();
   const service_package = String(b.service_package || "").toLowerCase();
   const vehicle_type_raw = String(b.vehicle_type || "").toLowerCase();
+  const vehicle_condition = String(b.vehicle_condition || "").trim().toLowerCase();
+  const address = String(b.address || "").trim();
+  const city = String(b.city || "").trim();
+  const state = String(b.state || "").trim();
+  const zip = String(b.zip || "").trim();
+  const notes = String(b.notes || "").trim();
   const referred_by_phone = b.referred_by_phone ? normalizePhone(String(b.referred_by_phone)) : null;
   const preferred_date_raw = b.preferred_date != null ? String(b.preferred_date).trim() : "";
   const preferred_time_raw = b.preferred_time != null ? String(b.preferred_time).trim().toLowerCase() : "";
@@ -42,6 +48,12 @@ export async function POST(req: Request) {
 
   if (vehicle_type_raw !== "sedan" && vehicle_type_raw !== "suv") {
     return NextResponse.json({ error: "Vehicle size is required (sedan or suv)." }, { status: 400 });
+  }
+  if (!["light", "moderate", "heavy"].includes(vehicle_condition)) {
+    return NextResponse.json({ error: "Vehicle condition is required." }, { status: 400 });
+  }
+  if (address.length < 5 || city.length < 2 || state.length < 2 || zip.length < 5) {
+    return NextResponse.json({ error: "Address, city, state, and zip are required for an accurate quote." }, { status: 400 });
   }
   const vehicle_category: VehicleCategory = vehicle_type_raw;
 
@@ -74,6 +86,12 @@ export async function POST(req: Request) {
     car_make_model,
     service_package,
     vehicle_type: vehicle_category,
+    vehicle_condition,
+    address,
+    city,
+    state,
+    zip,
+    notes: notes || null,
     estimated_price: price,
     price,
     preferred_date: preferred_date_raw,
