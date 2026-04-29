@@ -104,7 +104,7 @@ export async function POST(req: Request) {
     const vehicleLabel = vehicle_category === "suv" ? "SUV / truck / van" : "Sedan / coupe";
     const prepSummary = "Prep requirements: driveway access, ~50ft hose reach, and keys ready.";
 
-    await Promise.allSettled([
+    const emailResults = await Promise.all([
       sendMail({
         to: email,
         subject: "Your Shine N Time Detail is Requested!",
@@ -158,6 +158,10 @@ export async function POST(req: Request) {
         })}\n\n${prepSummary}`
       })
     ]);
+    if (!emailResults.every(Boolean)) {
+      console.warn("[jobs] booking saved but one or more emails failed to send");
+      return NextResponse.json({ ok: true, warning: "BOOKING_SAVED_EMAIL_FAILED" });
+    }
   }
 
   return NextResponse.json({ ok: true });

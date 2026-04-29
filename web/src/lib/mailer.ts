@@ -33,13 +33,26 @@ type MailPayload = {
 export async function sendMail(payload: MailPayload): Promise<boolean> {
   const transport = createMailerTransport();
   const from = getMailerFrom();
-  if (!transport || !from) return false;
-  await transport.sendMail({
-    from,
-    to: payload.to,
-    subject: payload.subject,
-    text: payload.text,
-    html: payload.html
-  });
-  return true;
+  if (!transport || !from) {
+    console.error("[mail] Gmail SMTP is not configured. Missing GMAIL_USER or GMAIL_APP_PASSWORD.");
+    return false;
+  }
+  try {
+    const info = await transport.sendMail({
+      from,
+      to: payload.to,
+      subject: payload.subject,
+      text: payload.text,
+      html: payload.html
+    });
+    console.log("[mail] sent", {
+      messageId: info.messageId,
+      accepted: info.accepted,
+      rejected: info.rejected
+    });
+    return true;
+  } catch (error) {
+    console.error("[mail] send failed", error);
+    return false;
+  }
 }
