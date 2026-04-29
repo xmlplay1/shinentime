@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizePhone } from "@/lib/phone";
 import { priceFor, type PackageId, type VehicleCategory } from "@/lib/package-pricing";
+import { adminNewQuoteText, quoteReceiptHtml, quoteReceiptText } from "@/lib/email-templates";
+import { sendMail } from "@/lib/mailer";
 
 export async function POST(req: Request) {
   const supabase = createAdminClient();
@@ -22,15 +24,23 @@ export async function POST(req: Request) {
   const b = body as Record<string, unknown>;
   const name = String(b.name || "").trim();
   const phone = normalizePhone(String(b.phone || ""));
+  const email = String(b.email || "").trim().toLowerCase();
   const car_make_model = String(b.car_make_model || "").trim();
   const service_package = String(b.service_package || "").toLowerCase();
   const vehicle_type_raw = String(b.vehicle_type || "").toLowerCase();
+  const vehicle_condition = String(b.vehicle_condition || "").trim().toLowerCase();
+  const address = String(b.address || "").trim();
+  const city = String(b.city || "").trim();
+  const state = String(b.state || "").trim();
+  const zip = String(b.zip || "").trim();
+  const notes = String(b.notes || "").trim();
   const referred_by_phone = b.referred_by_phone ? normalizePhone(String(b.referred_by_phone)) : null;
   const preferred_date_raw = b.preferred_date != null ? String(b.preferred_date).trim() : "";
   const preferred_time_raw = b.preferred_time != null ? String(b.preferred_time).trim().toLowerCase() : "";
 
   if (name.length < 2) return NextResponse.json({ error: "Name is required." }, { status: 400 });
   if (phone.length < 10) return NextResponse.json({ error: "Valid phone is required." }, { status: 400 });
+  if (!email || !email.includes("@")) return NextResponse.json({ error: "Valid email is required." }, { status: 400 });
   if (car_make_model.length < 2) return NextResponse.json({ error: "Vehicle is required." }, { status: 400 });
   if (!["silver", "gold", "platinum"].includes(service_package)) {
     return NextResponse.json({ error: "Invalid service package." }, { status: 400 });
@@ -38,6 +48,12 @@ export async function POST(req: Request) {
 
   if (vehicle_type_raw !== "sedan" && vehicle_type_raw !== "suv") {
     return NextResponse.json({ error: "Vehicle size is required (sedan or suv)." }, { status: 400 });
+  }
+  if (!["light", "moderate", "heavy"].includes(vehicle_condition)) {
+    return NextResponse.json({ error: "Vehicle condition is required." }, { status: 400 });
+  }
+  if (address.length < 5 || city.length < 2 || state.length < 2 || zip.length < 5) {
+    return NextResponse.json({ error: "Address, city, state, and zip are required for an accurate quote." }, { status: 400 });
   }
   const vehicle_category: VehicleCategory = vehicle_type_raw;
 
@@ -66,9 +82,16 @@ export async function POST(req: Request) {
   const row = {
     name,
     phone,
+    email,
     car_make_model,
     service_package,
     vehicle_type: vehicle_category,
+    vehicle_condition,
+    address,
+    city,
+    state,
+    zip,
+    notes: notes || null,
     estimated_price: price,
     price,
     preferred_date: preferred_date_raw,
@@ -90,6 +113,73 @@ export async function POST(req: Request) {
       },
       { status: 500 }
     );
+  }
+
+  const gmailUser = process.env.GMAIL_USER;
+  const gmailPass = process.env.GMAIL_APP_PASSWORD;
+  if (gmailUser && gmailPass) {
+    const packageLabel = String(service_package).charAt(0).toUpperCase() + String(service_package).slice(1);
+    const vehicleLabel = vehicle_category === "suv" ? "SUV / truck / van" : "Sedan / coupe";
+    const prepSummary = "Prep requirements: driveway access, ~50ft hose reach, and keys ready.";
+
+    const emailResults = await Promise.all([
+      sendMail({
+        to: email,
+        subject: "Your Shine N Time Detail is Requested!",
+        html: quoteReceiptHtml({
+          customerName: name,
+          customerEmail: email,
+          phone,
+          carMakeModel: car_make_model,
+          vehicleType: vehicle_category,
+          servicePackage: service_package,
+          preferredDate: preferred_date_raw,
+          preferredTime: preferred_time_raw,
+          estimatedPrice: price
+        }),
+        text: quoteReceiptText({
+          customerName: name,
+          customerEmail: email,
+          phone,
+          carMakeModel: car_make_model,
+          vehicleType: vehicle_category,
+          servicePackage: service_package,
+          preferredDate: preferred_date_raw,
+          preferredTime: preferred_time_raw,
+          estimatedPrice: price
+        })
+      }),
+      sendMail({
+        to: process.env.ADMIN_NOTIFICATION_EMAIL || "tawfiqalshara424@gmail.com",
+        subject: `New quote: ${name} · ${packageLabel} (${vehicleLabel})`,
+        html: `<pre style="font-family:Inter,Arial,sans-serif;white-space:pre-wrap">${adminNewQuoteText({
+          customerName: name,
+          customerEmail: email,
+          phone,
+          carMakeModel: car_make_model,
+          vehicleType: vehicle_category,
+          servicePackage: service_package,
+          preferredDate: preferred_date_raw,
+          preferredTime: preferred_time_raw,
+          estimatedPrice: price
+        })}\n${prepSummary}</pre>`,
+        text: `${adminNewQuoteText({
+          customerName: name,
+          customerEmail: email,
+          phone,
+          carMakeModel: car_make_model,
+          vehicleType: vehicle_category,
+          servicePackage: service_package,
+          preferredDate: preferred_date_raw,
+          preferredTime: preferred_time_raw,
+          estimatedPrice: price
+        })}\n\n${prepSummary}`
+      })
+    ]);
+    if (!emailResults.every(Boolean)) {
+      console.warn("[jobs] booking saved but one or more emails failed to send");
+      return NextResponse.json({ ok: true, warning: "BOOKING_SAVED_EMAIL_FAILED" });
+    }
   }
 
   return NextResponse.json({ ok: true });

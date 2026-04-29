@@ -21,7 +21,15 @@ export function DashboardCharts({ sedanCount, suvCount }: Props) {
           <BarChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.12)" />
             <XAxis dataKey="type" stroke="#94a3b8" tickLine={false} axisLine={false} />
-            <YAxis allowDecimals={false} stroke="#94a3b8" tickLine={false} axisLine={false} width={30} />
+            <YAxis
+              allowDecimals={false}
+              domain={[0, "dataMax + 1"]}
+              tickCount={Math.max(3, Math.max(sedanCount, suvCount) + 1)}
+              stroke="#94a3b8"
+              tickLine={false}
+              axisLine={false}
+              width={30}
+            />
             <Tooltip
               cursor={{ fill: "rgba(255,255,255,0.04)" }}
               contentStyle={{

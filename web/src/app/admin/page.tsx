@@ -1,81 +1,148 @@
 import { redirect } from "next/navigation";
-import { DollarSign, FileClock, CheckCircle2, Clock3, CircleCheckBig } from "lucide-react";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { adminLoginAction, adminLogoutAction, createTestJobAction, updateJobStatusAction } from "@/app/admin/actions";
+import {
+  addCommunicationLogAction,
+  adminLoginAction,
+  adminLogoutAction,
+  autoLogContactAction,
+  cancelJobAction,
+  claimJobAction,
+  createTeamMemberAction,
+  createTestJobAction,
+  rescheduleJobAction,
+  updateJobStatusAction,
+  uploadJobImageAction
+} from "@/app/admin/actions";
+import { CalendarPanel } from "@/app/admin/CalendarPanel";
+import { ScriptSidebar } from "@/app/admin/ScriptSidebar";
 import { DashboardCharts } from "@/app/admin/widgets";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
+import { formatPhoneUs, inferMonthlyProfit, monthKey, normalizeEmail } from "@/lib/admin-format";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { Car, CircleCheckBig, Clock3, DollarSign, FileClock, Truck, TrendingUp } from "lucide-react";
+
+type Role = "ADMIN" | "SERVICE_REP";
+type JobStatus = "Pending" | "Confirmed" | "Completed" | "Cancelled";
 
 type JobRow = {
-  id?: string;
-  name?: string | null;
-  car_make_model?: string | null;
-  service_package?: string | null;
-  status?: string | null;
-  vehicle_type?: string | null;
-  price?: number | null;
-  estimated_price?: number | null;
-  final_price?: number | null;
-  created_at?: string | null;
+  id: number;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  car_make_model: string | null;
+  service_package: string | null;
+  status: string | null;
+  vehicle_type: string | null;
+  price: number | null;
+  estimated_price: number | null;
+  final_price: number | null;
+  created_at: string | null;
+  preferred_date: string | null;
+  preferred_time: string | null;
+  vehicle_condition: string | null;
+  claimed_by: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  notes: string | null;
+  assigned_rep: string | null;
 };
 
-const PACKAGE_BASE: Record<string, number> = {
-  silver: 37,
-  gold: 99,
-  platinum: 129
+type CommunicationLog = {
+  id: number;
+  job_id: number;
+  channel: string;
+  note: string;
+  created_by: string | null;
+  created_at: string;
 };
 
-function inferVehicleType(job: JobRow): "sedan" | "suv" {
-  const source = `${job.vehicle_type || ""} ${job.car_make_model || ""}`.toLowerCase();
-  if (source.includes("suv") || source.includes("truck") || source.includes("van")) return "suv";
-  return "sedan";
-}
+type Profile = {
+  id: string;
+  email: string;
+  full_name: string | null;
+  role: Role;
+};
+
+const PACKAGE_BASE: Record<string, number> = { silver: 37, gold: 99, platinum: 129 };
 
 function inferPrice(job: JobRow): number {
-  if (typeof job.price === "number" && Number.isFinite(job.price) && job.price > 0) return job.price;
-  if (typeof job.final_price === "number" && Number.isFinite(job.final_price) && job.final_price > 0) return job.final_price;
-  if (typeof job.estimated_price === "number" && Number.isFinite(job.estimated_price) && job.estimated_price > 0) return job.estimated_price;
-  const pkg = String(job.service_package || "").toLowerCase();
-  return PACKAGE_BASE[pkg] || 0;
+  const candidates = [job.final_price, job.price, job.estimated_price];
+  for (const value of candidates) {
+    if (typeof value === "number" && Number.isFinite(value) && value > 0) return value;
+  }
+  return PACKAGE_BASE[String(job.service_package || "").toLowerCase()] || 0;
 }
 
-/** Revenue only includes rows whose status is exactly Completed (case-insensitive). */
-function isCompletedStatus(status: string | null | undefined): boolean {
-  return String(status || "").trim().toLowerCase() === "completed";
+function isCompleted(status: string | null | undefined) {
+  return String(status || "").toLowerCase() === "completed";
 }
 
-async function fetchJobs(): Promise<JobRow[]> {
+function statusClass(status: string | null | undefined): string {
+  const s = String(status || "").toLowerCase();
+  if (s === "completed") return "border-emerald-400/45 bg-emerald-500/12 text-emerald-200";
+  if (s === "confirmed") return "border-blue-400/45 bg-blue-500/12 text-blue-200";
+  if (s === "cancelled") return "border-rose-400/45 bg-rose-500/12 text-rose-200";
+  return "border-amber-400/45 bg-amber-500/12 text-amber-200";
+}
+
+function toStatus(status: string | null | undefined): JobStatus {
+  const s = String(status || "").toLowerCase();
+  if (s === "completed") return "Completed";
+  if (s === "confirmed") return "Confirmed";
+  if (s === "cancelled") return "Cancelled";
+  return "Pending";
+}
+
+function isAdminRole(email: string): boolean {
+  const env = (process.env.ADMIN_EMAILS || "")
+    .split(",")
+    .map((v) => v.trim().toLowerCase())
+    .filter(Boolean);
+  const defaults = ["tawfiqalshara424@gmail.com", "shine.n.time.detailing@gmail.com"];
+  return [...defaults, ...env].includes(email.toLowerCase());
+}
+
+async function ensureProfile(email: string): Promise<Profile | null> {
   const supabase = createAdminClient();
-  if (!supabase) return [];
-  const { data, error } = await supabase
-    .from("jobs")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (error) {
-    console.error("[admin] jobs query error", error);
-    return [];
+  if (!supabase) return null;
+  const normalized = normalizeEmail(email);
+  if (!normalized) return null;
+  const { data: existing } = await supabase.from("profiles").select("*").eq("email", normalized).maybeSingle();
+  if (existing) return existing as Profile;
+  const role: Role = isAdminRole(normalized) ? "ADMIN" : "SERVICE_REP";
+  const id = crypto.randomUUID();
+  const payload = { id, email: normalized, full_name: normalized.split("@")[0], role };
+  await supabase.from("profiles").insert(payload);
+  return payload;
+}
+
+async function loadData(actorEmail: string) {
+  const supabase = createAdminClient();
+  if (!supabase) return null;
+  const profile = await ensureProfile(actorEmail);
+  if (!profile) return null;
+
+  const [{ data: jobs, error: jobsError }, { data: logs }, { data: reps }] = await Promise.all([
+    supabase.from("jobs").select("*").order("created_at", { ascending: false }),
+    supabase.from("job_communication_logs").select("*").order("created_at", { ascending: false }),
+    supabase.from("profiles").select("id,email,full_name,role").order("created_at", { ascending: false })
+  ]);
+  if (jobsError) {
+    console.error("[admin] jobs query error", jobsError);
+    return { profile, jobs: [], logs: [], reps: (reps || []) as Profile[] };
   }
-  return (data as JobRow[] | null) || [];
+  return {
+    profile,
+    jobs: (jobs || []) as JobRow[],
+    logs: (logs || []) as CommunicationLog[],
+    reps: (reps || []) as Profile[]
+  };
 }
 
-function badgeForStatus(status: string): string {
-  const s = status.toLowerCase();
-  if (s === "completed") return "border-emerald-400/45 bg-emerald-500/12 text-emerald-200 shadow-[0_0_18px_rgba(16,185,129,0.35)]";
-  if (s === "confirmed") return "border-blue-400/45 bg-blue-500/12 text-blue-200 shadow-[0_0_18px_rgba(59,130,246,0.3)]";
-  return "border-amber-400/45 bg-amber-500/12 text-amber-200 shadow-[0_0_18px_rgba(245,158,11,0.28)]";
-}
-
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const adminPassword = process.env.ADMIN_PASSWORD || "shinentime2009";
-  if (!adminPassword) {
-    return (
-      <main className="min-h-screen bg-black px-5 py-16 text-white md:px-10">
-        <div className="mx-auto max-w-2xl rounded-2xl border border-amber-500/25 bg-amber-500/10 p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-300">Admin not configured</p>
-          <p className="mt-2 text-sm text-amber-100">Set <code>ADMIN_PASSWORD</code> in your environment to enable /admin.</p>
-        </div>
-      </main>
-    );
-  }
+  if (!adminPassword) redirect("/?error=admin-password");
 
   const authed = await isAdminAuthenticated();
   if (!authed) {
@@ -105,161 +172,330 @@ export default async function AdminPage() {
     );
   }
 
-  const jobs = await fetchJobs();
-  const completed = jobs.filter((j) => isCompletedStatus(j.status));
-  const pending = jobs.filter((j) => {
-    const s = String(j.status || "pending").toLowerCase();
-    return s === "pending" || s === "new" || s === "quote";
-  });
+  const params = await searchParams;
+  const activeView = typeof params.view === "string" ? params.view : "calendar";
+  const actorEmail = normalizeEmail(typeof params.as === "string" ? params.as : "") || "shine.n.time.detailing@gmail.com";
+  const data = await loadData(actorEmail);
+  if (!data) {
+    return <main className="min-h-screen bg-black p-8 text-white">Missing Supabase configuration.</main>;
+  }
+  const { profile, jobs, logs, reps } = data;
+  const isAdmin = profile.role === "ADMIN";
+  const completed = jobs.filter((j) => isCompleted(j.status));
   const totalRevenue = completed.reduce((sum, j) => sum + inferPrice(j), 0);
-  const sedanCount = jobs.filter((j) => inferVehicleType(j) === "sedan").length;
-  const suvCount = jobs.filter((j) => inferVehicleType(j) === "suv").length;
-  const recent = jobs.slice(0, 5);
+  const thisMonth = monthKey(new Date());
+  const monthlyProfit = inferMonthlyProfit(
+    jobs
+      .filter((j) => monthKey(j.preferred_date || j.created_at || "") === thisMonth && isCompleted(j.status))
+      .reduce((sum, j) => sum + inferPrice(j), 0)
+  );
+  const conversionRate = jobs.length ? Math.round((completed.length / jobs.length) * 100) : 0;
+  const pending = jobs.filter((j) => !isCompleted(j.status));
+  const sedanCount = jobs.filter((j) => (j.vehicle_type || "").toLowerCase() !== "suv").length;
+  const suvCount = jobs.filter((j) => (j.vehicle_type || "").toLowerCase() === "suv").length;
+  const logsByJob = new Map<number, CommunicationLog[]>();
+  for (const log of logs) {
+    if (!logsByJob.has(log.job_id)) logsByJob.set(log.job_id, []);
+    logsByJob.get(log.job_id)!.push(log);
+  }
+
+  const sortedReps = reps.filter((r) => r.role === "SERVICE_REP" || isAdmin);
+  const loadingPipeline = typeof params.loading === "string" && params.loading === "1";
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 md:grid-cols-[220px_1fr] md:px-6">
-        <aside className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-md md:min-h-[84vh] md:border-r md:border-white/10">
+      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[250px_1fr]">
+        <aside className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-md">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">Shine N Time</p>
-          <h2 className="mt-2 text-lg font-semibold">Admin Dashboard</h2>
+          <h2 className="mt-2 text-lg font-semibold">Ultimate Command Center</h2>
+          <p className="mt-2 text-xs text-slate-400">Role: {profile.role}</p>
           <nav className="mt-6 grid gap-2 text-sm">
-            <a className="rounded-lg border border-amber-400/50 bg-amber-500/15 px-3 py-2 font-semibold text-amber-200 shadow-[0_0_14px_rgba(245,158,11,0.22)]" href="#overview">
-              Overview
-            </a>
-            <a className="rounded-lg border border-white/10 px-3 py-2 text-slate-300 hover:bg-white/[0.04]" href="#active-jobs">
-              Active Jobs
-            </a>
-            <a className="rounded-lg border border-white/10 px-3 py-2 text-slate-300 hover:bg-white/[0.04]" href="#revenue">
-              Revenue
-            </a>
-          </nav>
-          <form action={adminLogoutAction} className="mt-8 md:mt-auto md:pt-6">
-            <button
-              type="submit"
-              className="w-full rounded-lg border border-white/15 bg-transparent px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-300 hover:bg-white/[0.05]"
+            <a
+              className={`rounded-lg border px-3 py-2 font-semibold ${activeView === "calendar" ? "border-amber-400/50 bg-amber-500/15 text-amber-200" : "border-white/10 text-slate-300 hover:bg-white/[0.04]"}`}
+              href="/admin?view=calendar"
             >
+              Calendar
+            </a>
+            <a
+              className={`rounded-lg border px-3 py-2 ${activeView === "pipeline" ? "border-blue-400/45 bg-blue-500/12 font-semibold text-blue-200" : "border-white/10 text-slate-300 hover:bg-white/[0.04]"}`}
+              href="/admin?view=pipeline"
+            >
+              Lead Pipeline
+            </a>
+            {isAdmin ? (
+              <a
+                className={`rounded-lg border px-3 py-2 ${activeView === "team" ? "border-emerald-400/45 bg-emerald-500/12 font-semibold text-emerald-200" : "border-white/10 text-slate-300 hover:bg-white/[0.04]"}`}
+                href="/admin?view=team"
+              >
+                Team Settings
+              </a>
+            ) : null}
+          </nav>
+          <form action={adminLogoutAction} className="mt-8">
+            <button className="w-full rounded-lg border border-white/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
               Lock
             </button>
           </form>
         </aside>
 
         <section className="space-y-6">
-          <div id="overview" className="grid gap-4 md:grid-cols-3">
-            <article className="rounded-2xl border border-white/10 bg-gradient-to-br from-amber-500/18 to-white/[0.03] p-4 backdrop-blur-md">
-              <p className="text-xs uppercase tracking-[0.2em] text-amber-200">Total Revenue</p>
-              <p className="mt-2 text-3xl font-bold">${totalRevenue.toLocaleString()}</p>
-              <div className="mt-3 inline-flex items-center gap-2 text-xs text-amber-100">
-                <DollarSign className="size-4" /> completed jobs only
-              </div>
-            </article>
-            <article className="rounded-2xl border border-white/10 bg-gradient-to-br from-emerald-500/18 to-white/[0.03] p-4 backdrop-blur-md">
-              <p className="text-xs uppercase tracking-[0.2em] text-emerald-200">Jobs Completed</p>
-              <p className="mt-2 text-3xl font-bold">{completed.length}</p>
-              <div className="mt-3 inline-flex items-center gap-2 text-xs text-emerald-100">
-                <CheckCircle2 className="size-4" /> status: completed
-              </div>
-            </article>
-            <article className="rounded-2xl border border-white/10 bg-gradient-to-br from-blue-500/18 to-white/[0.03] p-4 backdrop-blur-md">
-              <p className="text-xs uppercase tracking-[0.2em] text-blue-200">Pending Quotes</p>
-              <p className="mt-2 text-3xl font-bold">{pending.length}</p>
-              <div className="mt-3 inline-flex items-center gap-2 text-xs text-blue-100">
-                <FileClock className="size-4" /> new / pending / quote
-              </div>
-            </article>
+          {isAdmin ? (
+            <div className="grid gap-4 md:grid-cols-3">
+              <article className="rounded-2xl border border-white/10 bg-gradient-to-br from-amber-500/18 to-white/[0.03] p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-amber-200">Total Revenue</p>
+                <p className="mt-2 text-3xl font-bold">${totalRevenue.toLocaleString()}</p>
+                <div className="mt-2 inline-flex items-center gap-1 text-xs text-amber-100">
+                  <DollarSign className="size-4" /> completed jobs
+                </div>
+              </article>
+              <article className="rounded-2xl border border-white/10 bg-gradient-to-br from-blue-500/18 to-white/[0.03] p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-blue-200">Monthly Profit</p>
+                <p className="mt-2 text-3xl font-bold">${monthlyProfit.toLocaleString()}</p>
+                <div className="mt-2 inline-flex items-center gap-1 text-xs text-blue-100">
+                  <TrendingUp className="size-4" /> est. after 30% costs
+                </div>
+              </article>
+              <article className="rounded-2xl border border-white/10 bg-gradient-to-br from-emerald-500/18 to-white/[0.03] p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-emerald-200">Conversion Rate</p>
+                <p className="mt-2 text-3xl font-bold">{conversionRate}%</p>
+                <div className="mt-2 inline-flex items-center gap-1 text-xs text-emerald-100">
+                  <FileClock className="size-4" /> completed vs total leads
+                </div>
+              </article>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-300">
+              Service Rep mode enabled: financial stats are hidden. Focus on lead pipeline + outreach.
+            </div>
+          )}
+
+          <div id="calendar" className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
+            <CalendarPanel jobs={jobs} rescheduleAction={rescheduleJobAction} cancelAction={cancelJobAction} />
+            <ScriptSidebar
+              customerName={jobs[0]?.name || "Customer"}
+              packageName={jobs[0]?.service_package || "Detail Package"}
+              jobStatus={jobs[0]?.status || "pending"}
+              reviewLink={process.env.REVIEW_REQUEST_URL || "https://www.google.com/search?q=Shine+N+Time+detailing+reviews"}
+            />
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-            <section id="active-jobs" className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-md">
-              <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-300">Recent Activity</h3>
-              <div className="mt-4 overflow-x-auto rounded-xl border border-white/8 bg-black/25 p-1 shadow-inner shadow-black/40">
-                <table className="min-w-full border-separate border-spacing-y-1 text-left text-sm">
-                  <thead className="text-xs uppercase tracking-[0.15em] text-slate-500">
-                    <tr>
-                      <th className="rounded-l-lg bg-white/[0.04] px-4 py-3 pr-4">Customer</th>
-                      <th className="bg-white/[0.04] px-4 py-3 pr-4">Vehicle</th>
-                      <th className="bg-white/[0.04] px-4 py-3 pr-4">Package</th>
-                      <th className="rounded-r-lg bg-white/[0.04] px-4 py-3">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recent.map((job, i) => {
-                      const status = String(job.status || "pending");
-                      return (
-                        <tr
-                          key={job.id || `${job.name || "job"}-${i}`}
-                          className="group transition-[background-color,box-shadow] hover:bg-white/[0.05]"
-                        >
-                          <td className="rounded-l-xl border border-white/5 border-r-0 bg-white/[0.02] px-4 py-3 pr-3 text-slate-100 transition group-hover:border-amber-400/15 group-hover:bg-white/[0.04]">
-                            {job.name || "—"}
-                          </td>
-                          <td className="border-y border-white/5 bg-white/[0.02] px-4 py-3 pr-3 text-slate-300 transition group-hover:border-amber-400/15 group-hover:bg-white/[0.04]">
-                            {job.car_make_model || "—"}
-                          </td>
-                          <td className="border-y border-white/5 bg-white/[0.02] px-4 py-3 pr-3 capitalize transition group-hover:border-amber-400/15 group-hover:bg-white/[0.04]">
-                            {job.service_package || "—"}
-                          </td>
-                          <td className="rounded-r-xl border border-white/5 border-l-0 bg-white/[0.02] px-4 py-3 transition group-hover:border-amber-400/15 group-hover:bg-white/[0.04]">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className={`inline-flex rounded-md border px-2 py-1 text-xs ${badgeForStatus(status)}`}>{status}</span>
-                              {job.id != null ? (
-                                <form action={updateJobStatusAction} className="inline-flex items-center gap-2">
-                                  <input type="hidden" name="id" value={String(job.id)} />
-                                  <select
-                                    name="status"
-                                    defaultValue={status}
-                                    className="rounded-md border border-white/15 bg-black/60 px-2 py-1 text-xs capitalize text-slate-200"
-                                  >
-                                    <option value="Pending">Pending</option>
-                                    <option value="Confirmed">Confirmed</option>
-                                    <option value="Completed">Completed</option>
-                                  </select>
-                                  <button
-                                    type="submit"
-                                    className="rounded-md border border-amber-400/30 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-200"
-                                  >
-                                    Save
-                                  </button>
-                                </form>
-                              ) : null}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    {!recent.length ? (
-                      <tr>
-                        <td className="py-6 text-center text-slate-400" colSpan={4}>
-                          <div className="mx-auto flex max-w-sm flex-col items-center gap-3">
-                            <Clock3 className="size-8 text-slate-500" />
-                            <p>No jobs found yet.</p>
-                            <form action={createTestJobAction}>
-                              <button
-                                type="submit"
-                                className="rounded-lg border border-amber-400/40 bg-amber-500/12 px-3 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-amber-200 hover:bg-amber-500/20"
-                              >
-                                Create Test Job
-                              </button>
-                            </form>
-                          </div>
-                        </td>
-                      </tr>
-                    ) : null}
-                  </tbody>
-                </table>
-              </div>
-            </section>
+          <section id="pipeline" className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-300">Lead Pipeline</h3>
+              <form action={createTestJobAction}>
+                <button className="rounded-lg border border-amber-400/40 bg-amber-500/12 px-3 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-amber-200">
+                  Create Test Job
+                </button>
+              </form>
+            </div>
+            <div className="mt-4 grid gap-3">
+              {loadingPipeline
+                ? Array.from({ length: 3 }).map((_, idx) => (
+                    <article key={`skeleton-${idx}`} className="animate-pulse rounded-xl border border-white/10 bg-black/25 p-4">
+                      <div className="h-4 w-1/3 rounded bg-white/10" />
+                      <div className="mt-2 h-3 w-1/2 rounded bg-white/10" />
+                      <div className="mt-2 h-3 w-2/3 rounded bg-white/10" />
+                      <div className="mt-3 h-8 w-full rounded bg-white/10" />
+                    </article>
+                  ))
+                : jobs.map((job) => {
+                const status = toStatus(job.status);
+                const mapQuery = encodeURIComponent([job.address, job.city, job.state, job.zip].filter(Boolean).join(", "));
+                const jobLogs = logsByJob.get(job.id) || [];
+                const isSuv = String(job.vehicle_type || "").toLowerCase() === "suv";
+                return (
+                  <article key={job.id} className="rounded-xl border border-white/10 bg-black/25 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-semibold">{job.name || "Unknown Customer"}</p>
+                        <p className="text-xs text-slate-400">{formatPhoneUs(job.phone)} · {normalizeEmail(job.email) || "no email"}</p>
+                        <p className="inline-flex items-center gap-1 text-xs text-slate-400">
+                          {isSuv ? <Truck className="size-3.5 text-blue-300" /> : <Car className="size-3.5 text-amber-300" />}
+                          {job.car_make_model || "Vehicle TBD"} · {(job.service_package || "package").toUpperCase()}
+                        </p>
+                      </div>
+                      <span className={`inline-flex rounded-md border px-2 py-1 text-xs ${statusClass(status)}`}>{status}</span>
+                    </div>
 
-            <section id="revenue" className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-md">
-              <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-300">Sedan vs SUV volume</h3>
+                    <div className="mt-3 grid gap-2 text-xs text-slate-300 md:grid-cols-2">
+                      <p>Date: {job.preferred_date || "TBD"} · {job.preferred_time || "TBD"}</p>
+                      <p>Assigned: {job.assigned_rep || job.claimed_by || "Unassigned"}</p>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <a
+                        href={`https://maps.google.com/?q=${mapQuery || encodeURIComponent("Canton, MI")}`}
+                        target="_blank"
+                        className="rounded-lg border border-white/15 px-3 py-1.5 text-xs"
+                        rel="noreferrer"
+                      >
+                        Navigate
+                      </a>
+                      <form action={autoLogContactAction} className="inline-flex">
+                        <input type="hidden" name="job_id" value={job.id} />
+                        <input type="hidden" name="channel" value="call" />
+                        <input type="hidden" name="phone" value={job.phone || ""} />
+                        <button className="rounded-lg border border-white/15 px-3 py-1.5 text-xs">Call</button>
+                      </form>
+                      <form action={autoLogContactAction} className="inline-flex">
+                        <input type="hidden" name="job_id" value={job.id} />
+                        <input type="hidden" name="channel" value="sms" />
+                        <input type="hidden" name="phone" value={job.phone || ""} />
+                        <button className="rounded-lg border border-white/15 px-3 py-1.5 text-xs">SMS</button>
+                      </form>
+
+                      <form action={uploadJobImageAction} className="flex items-center gap-1 rounded-lg border border-white/15 px-2 py-1">
+                        <input type="hidden" name="job_id" value={job.id} />
+                        <input type="hidden" name="type" value="before" />
+                        <input name="image" type="file" accept="image/*" capture="environment" className="w-[130px] text-[10px]" />
+                        <button className="text-[10px] font-semibold uppercase tracking-[0.12em]">Photos</button>
+                      </form>
+
+                      <form action={claimJobAction} className="flex items-center gap-1 rounded-lg border border-white/15 px-2 py-1">
+                        <input type="hidden" name="id" value={job.id} />
+                        <input type="hidden" name="phone" value={job.phone || ""} />
+                        <select name="rep" className="rounded bg-black px-2 py-1 text-[10px]">
+                          <option value="">Assign rep</option>
+                          {sortedReps.map((r) => (
+                            <option key={r.id} value={r.full_name || r.email}>{r.full_name || r.email}</option>
+                          ))}
+                        </select>
+                        <button className="text-[10px] font-semibold uppercase">Save</button>
+                      </form>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <form action={updateJobStatusAction} className="inline-flex items-center gap-2">
+                        <input type="hidden" name="id" value={job.id} />
+                        <select name="status" defaultValue={status} className="rounded-md border border-white/15 bg-black/60 px-2 py-1 text-xs">
+                          <option value="Pending">Pending</option>
+                          <option value="Confirmed">Confirmed</option>
+                          <option value="Completed">Completed</option>
+                        </select>
+                        <button type="submit" className="rounded-md border border-amber-400/30 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold uppercase">
+                          Update
+                        </button>
+                      </form>
+                      <form action={rescheduleJobAction} className="inline-flex items-center gap-2 rounded-md border border-white/15 px-2 py-1">
+                        <input type="hidden" name="id" value={job.id} />
+                        <input
+                          type="date"
+                          name="preferred_date"
+                          required
+                          defaultValue={job.preferred_date || ""}
+                          className="rounded bg-black px-2 py-1 text-[10px]"
+                        />
+                        <select name="preferred_time" defaultValue={job.preferred_time || "morning"} className="rounded bg-black px-2 py-1 text-[10px]">
+                          <option value="morning">morning</option>
+                          <option value="afternoon">afternoon</option>
+                          <option value="evening">evening</option>
+                        </select>
+                        <button type="submit" className="rounded border border-blue-400/40 bg-blue-500/10 px-2 py-1 text-[10px] uppercase">
+                          Reschedule
+                        </button>
+                      </form>
+                      <form action={cancelJobAction} className="inline-flex">
+                        <input type="hidden" name="id" value={job.id} />
+                        <button type="submit" className="rounded border border-red-400/40 bg-red-500/10 px-2 py-1 text-[10px] uppercase text-red-200">
+                          Cancel
+                        </button>
+                      </form>
+
+                      <form action={addCommunicationLogAction} className="inline-flex flex-wrap items-center gap-2">
+                        <input type="hidden" name="job_id" value={job.id} />
+                        <input type="hidden" name="created_by" value={profile.full_name || profile.email} />
+                        <select name="channel" className="rounded border border-white/15 bg-black px-2 py-1 text-[10px]">
+                          <option value="sms">sms</option>
+                          <option value="call">call</option>
+                          <option value="email">email</option>
+                          <option value="internal">internal</option>
+                        </select>
+                        <input
+                          name="note"
+                          required
+                          placeholder="Communication note"
+                          className="rounded border border-white/15 bg-black px-2 py-1 text-[10px]"
+                        />
+                        <button className="rounded border border-blue-400/40 bg-blue-500/10 px-2 py-1 text-[10px] uppercase">Log</button>
+                      </form>
+                    </div>
+
+                    <div className="mt-3 max-h-24 overflow-y-auto rounded-md border border-white/10 bg-black/35 p-2 text-[11px] text-slate-400">
+                      {jobLogs.length ? (
+                        jobLogs.map((log) => (
+                          <p key={log.id}>
+                            <span className="uppercase text-slate-500">{log.channel}</span>: {log.note}
+                          </p>
+                        ))
+                      ) : (
+                        <p>No communication logs yet.</p>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+              {!jobs.length ? (
+                <div className="rounded-xl border border-white/10 bg-black/25 p-6 text-center text-sm text-slate-400">
+                  <Clock3 className="mx-auto mb-2 size-7 text-slate-500" />
+                  No jobs found yet.
+                </div>
+              ) : null}
+            </div>
+          </section>
+
+          <section className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+            <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-300">Vehicle Mix</h3>
               <DashboardCharts sedanCount={sedanCount} suvCount={suvCount} />
               {!sedanCount && !suvCount ? (
                 <div className="mt-4 rounded-xl border border-white/10 bg-black/25 p-6 text-center text-sm text-slate-400">
                   <CircleCheckBig className="mx-auto mb-2 size-6 text-slate-500" />
-                  No vehicle data yet. Add jobs to populate this chart.
+                  No vehicle data yet.
                 </div>
               ) : null}
             </section>
-          </div>
+
+            {isAdmin ? (
+              <section id="team" className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-300">Team Settings</h3>
+                <form action={createTeamMemberAction} className="mt-4 grid gap-3">
+                  <input
+                    type="email"
+                    name="email"
+                    required
+                    placeholder="teammate@email.com"
+                    className="rounded-lg border border-white/15 bg-black/60 px-3 py-2 text-sm"
+                  />
+                  <input
+                    type="text"
+                    name="full_name"
+                    placeholder="Full name"
+                    className="rounded-lg border border-white/15 bg-black/60 px-3 py-2 text-sm"
+                  />
+                  <select name="role" className="rounded-lg border border-white/15 bg-black/60 px-3 py-2 text-sm">
+                    <option value="SERVICE_REP">SERVICE_REP</option>
+                    <option value="ADMIN">ADMIN</option>
+                  </select>
+                  <button className="rounded-lg bg-amber-500 px-3 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-black">
+                    Add Team Member
+                  </button>
+                </form>
+                <div className="mt-4 text-xs text-slate-400">
+                  {sortedReps.length
+                    ? sortedReps.map((r) => <p key={r.id}>{r.full_name || r.email} · {r.role}</p>)
+                    : <p>No team members yet.</p>}
+                </div>
+              </section>
+            ) : (
+              <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+                Financials and team settings are restricted to admins.
+              </section>
+            )}
+          </section>
+
+          <section className="rounded-xl border border-white/10 bg-black/30 p-3 text-xs text-slate-400">
+            Mobile Action Center active: Navigate, Call/SMS, and Photos upload to Supabase `job-images` bucket.
+          </section>
         </section>
       </div>
     </main>
