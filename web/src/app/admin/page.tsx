@@ -4,11 +4,13 @@ import {
   archiveJobAction,
   adminLoginAction,
   adminLogoutAction,
+  cancelJobAction,
   clearPipelineAction,
   claimJobAction,
   createTeamMemberAction,
   createTestJobAction,
   deleteJobAction,
+  rescheduleJobAction,
   restoreArchivedJobAction,
   sendTestAdminEmailAction,
   updateJobStatusAction,
@@ -264,7 +266,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           )}
 
           <div id="calendar" className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-            <CalendarPanel jobs={jobs} />
+            <CalendarPanel jobs={jobs} rescheduleAction={rescheduleJobAction} cancelAction={cancelJobAction} />
             <ScriptSidebar
               customerName={jobs[0]?.name || "Customer"}
               packageName={jobs[0]?.service_package || "Detail Package"}
