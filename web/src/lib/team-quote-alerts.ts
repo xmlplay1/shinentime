@@ -115,3 +115,58 @@ export async function sendTeamQuoteAlertForJob(
   return notifyTeamNewQuote(toPayload(input), subjectPrefix);
 }
 
+export function followUpTemplateFor(
+  status: string,
+  customerName: string,
+  packageName: string,
+  channel: "email" | "sms"
+): string {
+  const s = String(status || "").toLowerCase();
+  const name = customerName || "there";
+  const pkg = packageName || "your detail package";
+
+  if (channel === "sms") {
+    if (s === "pending") {
+      return `Hi ${name}, quick follow-up from Shine N Time about your ${pkg} quote. Want morning, afternoon, or evening this week?`;
+    }
+    if (s === "confirmed") {
+      return `Hi ${name}, you're confirmed for ${pkg}. Reply here if you need to reschedule.`;
+    }
+    return `Hi ${name}, thanks for choosing Shine N Time for ${pkg}. We'd love your feedback when you have a minute.`;
+  }
+
+  if (s === "pending") {
+    return `Hi ${name},\n\nJust checking in on your ${pkg} quote with Shine N Time. We can lock in a time that works for you.\n\nReply with your preferred day/time and we’ll handle the rest.`;
+  }
+  if (s === "confirmed") {
+    return `Hi ${name},\n\nYour ${pkg} appointment is confirmed with Shine N Time.\n\nIf anything changes, reply to this email and we can reschedule quickly.`;
+  }
+  return `Hi ${name},\n\nThanks again for trusting Shine N Time for your ${pkg} service.\n\nIf you have a minute, we'd really appreciate a quick review.`;
+}
+
+export async function sendAdminDailyDigest(input: {
+  totalNewLeads: number;
+  pendingFollowUps: number;
+  completedToday: number;
+  escalations: { id: number; name: string; ageHours: number }[];
+}): Promise<boolean> {
+  const recipients = await resolveTeamRecipients();
+  const subject = `Daily Digest • Leads ${input.totalNewLeads} • Pending ${input.pendingFollowUps} • Completed ${input.completedToday}`;
+  const escalationLines = input.escalations.length
+    ? input.escalations.map((e) => `- #${e.id} ${e.name} (${e.ageHours}h old)`).join("\n")
+    : "- none";
+  const text = [
+    "Shine N Time Daily Digest",
+    "",
+    `New leads (24h): ${input.totalNewLeads}`,
+    `Pending follow-ups: ${input.pendingFollowUps}`,
+    `Completed today: ${input.completedToday}`,
+    "",
+    "Escalations:",
+    escalationLines
+  ].join("\n");
+  return deliverTeamEmail(recipients, subject, text);
+}
+
+export const sendDailyDigestEmail = sendAdminDailyDigest;
+

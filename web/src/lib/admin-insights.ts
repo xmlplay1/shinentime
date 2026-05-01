@@ -74,6 +74,33 @@ export function quoteScore(job: JobForInsights): number {
   return Math.min(99, score);
 }
 
+export function followUpTemplateFor(
+  status: string,
+  customer: string,
+  packageName: string,
+  channel: "email" | "sms"
+): string {
+  const s = String(status || "").toLowerCase();
+  const name = customer || "Customer";
+  const pkg = packageName || "detail package";
+  if (channel === "sms") {
+    if (s === "pending") {
+      return `Hi ${name} — quick follow-up on your ${pkg} quote. Reply with your best day/time and we’ll lock you in.`;
+    }
+    if (s === "confirmed") {
+      return `Hi ${name} — your ${pkg} appointment is confirmed. Please have driveway access, water (~50ft), and keys ready.`;
+    }
+    return `Hi ${name} — thank you for choosing Shine N Time. If you need anything else, reply here anytime.`;
+  }
+  if (s === "pending") {
+    return `Hi ${name}, following up on your ${pkg} quote from Shine N Time. We can reserve your spot as soon as you confirm your preferred date/time.`;
+  }
+  if (s === "confirmed") {
+    return `Hi ${name}, your ${pkg} appointment is confirmed. Prep reminder: driveway access, water connection (~50ft reach), and keys ready at arrival.`;
+  }
+  return `Hi ${name}, thanks again for choosing Shine N Time for your ${pkg}. We appreciate your business and are here if you need anything else.`;
+}
+
 // Backward-compatible aliases used by digest/API routes.
 export function calculateQuoteScore(job: JobForInsights | Record<string, unknown>): number {
   return quoteScore(job as JobForInsights);
