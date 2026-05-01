@@ -469,11 +469,24 @@ export async function clearPipelineAction(formData: FormData) {
 
 export async function sendTestAdminEmailAction() {
   await requireAdminCookie();
-  const to = String(process.env.ADMIN_NOTIFICATION_EMAIL || "")
-    .split(",")
-    .map((v) => v.trim())
-    .filter((v) => v.includes("@"));
+  const supabase = createAdminClient();
+  const recipients = new Set<string>(
+    String(process.env.ADMIN_NOTIFICATION_EMAIL || "")
+      .split(",")
+      .map((v) => v.trim().toLowerCase())
+      .filter((v) => v.includes("@"))
+  );
+  if (supabase) {
+    const { data } = await supabase.from("profiles").select("email, role").in("role", ["ADMIN", "SERVICE_REP"]);
+    for (const row of data || []) {
+      const email = String((row as { email?: string | null }).email || "")
+        .trim()
+        .toLowerCase();
+      if (email.includes("@")) recipients.add(email);
+    }
+  }
 
+  const to = [...recipients];
   if (!to.length) {
     redirect("/admin?error=no-admin-email");
   }
