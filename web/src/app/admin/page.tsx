@@ -1,33 +1,28 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   addCommunicationLogAction,
   adminLoginAction,
   adminLogoutAction,
-  autoLogContactAction,
-  cancelJobAction,
   claimJobAction,
   createTeamMemberAction,
   createTestJobAction,
-  rescheduleJobAction,
+  sendQuoteAlertAction,
   updateJobStatusAction,
   uploadJobImageAction
 } from "@/app/admin/actions";
-import { CreateJobForm } from "@/app/admin/CreateJobForm";
 import { CalendarPanel } from "@/app/admin/CalendarPanel";
 import { ScriptSidebar } from "@/app/admin/ScriptSidebar";
 import { DashboardCharts } from "@/app/admin/widgets";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { formatPhoneUs, inferMonthlyProfit, monthKey, normalizeEmail } from "@/lib/admin-format";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Car, CircleCheckBig, Clock3, DollarSign, FileClock, Truck, TrendingUp } from "lucide-react";
+import { CircleCheckBig, Clock3, DollarSign, FileClock, TrendingUp } from "lucide-react";
 
 type Role = "ADMIN" | "SERVICE_REP";
-type JobStatus = "Pending" | "Confirmed" | "Completed" | "Cancelled";
+type JobStatus = "Pending" | "Confirmed" | "Completed";
 
 type JobRow = {
   id: number;
-  customer_id: string | null;
   name: string | null;
   email: string | null;
   phone: string | null;
@@ -41,7 +36,6 @@ type JobRow = {
   created_at: string | null;
   preferred_date: string | null;
   preferred_time: string | null;
-  vehicle_condition: string | null;
   claimed_by: string | null;
   address: string | null;
   city: string | null;
@@ -85,7 +79,6 @@ function statusClass(status: string | null | undefined): string {
   const s = String(status || "").toLowerCase();
   if (s === "completed") return "border-emerald-400/45 bg-emerald-500/12 text-emerald-200";
   if (s === "confirmed") return "border-blue-400/45 bg-blue-500/12 text-blue-200";
-  if (s === "cancelled") return "border-rose-400/45 bg-rose-500/12 text-rose-200";
   return "border-amber-400/45 bg-amber-500/12 text-amber-200";
 }
 
@@ -93,7 +86,6 @@ function toStatus(status: string | null | undefined): JobStatus {
   const s = String(status || "").toLowerCase();
   if (s === "completed") return "Completed";
   if (s === "confirmed") return "Confirmed";
-  if (s === "cancelled") return "Cancelled";
   return "Pending";
 }
 
@@ -176,7 +168,6 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   }
 
   const params = await searchParams;
-  const activeView = typeof params.view === "string" ? params.view : "calendar";
   const actorEmail = normalizeEmail(typeof params.as === "string" ? params.as : "") || "shine.n.time.detailing@gmail.com";
   const data = await loadData(actorEmail);
   if (!data) {
@@ -203,7 +194,6 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   }
 
   const sortedReps = reps.filter((r) => r.role === "SERVICE_REP" || isAdmin);
-  const loadingPipeline = typeof params.loading === "string" && params.loading === "1";
 
   return (
     <main className="min-h-screen bg-black text-white">
@@ -213,29 +203,14 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           <h2 className="mt-2 text-lg font-semibold">Ultimate Command Center</h2>
           <p className="mt-2 text-xs text-slate-400">Role: {profile.role}</p>
           <nav className="mt-6 grid gap-2 text-sm">
-            <a
-              className={`rounded-lg border px-3 py-2 font-semibold ${activeView === "calendar" ? "border-amber-400/50 bg-amber-500/15 text-amber-200" : "border-white/10 text-slate-300 hover:bg-white/[0.04]"}`}
-              href="/admin?view=calendar"
-            >
+            <a className="rounded-lg border border-amber-400/50 bg-amber-500/15 px-3 py-2 font-semibold text-amber-200" href="#calendar">
               Calendar
             </a>
-            <a
-              className={`rounded-lg border px-3 py-2 ${activeView === "pipeline" ? "border-blue-400/45 bg-blue-500/12 font-semibold text-blue-200" : "border-white/10 text-slate-300 hover:bg-white/[0.04]"}`}
-              href="/admin?view=pipeline"
-            >
+            <a className="rounded-lg border border-white/10 px-3 py-2 text-slate-300 hover:bg-white/[0.04]" href="#pipeline">
               Lead Pipeline
             </a>
-            <Link
-              href="/admin/customers"
-              className="rounded-lg border border-white/10 px-3 py-2 text-slate-300 hover:bg-white/[0.04]"
-            >
-              Customers
-            </Link>
             {isAdmin ? (
-              <a
-                className={`rounded-lg border px-3 py-2 ${activeView === "team" ? "border-emerald-400/45 bg-emerald-500/12 font-semibold text-emerald-200" : "border-white/10 text-slate-300 hover:bg-white/[0.04]"}`}
-                href="/admin?view=team"
-              >
+              <a className="rounded-lg border border-white/10 px-3 py-2 text-slate-300 hover:bg-white/[0.04]" href="#team">
                 Team Settings
               </a>
             ) : null}
@@ -279,62 +254,35 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           )}
 
           <div id="calendar" className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-            <CalendarPanel jobs={jobs} rescheduleAction={rescheduleJobAction} cancelAction={cancelJobAction} />
+            <CalendarPanel jobs={jobs} />
             <ScriptSidebar
               customerName={jobs[0]?.name || "Customer"}
               packageName={jobs[0]?.service_package || "Detail Package"}
-              jobStatus={jobs[0]?.status || "pending"}
               reviewLink={process.env.REVIEW_REQUEST_URL || "https://www.google.com/search?q=Shine+N+Time+detailing+reviews"}
             />
           </div>
 
           <section id="pipeline" className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-300">Lead Pipeline</h3>
-              <div className="flex flex-wrap items-end gap-4">
-                <CreateJobForm />
-                <form action={createTestJobAction}>
-                  <button type="submit" className="rounded-lg border border-amber-400/40 bg-amber-500/12 px-3 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-amber-200 whitespace-nowrap">
-                    Create Test Job
-                  </button>
-                </form>
-              </div>
+              <form action={createTestJobAction}>
+                <button className="rounded-lg border border-amber-400/40 bg-amber-500/12 px-3 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-amber-200">
+                  Create Test Job
+                </button>
+              </form>
             </div>
             <div className="mt-4 grid gap-3">
-              {loadingPipeline
-                ? Array.from({ length: 3 }).map((_, idx) => (
-                    <article key={`skeleton-${idx}`} className="animate-pulse rounded-xl border border-white/10 bg-black/25 p-4">
-                      <div className="h-4 w-1/3 rounded bg-white/10" />
-                      <div className="mt-2 h-3 w-1/2 rounded bg-white/10" />
-                      <div className="mt-2 h-3 w-2/3 rounded bg-white/10" />
-                      <div className="mt-3 h-8 w-full rounded bg-white/10" />
-                    </article>
-                  ))
-                : jobs.map((job) => {
+              {jobs.map((job) => {
                 const status = toStatus(job.status);
                 const mapQuery = encodeURIComponent([job.address, job.city, job.state, job.zip].filter(Boolean).join(", "));
                 const jobLogs = logsByJob.get(job.id) || [];
-                const isSuv = String(job.vehicle_type || "").toLowerCase() === "suv";
-                const profileHref =
-                  job.email ? `/admin/customers?email=${encodeURIComponent(normalizeEmail(job.email) || "")}` : null;
                 return (
                   <article key={job.id} className="rounded-xl border border-white/10 bg-black/25 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
-                        <p className="text-sm font-semibold">
-                          {profileHref ? (
-                            <Link href={profileHref} className="text-white underline-offset-4 hover:text-amber-200 hover:underline">
-                              {job.name || "Unknown Customer"}
-                            </Link>
-                          ) : (
-                            job.name || "Unknown Customer"
-                          )}
-                        </p>
+                        <p className="text-sm font-semibold">{job.name || "Unknown Customer"}</p>
                         <p className="text-xs text-slate-400">{formatPhoneUs(job.phone)} · {normalizeEmail(job.email) || "no email"}</p>
-                        <p className="inline-flex items-center gap-1 text-xs text-slate-400">
-                          {isSuv ? <Truck className="size-3.5 text-blue-300" /> : <Car className="size-3.5 text-amber-300" />}
-                          {job.car_make_model || "Vehicle TBD"} · {(job.service_package || "package").toUpperCase()}
-                        </p>
+                        <p className="text-xs text-slate-400">{job.car_make_model || "Vehicle TBD"} · {(job.service_package || "package").toUpperCase()}</p>
                       </div>
                       <span className={`inline-flex rounded-md border px-2 py-1 text-xs ${statusClass(status)}`}>{status}</span>
                     </div>
@@ -353,20 +301,12 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                       >
                         Navigate
                       </a>
-                      <form action={autoLogContactAction} className="inline-flex">
-                        <input type="hidden" name="job_id" value={job.id} />
-                        <input type="hidden" name="channel" value="call" />
-                        <input type="hidden" name="phone" value={job.phone || ""} />
-                        <input type="hidden" name="customer" value={job.name || job.email || "customer"} />
-                        <button className="rounded-lg border border-white/15 px-3 py-1.5 text-xs">Call</button>
-                      </form>
-                      <form action={autoLogContactAction} className="inline-flex">
-                        <input type="hidden" name="job_id" value={job.id} />
-                        <input type="hidden" name="channel" value="sms" />
-                        <input type="hidden" name="phone" value={job.phone || ""} />
-                        <input type="hidden" name="customer" value={job.name || job.email || "customer"} />
-                        <button className="rounded-lg border border-white/15 px-3 py-1.5 text-xs">SMS</button>
-                      </form>
+                      <a href={`tel:${job.phone || ""}`} className="rounded-lg border border-white/15 px-3 py-1.5 text-xs">
+                        Call
+                      </a>
+                      <a href={`sms:${job.phone || ""}`} className="rounded-lg border border-white/15 px-3 py-1.5 text-xs">
+                        SMS
+                      </a>
 
                       <form action={uploadJobImageAction} className="flex items-center gap-1 rounded-lg border border-white/15 px-2 py-1">
                         <input type="hidden" name="job_id" value={job.id} />
@@ -395,39 +335,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                           <option value="Pending">Pending</option>
                           <option value="Confirmed">Confirmed</option>
                           <option value="Completed">Completed</option>
-                          <option value="Cancelled">Cancelled</option>
                         </select>
                         <button type="submit" className="rounded-md border border-amber-400/30 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold uppercase">
                           Update
-                        </button>
-                      </form>
-                      <form action={rescheduleJobAction} className="inline-flex items-center gap-2 rounded-md border border-white/15 px-2 py-1">
-                        <input type="hidden" name="id" value={job.id} />
-                        <input
-                          type="date"
-                          name="preferred_date"
-                          required
-                          defaultValue={job.preferred_date || ""}
-                          className="rounded bg-black px-2 py-1 text-[10px]"
-                        />
-                        <select name="preferred_time" defaultValue={job.preferred_time || "morning"} className="rounded bg-black px-2 py-1 text-[10px]">
-                          <option value="morning">morning</option>
-                          <option value="afternoon">afternoon</option>
-                          <option value="evening">evening</option>
-                        </select>
-                        <button type="submit" className="rounded border border-blue-400/40 bg-blue-500/10 px-2 py-1 text-[10px] uppercase">
-                          Reschedule
-                        </button>
-                      </form>
-                      <form action={cancelJobAction} className="inline-flex flex-wrap items-center gap-2">
-                        <input type="hidden" name="id" value={job.id} />
-                        <input
-                          name="cancel_note"
-                          placeholder="Cancel reason (optional)"
-                          className="min-w-[8rem] rounded border border-white/15 bg-black px-2 py-1 text-[10px]"
-                        />
-                        <button type="submit" className="rounded border border-red-400/40 bg-red-500/10 px-2 py-1 text-[10px] uppercase text-red-200">
-                          Cancel
                         </button>
                       </form>
 
@@ -448,11 +358,20 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                         />
                         <button className="rounded border border-blue-400/40 bg-blue-500/10 px-2 py-1 text-[10px] uppercase">Log</button>
                       </form>
+                      <form action={sendQuoteAlertAction} className="inline-flex">
+                        <input type="hidden" name="id" value={job.id} />
+                        <button
+                          type="submit"
+                          className="rounded border border-emerald-400/40 bg-emerald-500/10 px-2 py-1 text-[10px] uppercase text-emerald-200"
+                        >
+                          Alert Team
+                        </button>
+                      </form>
                     </div>
 
-                    <div className="mt-3 max-h-24 overflow-y-auto rounded-md border border-white/10 bg-black/35 p-2 text-[11px] text-slate-400">
+                    <div className="mt-3 rounded-md border border-white/10 bg-black/35 p-2 text-[11px] text-slate-400">
                       {jobLogs.length ? (
-                        jobLogs.map((log) => (
+                        jobLogs.slice(0, 3).map((log) => (
                           <p key={log.id}>
                             <span className="uppercase text-slate-500">{log.channel}</span>: {log.note}
                           </p>
