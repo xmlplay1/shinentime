@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizePhone } from "@/lib/phone";
-import { sendNewQuoteTeamAlert } from "@/lib/team-quote-alerts";
+import { notifyTeamNewQuote } from "@/lib/team-quote-alerts";
 
 export async function POST(req: Request) {
   const supabase = createAdminClient();
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const alertOk = await sendNewQuoteTeamAlert({
+  const alertOk = await notifyTeamNewQuote({
     name,
     email: null,
     phone,

@@ -270,6 +270,11 @@ export async function resendQuoteAlertAction(formData: FormData) {
   redirect("/admin?alert=resent");
 }
 
+// Backward-compatible alias used by admin page imports.
+export async function sendQuoteAlertAction(formData: FormData) {
+  return resendQuoteAlertAction(formData);
+}
+
 export async function escalateNoResponseAction(formData: FormData) {
   await requireAdminCookie();
   const supabase = createAdminClient();

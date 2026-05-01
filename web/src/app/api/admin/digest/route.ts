@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendDailyDigestEmail } from "@/lib/team-quote-alerts";
-import { calculateQuoteScore, hoursSince, slaBadge } from "@/lib/admin-insights";
+import { sendAdminDailyDigest } from "@/lib/team-quote-alerts";
+import { quoteScore, slaLabel } from "@/lib/admin-insights";
 
 export async function POST(req: Request) {
   const auth = req.headers.get("authorization") || "";
@@ -37,21 +37,20 @@ export async function POST(req: Request) {
   }).length;
 
   const topScored = [...jobRows]
-    .sort((a, b) => calculateQuoteScore(b) - calculateQuoteScore(a))
+    .sort((a, b) => quoteScore(b as never) - quoteScore(a as never))
     .slice(0, 5)
     .map((j) => ({
       id: Number(j.id || 0),
       name: String(j.name || "Customer"),
-      score: calculateQuoteScore(j),
-      urgency: slaBadge(hoursSince(String(j.created_at || ""))).label
+      score: quoteScore(j as never),
+      urgency: slaLabel(String(j.created_at || ""))
     }));
 
-  const sent = await sendDailyDigestEmail({
-    dateIso: now.toISOString(),
-    newLeads24h,
-    completed24h,
-    pendingFollowups,
-    topScored
+  const sent = await sendAdminDailyDigest({
+    totalNewLeads: newLeads24h,
+    pendingFollowUps: pendingFollowups,
+    completedToday: completed24h,
+    escalations: topScored.map((row) => ({ id: row.id, name: row.name, ageHours: 0 }))
   });
 
   if (!sent) {

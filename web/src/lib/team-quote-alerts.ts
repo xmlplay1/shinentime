@@ -97,6 +97,10 @@ export async function notifyTeamNewQuote(payload: QuoteAlertPayload): Promise<bo
   return sendTeamEmail(subject, text);
 }
 
+// Backward-compatible aliases used by API/admin callers.
+export const sendNewQuoteTeamAlert = notifyTeamNewQuote;
+export const sendTeamQuoteAlertForJob = notifyTeamNewQuote;
+
 export async function resendTeamAlertForJob(jobId: number): Promise<boolean> {
   const supabase = createAdminClient();
   if (!supabase) return false;
@@ -131,3 +135,6 @@ export async function sendAdminDailyDigest(input: {
   ].join("\n");
   return sendTeamEmail(subject, text);
 }
+
+// Backward-compatible alias used by digest route.
+export const sendDailyDigestEmail = sendAdminDailyDigest;

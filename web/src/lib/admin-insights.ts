@@ -74,6 +74,23 @@ export function quoteScore(job: JobForInsights): number {
   return Math.min(99, score);
 }
 
+// Backward-compatible aliases used by digest/API routes.
+export function calculateQuoteScore(job: JobForInsights | Record<string, unknown>): number {
+  return quoteScore(job as JobForInsights);
+}
+
+export function hoursSince(input: string | null | undefined): number {
+  const d = new Date(String(input || ""));
+  if (Number.isNaN(d.getTime())) return 0;
+  return (Date.now() - d.getTime()) / 3_600_000;
+}
+
+export function slaBadge(ageHours: number): { label: string; tone: "green" | "yellow" | "red" } {
+  if (!Number.isFinite(ageHours) || ageHours < 2) return { label: "new", tone: "green" };
+  if (ageHours < 6) return { label: "warm", tone: "yellow" };
+  return { label: "urgent", tone: "red" };
+}
+
 export function hasNoResponse(jobId: number, logsByJob: Map<number, LogForInsights[]>, createdAt: string | null, thresholdHours: number): boolean {
   const created = new Date(String(createdAt || ""));
   if (Number.isNaN(created.getTime())) return false;
