@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizePhone } from "@/lib/phone";
 import { sendTeamQuoteAlertForJob } from "@/lib/team-quote-alerts";
 import { followUpTemplateFor } from "@/lib/admin-insights";
+import { sendMail } from "@/lib/mailer";
 
 function ensureAdminSession() {
   const expectedPassword = getAdminPassword();
@@ -284,4 +285,69 @@ export async function addFollowUpTemplateLogAction(formData: FormData) {
     redirect("/admin?error=template-log");
   }
   redirect("/admin?template=logged");
+}
+
+export async function deleteJobAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const id = Number.parseInt(String(formData.get("id") || ""), 10);
+  if (!Number.isFinite(id)) redirect("/admin");
+
+  const { error } = await supabase.from("jobs").delete().eq("id", id);
+  if (error) {
+    console.error("[admin] delete job error", error);
+    redirect("/admin?error=delete");
+  }
+  redirect("/admin?deleted=1");
+}
+
+export async function clearPipelineAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const mode = String(formData.get("mode") || "completed");
+  if (mode === "all") {
+    const { error } = await supabase.from("jobs").delete().gt("id", 0);
+    if (error) {
+      console.error("[admin] clear all jobs error", error);
+      redirect("/admin?error=clear-all");
+    }
+    redirect("/admin?cleared=all");
+  }
+
+  const { error } = await supabase.from("jobs").delete().eq("status", "Completed");
+  if (error) {
+    console.error("[admin] clear completed jobs error", error);
+    redirect("/admin?error=clear-completed");
+  }
+  redirect("/admin?cleared=completed");
+}
+
+export async function sendTestAdminEmailAction() {
+  await requireAdminCookie();
+  const to = String(process.env.ADMIN_NOTIFICATION_EMAIL || "")
+    .split(",")
+    .map((v) => v.trim())
+    .filter((v) => v.includes("@"));
+
+  if (!to.length) {
+    redirect("/admin?error=no-admin-email");
+  }
+
+  const sent = await Promise.all(
+    to.map((email) =>
+      sendMail({
+        to: email,
+        subject: "Shine N Time Admin Email Test",
+        text: "Test successful: admin notification path is working from /admin."
+      })
+    )
+  );
+  if (!sent.some(Boolean)) {
+    redirect("/admin?error=test-email-failed");
+  }
+  redirect("/admin?test-email=sent");
 }

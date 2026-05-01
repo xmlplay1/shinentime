@@ -3,9 +3,12 @@ import {
   addCommunicationLogAction,
   adminLoginAction,
   adminLogoutAction,
+  clearPipelineAction,
   claimJobAction,
   createTeamMemberAction,
   createTestJobAction,
+  deleteJobAction,
+  sendTestAdminEmailAction,
   updateJobStatusAction,
   uploadJobImageAction
 } from "@/app/admin/actions";
@@ -264,11 +267,24 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           <section id="pipeline" className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-300">Lead Pipeline</h3>
-              <form action={createTestJobAction}>
-                <button className="rounded-lg border border-amber-400/40 bg-amber-500/12 px-3 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-amber-200">
-                  Create Test Job
-                </button>
-              </form>
+              <div className="flex flex-wrap items-center gap-2">
+                <form action={sendTestAdminEmailAction}>
+                  <button className="rounded-lg border border-blue-400/40 bg-blue-500/12 px-3 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-blue-200">
+                    Test Admin Email
+                  </button>
+                </form>
+                <form action={createTestJobAction}>
+                  <button className="rounded-lg border border-amber-400/40 bg-amber-500/12 px-3 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-amber-200">
+                    Create Test Job
+                  </button>
+                </form>
+                <form action={clearPipelineAction}>
+                  <input type="hidden" name="mode" value="completed" />
+                  <button className="rounded-lg border border-rose-400/40 bg-rose-500/12 px-3 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-rose-200">
+                    Clear Completed
+                  </button>
+                </form>
+              </div>
             </div>
             <div className="mt-4 grid gap-3">
               {jobs.map((job) => {
@@ -356,6 +372,15 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                           className="rounded border border-white/15 bg-black px-2 py-1 text-[10px]"
                         />
                         <button className="rounded border border-blue-400/40 bg-blue-500/10 px-2 py-1 text-[10px] uppercase">Log</button>
+                      </form>
+                      <form action={deleteJobAction}>
+                        <input type="hidden" name="id" value={job.id} />
+                        <button
+                          type="submit"
+                          className="rounded-md border border-rose-400/35 bg-rose-500/10 px-2 py-1 text-[10px] font-semibold uppercase text-rose-100"
+                        >
+                          Delete
+                        </button>
                       </form>
                     </div>
 
