@@ -72,6 +72,66 @@ export async function updateJobStatusAction(formData: FormData) {
   redirect("/admin");
 }
 
+export async function rescheduleJobAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const id = Number.parseInt(String(formData.get("id") || ""), 10);
+  const preferredDate = String(formData.get("preferred_date") || "").trim();
+  const preferredTime = String(formData.get("preferred_time") || "").trim().toLowerCase();
+  if (!Number.isFinite(id) || !preferredDate) redirect("/admin");
+  if (!["morning", "afternoon", "evening"].includes(preferredTime)) redirect("/admin");
+
+  const dateObj = new Date(`${preferredDate}T12:00:00`);
+  if (Number.isNaN(dateObj.getTime())) redirect("/admin");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (dateObj < today || dateObj.getDay() === 0) redirect("/admin");
+
+  const { data: row } = await supabase.from("jobs").select("status").eq("id", id).maybeSingle();
+  const prev = String(row?.status || "").toLowerCase();
+  const nextStatus = prev === "cancelled" ? "Pending" : "Confirmed";
+
+  const { error } = await supabase
+    .from("jobs")
+    .update({ preferred_date: preferredDate, preferred_time: preferredTime, status: nextStatus })
+    .eq("id", id);
+  if (error) {
+    console.error("[admin] reschedule error", error);
+    redirect("/admin?error=reschedule");
+  }
+  redirect("/admin");
+}
+
+export async function cancelJobAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const id = Number.parseInt(String(formData.get("id") || ""), 10);
+  if (!Number.isFinite(id)) redirect("/admin");
+
+  const extra = String(formData.get("cancel_note") || "").trim();
+  const stamp = `Cancelled · ${new Date().toISOString().slice(0, 16).replace("T", " ")}`;
+  let notesPatch: string | null = null;
+  if (extra) {
+    const { data: row } = await supabase.from("jobs").select("notes").eq("id", id).maybeSingle();
+    const prev = row?.notes ? String(row.notes) : "";
+    notesPatch = prev ? `${prev}\n${stamp}: ${extra}` : `${stamp}: ${extra}`;
+  }
+
+  const { error } = await supabase
+    .from("jobs")
+    .update({ status: "Cancelled", ...(notesPatch ? { notes: notesPatch } : {}) })
+    .eq("id", id);
+  if (error) {
+    console.error("[admin] cancel error", error);
+    redirect("/admin?error=cancel");
+  }
+  redirect("/admin");
+}
+
 export async function createTestJobAction() {
   await requireAdminCookie();
 
