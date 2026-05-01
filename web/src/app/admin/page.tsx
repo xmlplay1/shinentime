@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import {
   addCommunicationLogAction,
+  archiveJobAction,
   adminLoginAction,
   adminLogoutAction,
   clearPipelineAction,
@@ -8,6 +9,7 @@ import {
   createTeamMemberAction,
   createTestJobAction,
   deleteJobAction,
+  restoreArchivedJobAction,
   sendTestAdminEmailAction,
   updateJobStatusAction,
   uploadJobImageAction
@@ -79,6 +81,7 @@ function isCompleted(status: string | null | undefined) {
 
 function statusClass(status: string | null | undefined): string {
   const s = String(status || "").toLowerCase();
+  if (s === "archived") return "border-violet-400/45 bg-violet-500/12 text-violet-200";
   if (s === "completed") return "border-emerald-400/45 bg-emerald-500/12 text-emerald-200";
   if (s === "confirmed") return "border-blue-400/45 bg-blue-500/12 text-blue-200";
   return "border-amber-400/45 bg-amber-500/12 text-amber-200";
@@ -86,6 +89,7 @@ function statusClass(status: string | null | undefined): string {
 
 function toStatus(status: string | null | undefined): JobStatus {
   const s = String(status || "").toLowerCase();
+  if (s === "archived") return "Pending";
   if (s === "completed") return "Completed";
   if (s === "confirmed") return "Confirmed";
   return "Pending";
@@ -114,14 +118,17 @@ async function ensureProfile(email: string): Promise<Profile | null> {
   return payload;
 }
 
-async function loadData(actorEmail: string) {
+async function loadData(actorEmail: string, includeArchived: boolean) {
   const supabase = createAdminClient();
   if (!supabase) return null;
   const profile = await ensureProfile(actorEmail);
   if (!profile) return null;
 
+  const jobsQuery = supabase.from("jobs").select("*").order("created_at", { ascending: false });
+  if (!includeArchived) jobsQuery.neq("status", "Archived");
+
   const [{ data: jobs, error: jobsError }, { data: logs }, { data: reps }] = await Promise.all([
-    supabase.from("jobs").select("*").order("created_at", { ascending: false }),
+    jobsQuery,
     supabase.from("job_communication_logs").select("*").order("created_at", { ascending: false }),
     supabase.from("profiles").select("id,email,full_name,role").order("created_at", { ascending: false })
   ]);
@@ -171,7 +178,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
   const params = await searchParams;
   const actorEmail = normalizeEmail(typeof params.as === "string" ? params.as : "") || "shine.n.time.detailing@gmail.com";
-  const data = await loadData(actorEmail);
+  const showArchived = String(params.archived || "").toLowerCase() === "1";
+  const data = await loadData(actorEmail, showArchived);
   if (!data) {
     return <main className="min-h-screen bg-black p-8 text-white">Missing Supabase configuration.</main>;
   }
@@ -284,6 +292,12 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                     Clear Completed
                   </button>
                 </form>
+                <a
+                  href={showArchived ? "/admin" : "/admin?archived=1"}
+                  className="rounded-lg border border-violet-400/40 bg-violet-500/12 px-3 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-violet-200"
+                >
+                  {showArchived ? "Hide Archived" : "View Archived"}
+                </a>
               </div>
             </div>
             <div className="mt-4 grid gap-3">
@@ -380,6 +394,15 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                           className="rounded-md border border-rose-400/35 bg-rose-500/10 px-2 py-1 text-[10px] font-semibold uppercase text-rose-100"
                         >
                           Delete
+                        </button>
+                      </form>
+                      <form action={showArchived ? restoreArchivedJobAction : archiveJobAction}>
+                        <input type="hidden" name="id" value={job.id} />
+                        <button
+                          type="submit"
+                          className="rounded-md border border-violet-400/35 bg-violet-500/10 px-2 py-1 text-[10px] font-semibold uppercase text-violet-100"
+                        >
+                          {showArchived ? "Unarchive" : "Archive"}
                         </button>
                       </form>
                     </div>

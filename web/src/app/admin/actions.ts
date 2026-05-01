@@ -56,7 +56,7 @@ export async function updateJobStatusAction(formData: FormData) {
   const id = Number.parseInt(idRaw, 10);
   if (!Number.isFinite(id)) redirect("/admin");
 
-  const allowed = new Set(["Pending", "Confirmed", "Completed"]);
+  const allowed = new Set(["Pending", "Confirmed", "Completed", "Archived"]);
   if (!allowed.has(nextStatus)) redirect("/admin");
 
   const supabase = createAdminClient();
@@ -301,6 +301,38 @@ export async function deleteJobAction(formData: FormData) {
     redirect("/admin?error=delete");
   }
   redirect("/admin?deleted=1");
+}
+
+export async function archiveJobAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const id = Number.parseInt(String(formData.get("id") || ""), 10);
+  if (!Number.isFinite(id)) redirect("/admin");
+
+  const { error } = await supabase.from("jobs").update({ status: "Archived" }).eq("id", id);
+  if (error) {
+    console.error("[admin] archive job error", error);
+    redirect("/admin?error=archive");
+  }
+  redirect("/admin?archived=1");
+}
+
+export async function restoreArchivedJobAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const id = Number.parseInt(String(formData.get("id") || ""), 10);
+  if (!Number.isFinite(id)) redirect("/admin");
+
+  const { error } = await supabase.from("jobs").update({ status: "Pending" }).eq("id", id);
+  if (error) {
+    console.error("[admin] restore archived job error", error);
+    redirect("/admin?error=restore");
+  }
+  redirect("/admin?restored=1");
 }
 
 export async function clearPipelineAction(formData: FormData) {
