@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizePhone } from "@/lib/phone";
 import { sendTeamQuoteAlertForJob } from "@/lib/team-quote-alerts";
 import { followUpTemplateFor } from "@/lib/admin-insights";
+import { sendMail } from "@/lib/mailer";
 
 function ensureAdminSession() {
   const expectedPassword = getAdminPassword();
@@ -55,7 +56,7 @@ export async function updateJobStatusAction(formData: FormData) {
   const id = Number.parseInt(idRaw, 10);
   if (!Number.isFinite(id)) redirect("/admin");
 
-  const allowed = new Set(["Pending", "Confirmed", "Completed", "Cancelled"]);
+  const allowed = new Set(["Pending", "Confirmed", "Completed", "Archived"]);
   if (!allowed.has(nextStatus)) redirect("/admin");
 
   const supabase = createAdminClient();
@@ -65,48 +66,6 @@ export async function updateJobStatusAction(formData: FormData) {
   if (error) {
     console.error("[admin] update status error", error);
     redirect("/admin?error=update");
-  }
-  redirect("/admin");
-}
-
-export async function rescheduleJobAction(formData: FormData) {
-  await requireAdminCookie();
-  const supabase = createAdminClient();
-  if (!supabase) redirect("/admin?error=db");
-
-  const id = Number.parseInt(String(formData.get("id") || ""), 10);
-  const preferredDate = String(formData.get("preferred_date") || "").trim();
-  const preferredTime = String(formData.get("preferred_time") || "").trim().toLowerCase();
-  if (!Number.isFinite(id) || !preferredDate) redirect("/admin");
-  if (!["morning", "afternoon", "evening"].includes(preferredTime)) redirect("/admin");
-
-  const dateObj = new Date(`${preferredDate}T12:00:00`);
-  if (Number.isNaN(dateObj.getTime())) redirect("/admin");
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  if (dateObj < today || dateObj.getDay() === 0) redirect("/admin");
-
-  const { error } = await supabase
-    .from("jobs")
-    .update({ preferred_date: preferredDate, preferred_time: preferredTime, status: "Confirmed" })
-    .eq("id", id);
-  if (error) {
-    console.error("[admin] reschedule error", error);
-    redirect("/admin?error=reschedule");
-  }
-  redirect("/admin");
-}
-
-export async function cancelJobAction(formData: FormData) {
-  await requireAdminCookie();
-  const supabase = createAdminClient();
-  if (!supabase) redirect("/admin?error=db");
-  const id = Number.parseInt(String(formData.get("id") || ""), 10);
-  if (!Number.isFinite(id)) redirect("/admin");
-  const { error } = await supabase.from("jobs").update({ status: "Cancelled" }).eq("id", id);
-  if (error) {
-    console.error("[admin] cancel error", error);
-    redirect("/admin?error=cancel");
   }
   redirect("/admin");
 }
@@ -247,7 +206,6 @@ export async function claimJobAction(formData: FormData) {
   }
   redirect("/admin");
 }
-
 export async function resendQuoteAlertAction(formData: FormData) {
   await requireAdminCookie();
   const supabase = createAdminClient();
@@ -263,7 +221,7 @@ export async function resendQuoteAlertAction(formData: FormData) {
     .maybeSingle();
   if (!job) redirect("/admin?error=job-not-found");
 
-  const sent = await sendTeamQuoteAlertForJob(supabase, job as Record<string, unknown>);
+  const sent = await sendTeamQuoteAlertForJob(job as Record<string, unknown>);
   if (!sent) {
     redirect("/admin?error=alert-failed");
   }
@@ -290,7 +248,7 @@ export async function escalateNoResponseAction(formData: FormData) {
     .maybeSingle();
   if (!job) redirect("/admin?error=job-not-found");
 
-  const sent = await sendTeamQuoteAlertForJob(supabase, job as Record<string, unknown>, "No response escalation");
+  const sent = await sendTeamQuoteAlertForJob(job as Record<string, unknown>, "No response escalation");
   if (!sent) redirect("/admin?error=escalation-alert-failed");
 
   await supabase.from("job_communication_logs").insert({
@@ -327,4 +285,101 @@ export async function addFollowUpTemplateLogAction(formData: FormData) {
     redirect("/admin?error=template-log");
   }
   redirect("/admin?template=logged");
+}
+
+export async function deleteJobAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const id = Number.parseInt(String(formData.get("id") || ""), 10);
+  if (!Number.isFinite(id)) redirect("/admin");
+
+  const { error } = await supabase.from("jobs").delete().eq("id", id);
+  if (error) {
+    console.error("[admin] delete job error", error);
+    redirect("/admin?error=delete");
+  }
+  redirect("/admin?deleted=1");
+}
+
+export async function archiveJobAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const id = Number.parseInt(String(formData.get("id") || ""), 10);
+  if (!Number.isFinite(id)) redirect("/admin");
+
+  const { error } = await supabase.from("jobs").update({ status: "Archived" }).eq("id", id);
+  if (error) {
+    console.error("[admin] archive job error", error);
+    redirect("/admin?error=archive");
+  }
+  redirect("/admin?archived=1");
+}
+
+export async function restoreArchivedJobAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const id = Number.parseInt(String(formData.get("id") || ""), 10);
+  if (!Number.isFinite(id)) redirect("/admin");
+
+  const { error } = await supabase.from("jobs").update({ status: "Pending" }).eq("id", id);
+  if (error) {
+    console.error("[admin] restore archived job error", error);
+    redirect("/admin?error=restore");
+  }
+  redirect("/admin?restored=1");
+}
+
+export async function clearPipelineAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const mode = String(formData.get("mode") || "completed");
+  if (mode === "all") {
+    const { error } = await supabase.from("jobs").delete().gt("id", 0);
+    if (error) {
+      console.error("[admin] clear all jobs error", error);
+      redirect("/admin?error=clear-all");
+    }
+    redirect("/admin?cleared=all");
+  }
+
+  const { error } = await supabase.from("jobs").delete().eq("status", "Completed");
+  if (error) {
+    console.error("[admin] clear completed jobs error", error);
+    redirect("/admin?error=clear-completed");
+  }
+  redirect("/admin?cleared=completed");
+}
+
+export async function sendTestAdminEmailAction() {
+  await requireAdminCookie();
+  const to = String(process.env.ADMIN_NOTIFICATION_EMAIL || "")
+    .split(",")
+    .map((v) => v.trim())
+    .filter((v) => v.includes("@"));
+
+  if (!to.length) {
+    redirect("/admin?error=no-admin-email");
+  }
+
+  const sent = await Promise.all(
+    to.map((email) =>
+      sendMail({
+        to: email,
+        subject: "Shine N Time Admin Email Test",
+        text: "Test successful: admin notification path is working from /admin."
+      })
+    )
+  );
+  if (!sent.some(Boolean)) {
+    redirect("/admin?error=test-email-failed");
+  }
+  redirect("/admin?test-email=sent");
 }
