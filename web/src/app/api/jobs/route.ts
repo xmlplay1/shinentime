@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizePhone } from "@/lib/phone";
+import { sendNewQuoteTeamAlert } from "@/lib/team-quote-alerts";
 
 export async function POST(req: Request) {
   const supabase = createAdminClient();
@@ -77,6 +78,19 @@ export async function POST(req: Request) {
       },
       { status: 500 }
     );
+  }
+
+  const alertOk = await sendNewQuoteTeamAlert({
+    name,
+    email: null,
+    phone,
+    car_make_model,
+    service_package,
+    preferred_date: preferred_date_raw,
+    preferred_time: preferred_time_raw
+  });
+  if (!alertOk) {
+    console.warn("[jobs] quote saved but team alert email failed");
   }
 
   return NextResponse.json({ ok: true });

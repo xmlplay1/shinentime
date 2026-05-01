@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { ADMIN_COOKIE_NAME, expectedAdminToken, getAdminPassword } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizePhone } from "@/lib/phone";
+import { sendTeamQuoteAlertForJob } from "@/lib/team-quote-alerts";
 
 function ensureAdminSession() {
   const expectedPassword = getAdminPassword();
@@ -202,4 +203,26 @@ export async function claimJobAction(formData: FormData) {
     redirect("/admin?error=claim");
   }
   redirect("/admin");
+}
+
+export async function resendQuoteAlertAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const id = Number.parseInt(String(formData.get("id") || ""), 10);
+  if (!Number.isFinite(id)) redirect("/admin");
+
+  const { data: job } = await supabase
+    .from("jobs")
+    .select("id,name,email,phone,car_make_model,service_package,preferred_date,preferred_time,status")
+    .eq("id", id)
+    .maybeSingle();
+  if (!job) redirect("/admin?error=job-not-found");
+
+  const sent = await sendTeamQuoteAlertForJob(supabase, job as Record<string, unknown>);
+  if (!sent) {
+    redirect("/admin?error=alert-failed");
+  }
+  redirect("/admin?alert=resent");
 }

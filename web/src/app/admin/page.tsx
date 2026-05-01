@@ -6,6 +6,7 @@ import {
   claimJobAction,
   createTeamMemberAction,
   createTestJobAction,
+  sendQuoteAlertAction,
   updateJobStatusAction,
   uploadJobImageAction
 } from "@/app/admin/actions";
@@ -356,6 +357,15 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                           className="rounded border border-white/15 bg-black px-2 py-1 text-[10px]"
                         />
                         <button className="rounded border border-blue-400/40 bg-blue-500/10 px-2 py-1 text-[10px] uppercase">Log</button>
+                      </form>
+                      <form action={sendQuoteAlertAction} className="inline-flex">
+                        <input type="hidden" name="id" value={job.id} />
+                        <button
+                          type="submit"
+                          className="rounded border border-emerald-400/40 bg-emerald-500/10 px-2 py-1 text-[10px] uppercase text-emerald-200"
+                        >
+                          Alert Team
+                        </button>
                       </form>
                     </div>
 
