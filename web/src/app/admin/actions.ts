@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { ADMIN_COOKIE_NAME, expectedAdminToken, getAdminPassword } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizePhone } from "@/lib/phone";
+import { sendTeamQuoteAlertForJob } from "@/lib/team-quote-alerts";
+import { followUpTemplateFor } from "@/lib/admin-insights";
 
 function ensureAdminSession() {
   const expectedPassword = getAdminPassword();
@@ -202,4 +204,84 @@ export async function claimJobAction(formData: FormData) {
     redirect("/admin?error=claim");
   }
   redirect("/admin");
+}
+export async function resendQuoteAlertAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const id = Number.parseInt(String(formData.get("id") || ""), 10);
+  if (!Number.isFinite(id)) redirect("/admin");
+
+  const { data: job } = await supabase
+    .from("jobs")
+    .select("id,name,email,phone,car_make_model,service_package,preferred_date,preferred_time,status")
+    .eq("id", id)
+    .maybeSingle();
+  if (!job) redirect("/admin?error=job-not-found");
+
+  const sent = await sendTeamQuoteAlertForJob(job as Record<string, unknown>);
+  if (!sent) {
+    redirect("/admin?error=alert-failed");
+  }
+  redirect("/admin?alert=resent");
+}
+
+// Backward-compatible alias used by admin page imports.
+export async function sendQuoteAlertAction(formData: FormData) {
+  return resendQuoteAlertAction(formData);
+}
+
+export async function escalateNoResponseAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const id = Number.parseInt(String(formData.get("id") || ""), 10);
+  if (!Number.isFinite(id)) redirect("/admin");
+
+  const { data: job } = await supabase
+    .from("jobs")
+    .select("id,name,email,phone,car_make_model,service_package,preferred_date,preferred_time,status,created_at")
+    .eq("id", id)
+    .maybeSingle();
+  if (!job) redirect("/admin?error=job-not-found");
+
+  const sent = await sendTeamQuoteAlertForJob(job as Record<string, unknown>, "No response escalation");
+  if (!sent) redirect("/admin?error=escalation-alert-failed");
+
+  await supabase.from("job_communication_logs").insert({
+    job_id: id,
+    channel: "internal",
+    note: "Escalation alert sent (no response SLA breached).",
+    created_by: "system"
+  });
+  redirect("/admin?escalation=sent");
+}
+
+export async function addFollowUpTemplateLogAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const jobId = Number.parseInt(String(formData.get("job_id") || ""), 10);
+  const status = String(formData.get("status") || "pending");
+  const channel = String(formData.get("channel") || "email").toLowerCase();
+  const customer = String(formData.get("customer") || "Customer");
+  const pkg = String(formData.get("package") || "detail package");
+  if (!Number.isFinite(jobId)) redirect("/admin");
+  if (!(channel === "email" || channel === "sms")) redirect("/admin");
+
+  const template = followUpTemplateFor(status, customer, pkg, channel as "email" | "sms");
+  const { error } = await supabase.from("job_communication_logs").insert({
+    job_id: jobId,
+    channel: channel === "email" ? "email" : "sms",
+    note: `Template used (${channel}): ${template}`,
+    created_by: "template"
+  });
+  if (error) {
+    console.error("[admin] template log error", error);
+    redirect("/admin?error=template-log");
+  }
+  redirect("/admin?template=logged");
 }
