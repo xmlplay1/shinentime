@@ -6,6 +6,7 @@ import { createResendClient, getResendFrom } from "@/lib/resend";
 import { sendMail } from "@/lib/mailer";
 import { adminNewQuoteText, quoteReceiptHtml, quoteReceiptText } from "@/lib/email-templates";
 import { priceFor, type PackageId, type VehicleCategory } from "@/lib/package-pricing";
+import { bookingPortalUrl, newPortalToken } from "@/lib/customer-notifications";
 
 function normalizeEmail(value: string | null | undefined): string | null {
   const email = String(value || "").trim().toLowerCase();
@@ -80,6 +81,7 @@ async function sendCustomerQuoteReceipt(input: {
   preferredDate: string;
   preferredTime: "morning" | "afternoon" | "evening";
   estimatedPrice: number;
+  bookingStatusUrl?: string | null;
 }): Promise<boolean> {
   const subject = `Shine N Time Quote Received • ${input.customerName}`;
   const html = quoteReceiptHtml({
@@ -91,7 +93,8 @@ async function sendCustomerQuoteReceipt(input: {
     servicePackage: input.servicePackage,
     preferredDate: input.preferredDate,
     preferredTime: input.preferredTime,
-    estimatedPrice: input.estimatedPrice
+    estimatedPrice: input.estimatedPrice,
+    bookingStatusUrl: input.bookingStatusUrl ?? null
   });
   const text = quoteReceiptText({
     customerName: input.customerName,
@@ -102,7 +105,8 @@ async function sendCustomerQuoteReceipt(input: {
     servicePackage: input.servicePackage,
     preferredDate: input.preferredDate,
     preferredTime: input.preferredTime,
-    estimatedPrice: input.estimatedPrice
+    estimatedPrice: input.estimatedPrice,
+    bookingStatusUrl: input.bookingStatusUrl ?? null
   });
 
   try {
@@ -158,6 +162,12 @@ export async function POST(req: Request) {
   const referred_by_phone = b.referred_by_phone ? normalizePhone(String(b.referred_by_phone)) : null;
   const preferred_date_raw = b.preferred_date != null ? String(b.preferred_date).trim() : "";
   const preferred_time_raw = b.preferred_time != null ? String(b.preferred_time).trim().toLowerCase() : "";
+  const address = String(b.address || "").trim().slice(0, 280) || null;
+  const city = String(b.city || "").trim().slice(0, 120) || null;
+  const state = String(b.state || "").trim().slice(0, 32) || null;
+  const zip = String(b.zip || "").trim().slice(0, 20) || null;
+
+  let portalToken = newPortalToken();
 
   if (name.length < 2) return NextResponse.json({ error: "Name is required." }, { status: 400 });
   if (!isStrictEmail(email) || email !== emailConfirm) {
@@ -188,20 +198,40 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Preferred time is required." }, { status: 400 });
   }
 
-  const row = {
+  const insertPayload = (): Record<string, unknown> => ({
     name,
     phone: phone.length >= 10 ? phone : null,
     email,
+    address,
+    city,
+    state,
+    zip,
     car_make_model,
     service_package,
     vehicle_type,
     preferred_date: preferred_date_raw,
     preferred_time: preferred_time_raw,
     referred_by_phone: referred_by_phone && referred_by_phone.length >= 10 ? referred_by_phone : null,
+    customer_portal_token: portalToken,
+    reminder_sent_24h_at: null,
+    reminder_sent_2h_at: null,
     created_at: new Date().toISOString()
-  };
+  });
 
-  const { error } = await supabase.from("jobs").insert(row);
+  let insertError = null as { message?: string } | null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const row = insertPayload();
+    const { error } = await supabase.from("jobs").insert(row);
+    insertError = error;
+    if (!error) break;
+    if (error.message?.includes("customer_portal_token") || error.message?.includes("duplicate")) {
+      portalToken = newPortalToken();
+      continue;
+    }
+    break;
+  }
+
+  const error = insertError;
 
   if (error) {
     console.error("[jobs] insert error", error);
@@ -215,6 +245,7 @@ export async function POST(req: Request) {
     );
   }
 
+  const portalUrl = bookingPortalUrl(portalToken);
   const estimatedPrice = priceFor(service_package as PackageId, vehicle_type);
   const customerMailOk = await sendCustomerQuoteReceipt({
     customerName: name,
@@ -225,7 +256,8 @@ export async function POST(req: Request) {
     servicePackage: service_package as PackageId,
     preferredDate: preferred_date_raw,
     preferredTime: preferred_time_raw as "morning" | "afternoon" | "evening",
-    estimatedPrice
+    estimatedPrice,
+    bookingStatusUrl: portalUrl
   });
   if (!customerMailOk) {
     console.warn("[jobs] quote saved but customer receipt email failed");
@@ -250,5 +282,9 @@ export async function POST(req: Request) {
   if (!adminAlertOk) {
     console.warn("[jobs] quote saved but admin alert email failed");
   }
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({
+    ok: true,
+    booking_portal_token: portalToken,
+    ...(portalUrl ? { booking_status_url: portalUrl } : {})
+  });
 }

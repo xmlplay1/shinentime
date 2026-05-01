@@ -19,6 +19,7 @@ import {
 import { CalendarPanel } from "@/app/admin/CalendarPanel";
 import { ScriptSidebar } from "@/app/admin/ScriptSidebar";
 import { DashboardCharts } from "@/app/admin/widgets";
+import { sameDayZipClusters } from "@/lib/route-cluster";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { formatPhoneUs, inferMonthlyProfit, monthKey, normalizeEmail } from "@/lib/admin-format";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -207,6 +208,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
   const sortedReps = reps.filter((r) => r.role === "SERVICE_REP" || isAdmin);
 
+  const routeClusters = sameDayZipClusters(jobs.map((j) => ({ id: j.id, zip: j.zip, preferred_date: j.preferred_date, status: j.status })));
+
   return (
     <main className="min-h-screen bg-black text-white">
       <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[250px_1fr]">
@@ -264,6 +267,25 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
               Service Rep mode enabled: financial stats are hidden. Focus on lead pipeline + outreach.
             </div>
           )}
+
+          {routeClusters.length ? (
+            <aside className="rounded-2xl border border-emerald-500/25 bg-emerald-500/8 p-4 text-sm backdrop-blur-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-200">Same-day ZIP clusters</p>
+              <p className="mt-2 text-xs text-emerald-100/85">
+                Book these back-to-back to save windshield time — same ZIP and date (Pending / Confirmed only).
+              </p>
+              <ul className="mt-4 space-y-3">
+                {routeClusters.slice(0, 6).map((c) => (
+                  <li key={`${c.date}-${c.zip}`} className="rounded-lg border border-white/10 bg-black/30 px-3 py-2">
+                    <p className="font-medium text-emerald-50">{c.date} · ZIP {c.zip}</p>
+                    <p className="mt-1 text-xs text-emerald-200/85">
+                      {c.ids.length} jobs · IDs #{c.ids.join(", #")}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </aside>
+          ) : null}
 
           <div id="calendar" className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
             <CalendarPanel jobs={jobs} rescheduleAction={rescheduleJobAction} cancelAction={cancelJobAction} />

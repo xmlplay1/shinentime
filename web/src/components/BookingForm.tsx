@@ -61,6 +61,7 @@ export function BookingForm() {
   const [status, setStatus] = useState<"idle" | "loading" | "error" | "success">("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [shareUrl, setShareUrl] = useState("");
+  const [bookingStatusUrl, setBookingStatusUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const ref = searchParams.get("ref");
@@ -150,11 +151,20 @@ export function BookingForm() {
           client_fingerprint: clientFingerprint()
         })
       });
-      const data = (await res.json().catch(() => ({}))) as { error?: string; referral_code?: string };
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        referral_code?: string;
+        booking_status_url?: string;
+      };
       if (!res.ok) throw new Error(data.error || "Could not submit booking.");
       const origin = typeof window !== "undefined" ? window.location.origin : "";
       const code = typeof data.referral_code === "string" && data.referral_code.length > 2 ? data.referral_code : "";
       setShareUrl(code ? `${origin}/share/${encodeURIComponent(code)}` : origin);
+      const statusUrlRaw = typeof data.booking_status_url === "string" ? data.booking_status_url.trim() : "";
+      if (statusUrlRaw.startsWith("http"))
+        setBookingStatusUrl(statusUrlRaw);
+      else if (statusUrlRaw.startsWith("/")) setBookingStatusUrl(origin ? `${origin}${statusUrlRaw}` : statusUrlRaw);
+      else setBookingStatusUrl(null);
       setStatus("success");
     } catch (e) {
       setStatus("error");
@@ -179,6 +189,19 @@ export function BookingForm() {
         <p className="mx-auto mt-3 max-w-md text-sm text-slate-400">
           We&apos;ll text you shortly to confirm details. Share Shine N Time and earn credit toward your next detail.
         </p>
+        {bookingStatusUrl ? (
+          <div className="mt-6 rounded-2xl border border-white/15 bg-black/40 p-4 text-left">
+            <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Booking status link</p>
+            <p className="mt-2 break-all font-mono text-sm text-emerald-200">{bookingStatusUrl}</p>
+            <button
+              type="button"
+              onClick={() => void navigator.clipboard.writeText(bookingStatusUrl)}
+              className="mt-4 w-full rounded-xl border border-emerald-500/35 bg-emerald-500/12 py-3 text-xs font-bold uppercase tracking-[0.2em] text-emerald-100 transition hover:bg-emerald-500/18"
+            >
+              Copy status link
+            </button>
+          </div>
+        ) : null}
         {shareUrl ? (
           <div className="mt-8 rounded-2xl border border-white/10 bg-black/40 p-4 text-left">
             <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Your referral link</p>

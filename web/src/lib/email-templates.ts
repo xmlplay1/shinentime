@@ -10,6 +10,7 @@ type QuoteEmailInput = {
   preferredDate: string;
   preferredTime: string;
   estimatedPrice: number;
+  bookingStatusUrl?: string | null;
 };
 
 const timeLabel: Record<string, string> = {
@@ -56,6 +57,16 @@ export function quoteReceiptHtml(input: QuoteEmailInput): string {
         </ul>
       </div>
 
+      ${
+        input.bookingStatusUrl
+          ? `<div style="margin-top:14px;background:#0f172a;border:1px solid rgba(93,216,246,0.35);border-radius:12px;padding:14px;">
+        <p style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:0.16em;color:#7dd3fc;">Track your request</p>
+        <a href="${input.bookingStatusUrl}" style="display:inline-block;background:#0369a1;color:#fff;text-decoration:none;padding:10px 16px;border-radius:10px;font-weight:700;">View booking status</a>
+        <p style="margin:10px 0 0;color:#94a3b8;font-size:12px;">${input.bookingStatusUrl}</p>
+      </div>`
+          : ""
+      }
+
       <p style="margin-top:18px; color:#94a3b8; font-size:13px;">Questions? Reply to this email and we’ll help right away.</p>
     </div>
   </div>
@@ -82,6 +93,9 @@ export function quoteReceiptText(input: QuoteEmailInput): string {
     "- Water access (~50ft hose reach)",
     "- Keys ready",
     "",
+    ...(input.bookingStatusUrl
+      ? ["View booking status anytime:", input.bookingStatusUrl, ""]
+      : []),
     "— Shine N Time"
   ].join("\n");
 }

@@ -10,6 +10,11 @@ import { followUpTemplateFor } from "@/lib/admin-insights";
 import { sendMail } from "@/lib/mailer";
 import { isStrictEmail, normalizeCustomerEmail } from "@/lib/email-validation";
 import { priceFor, type PackageId, type VehicleCategory } from "@/lib/package-pricing";
+import {
+  newPortalToken,
+  sendCustomerBookingUpdateEmails,
+  summarizePreferred
+} from "@/lib/customer-notifications";
 
 function ensureAdminSession() {
   const expectedPassword = getAdminPassword();
@@ -64,11 +69,52 @@ export async function updateJobStatusAction(formData: FormData) {
   const supabase = createAdminClient();
   if (!supabase) redirect("/admin?error=db");
 
-  const { error } = await supabase.from("jobs").update({ status: nextStatus }).eq("id", id);
+  const { data: before } = await supabase
+    .from("jobs")
+    .select(
+      "status,name,email,phone,car_make_model,service_package,preferred_date,preferred_time,customer_portal_token"
+    )
+    .eq("id", id)
+    .maybeSingle();
+
+  let portalToken =
+    typeof before?.customer_portal_token === "string" && before.customer_portal_token.length > 8
+      ? before.customer_portal_token
+      : null;
+  if (nextStatus === "Confirmed" && !portalToken) {
+    portalToken = newPortalToken();
+  }
+
+  const patch: Record<string, unknown> = { status: nextStatus };
+  if (nextStatus === "Confirmed" && portalToken && before?.customer_portal_token !== portalToken) {
+    patch.customer_portal_token = portalToken;
+    patch.reminder_sent_24h_at = null;
+    patch.reminder_sent_2h_at = null;
+  }
+
+  const { error } = await supabase.from("jobs").update(patch).eq("id", id);
   if (error) {
     console.error("[admin] update status error", error);
     redirect("/admin?error=update");
   }
+
+  const prevLc = String(before?.status || "").toLowerCase();
+  if (nextStatus === "Confirmed" && prevLc !== "confirmed" && before) {
+    await sendCustomerBookingUpdateEmails({
+      kind: "confirmed",
+      row: {
+        name: before.name as string | null,
+        email: before.email as string | null,
+        phone: before.phone as string | null,
+        car_make_model: before.car_make_model as string | null,
+        service_package: before.service_package as string | null,
+        preferred_date: before.preferred_date as string | null,
+        preferred_time: before.preferred_time as string | null,
+        customer_portal_token: portalToken
+      }
+    });
+  }
+
   redirect("/admin");
 }
 
@@ -89,18 +135,62 @@ export async function rescheduleJobAction(formData: FormData) {
   today.setHours(0, 0, 0, 0);
   if (dateObj < today || dateObj.getDay() === 0) redirect("/admin");
 
-  const { data: row } = await supabase.from("jobs").select("status").eq("id", id).maybeSingle();
-  const prev = String(row?.status || "").toLowerCase();
+  const { data: before } = await supabase
+    .from("jobs")
+    .select(
+      "status,name,email,phone,car_make_model,service_package,preferred_date,preferred_time,customer_portal_token"
+    )
+    .eq("id", id)
+    .maybeSingle();
+
+  const prev = String(before?.status || "").toLowerCase();
   const nextStatus = prev === "cancelled" ? "Pending" : "Confirmed";
+
+  const portalToken =
+    typeof before?.customer_portal_token === "string" && before.customer_portal_token.length > 8
+      ? before.customer_portal_token
+      : newPortalToken();
+
+  const previousPreferred = before
+    ? summarizePreferred({
+        preferred_date: before.preferred_date as string | null,
+        preferred_time: before.preferred_time as string | null
+      })
+    : undefined;
 
   const { error } = await supabase
     .from("jobs")
-    .update({ preferred_date: preferredDate, preferred_time: preferredTime, status: nextStatus })
+    .update({
+      preferred_date: preferredDate,
+      preferred_time: preferredTime,
+      status: nextStatus,
+      customer_portal_token: portalToken,
+      reminder_sent_24h_at: null,
+      reminder_sent_2h_at: null
+    })
     .eq("id", id);
   if (error) {
     console.error("[admin] reschedule error", error);
     redirect("/admin?error=reschedule");
   }
+
+  if (before) {
+    await sendCustomerBookingUpdateEmails({
+      kind: "rescheduled",
+      previousPreferred: previousPreferred,
+      row: {
+        name: before.name as string | null,
+        email: before.email as string | null,
+        phone: before.phone as string | null,
+        car_make_model: before.car_make_model as string | null,
+        service_package: before.service_package as string | null,
+        preferred_date: preferredDate,
+        preferred_time: preferredTime,
+        customer_portal_token: portalToken
+      }
+    });
+  }
+
   redirect("/admin");
 }
 
@@ -112,12 +202,19 @@ export async function cancelJobAction(formData: FormData) {
   const id = Number.parseInt(String(formData.get("id") || ""), 10);
   if (!Number.isFinite(id)) redirect("/admin");
 
+  const { data: before } = await supabase
+    .from("jobs")
+    .select(
+      "notes,name,email,phone,car_make_model,service_package,preferred_date,preferred_time,customer_portal_token"
+    )
+    .eq("id", id)
+    .maybeSingle();
+
   const extra = String(formData.get("cancel_note") || "").trim();
   const stamp = `Cancelled · ${new Date().toISOString().slice(0, 16).replace("T", " ")}`;
   let notesPatch: string | null = null;
   if (extra) {
-    const { data: row } = await supabase.from("jobs").select("notes").eq("id", id).maybeSingle();
-    const prev = row?.notes ? String(row.notes) : "";
+    const prev = before?.notes ? String(before.notes) : "";
     notesPatch = prev ? `${prev}\n${stamp}: ${extra}` : `${stamp}: ${extra}`;
   }
 
@@ -129,6 +226,23 @@ export async function cancelJobAction(formData: FormData) {
     console.error("[admin] cancel error", error);
     redirect("/admin?error=cancel");
   }
+
+  if (before) {
+    await sendCustomerBookingUpdateEmails({
+      kind: "cancelled",
+      row: {
+        name: before.name as string | null,
+        email: before.email as string | null,
+        phone: before.phone as string | null,
+        car_make_model: before.car_make_model as string | null,
+        service_package: before.service_package as string | null,
+        preferred_date: before.preferred_date as string | null,
+        preferred_time: before.preferred_time as string | null,
+        customer_portal_token: before.customer_portal_token as string | null
+      }
+    });
+  }
+
   redirect("/admin");
 }
 
@@ -197,7 +311,8 @@ export async function createJobAdminAction(formData: FormData) {
     preferred_time: preferredTime,
     status: "Pending",
     price: estimated,
-    estimated_price: estimated
+    estimated_price: estimated,
+    customer_portal_token: newPortalToken()
   });
   if (error) {
     console.error("[admin] create job error", error);
