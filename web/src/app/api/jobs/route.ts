@@ -7,6 +7,69 @@ import { sendMail } from "@/lib/mailer";
 import { adminNewQuoteText, quoteReceiptHtml, quoteReceiptText } from "@/lib/email-templates";
 import { priceFor, type PackageId, type VehicleCategory } from "@/lib/package-pricing";
 
+function normalizeEmail(value: string | null | undefined): string | null {
+  const email = String(value || "").trim().toLowerCase();
+  return email.includes("@") ? email : null;
+}
+
+async function resolveAdminRecipients(): Promise<string[]> {
+  const out = new Set<string>();
+  String(process.env.ADMIN_NOTIFICATION_EMAIL || "")
+    .split(",")
+    .map((v) => normalizeEmail(v))
+    .filter((v): v is string => Boolean(v))
+    .forEach((v) => out.add(v));
+
+  const supabase = createAdminClient();
+  if (supabase) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("email, role")
+      .in("role", ["ADMIN", "SERVICE_REP"]);
+    for (const row of data || []) {
+      const email = normalizeEmail((row as { email?: string | null }).email || null);
+      if (email) out.add(email);
+    }
+  }
+  return [...out];
+}
+
+async function sendAdminQuoteAlert(input: {
+  recipients: string[];
+  subject: string;
+  text: string;
+}): Promise<boolean> {
+  if (!input.recipients.length) return false;
+
+  try {
+    const resend = createResendClient();
+    if (resend) {
+      const { error } = await resend.emails.send({
+        from: getResendFrom(),
+        to: input.recipients,
+        subject: input.subject,
+        text: input.text,
+        html: `<pre style="font-family:Inter,Arial,sans-serif;white-space:pre-wrap">${input.text}</pre>`
+      });
+      if (!error) return true;
+      console.error("[jobs] resend admin alert failed", error);
+    }
+  } catch (error) {
+    console.error("[jobs] resend admin alert exception", error);
+  }
+
+  let atLeastOneDelivered = false;
+  for (const recipient of input.recipients) {
+    const ok = await sendMail({
+      to: recipient,
+      subject: input.subject,
+      text: input.text
+    });
+    atLeastOneDelivered = atLeastOneDelivered || ok;
+  }
+  return atLeastOneDelivered;
+}
+
 async function sendCustomerQuoteReceipt(input: {
   customerName: string;
   customerEmail: string;
@@ -168,26 +231,24 @@ export async function POST(req: Request) {
     console.warn("[jobs] quote saved but customer receipt email failed");
   }
 
-  const adminEmail = String(process.env.ADMIN_NOTIFICATION_EMAIL || "")
-    .split(",")
-    .map((v) => v.trim())
-    .find((v) => v.includes("@"));
-  if (adminEmail) {
-    await sendMail({
-      to: adminEmail,
-      subject: `New Quote • ${name} • ${service_package.toUpperCase()}`,
-      text: adminNewQuoteText({
-        customerName: name,
-        customerEmail: email,
-        phone,
-        carMakeModel: car_make_model,
-        vehicleType: vehicle_type,
-        servicePackage: service_package,
-        preferredDate: preferred_date_raw,
-        preferredTime: preferred_time_raw,
-        estimatedPrice
-      })
-    });
+  const adminRecipients = await resolveAdminRecipients();
+  const adminAlertOk = await sendAdminQuoteAlert({
+    recipients: adminRecipients,
+    subject: `New Quote • ${name} • ${service_package.toUpperCase()}`,
+    text: adminNewQuoteText({
+      customerName: name,
+      customerEmail: email,
+      phone,
+      carMakeModel: car_make_model,
+      vehicleType: vehicle_type,
+      servicePackage: service_package,
+      preferredDate: preferred_date_raw,
+      preferredTime: preferred_time_raw,
+      estimatedPrice
+    })
+  });
+  if (!adminAlertOk) {
+    console.warn("[jobs] quote saved but admin alert email failed");
   }
   return NextResponse.json({ ok: true });
 }
