@@ -1,11 +1,14 @@
 import { redirect } from "next/navigation";
 import {
   addCommunicationLogAction,
+  addFollowUpTemplateLogAction,
   adminLoginAction,
   adminLogoutAction,
+  escalateNoResponseAction,
   claimJobAction,
   createTeamMemberAction,
   createTestJobAction,
+  resendQuoteAlertAction,
   sendQuoteAlertAction,
   updateJobStatusAction,
   uploadJobImageAction
@@ -15,11 +18,21 @@ import { ScriptSidebar } from "@/app/admin/ScriptSidebar";
 import { DashboardCharts } from "@/app/admin/widgets";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { formatPhoneUs, inferMonthlyProfit, monthKey, normalizeEmail } from "@/lib/admin-format";
+import {
+  computeRepLeaderboard,
+  fetchCustomerTimelineByEmail,
+  followUpTemplateFor,
+  hasCalendarConflict,
+  hasNoResponse,
+  quoteScore,
+  slaLabel,
+  slaTone
+} from "@/lib/admin-insights";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CircleCheckBig, Clock3, DollarSign, FileClock, TrendingUp } from "lucide-react";
 
 type Role = "ADMIN" | "SERVICE_REP";
-type JobStatus = "Pending" | "Confirmed" | "Completed";
+type JobStatus = "Pending" | "Confirmed" | "Completed" | "Cancelled";
 
 type JobRow = {
   id: number;
@@ -168,6 +181,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   }
 
   const params = await searchParams;
+  const activeView = typeof params.view === "string" ? params.view : "calendar";
   const actorEmail = normalizeEmail(typeof params.as === "string" ? params.as : "") || "shine.n.time.detailing@gmail.com";
   const data = await loadData(actorEmail);
   if (!data) {
@@ -194,6 +208,19 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   }
 
   const sortedReps = reps.filter((r) => r.role === "SERVICE_REP" || isAdmin);
+  const supabase = createAdminClient();
+  const sortedJobs = [...jobs].sort((a, b) => quoteScore(b) - quoteScore(a));
+  const highValueLeads = sortedJobs.filter((j) => quoteScore(j) >= 70).length;
+  const conflictCount = sortedJobs.filter((j) => hasCalendarConflict(j, sortedJobs)).length;
+  const noResponseThresholdHours = Number(process.env.NO_RESPONSE_THRESHOLD_HOURS || 4);
+  const noResponseJobs = sortedJobs.filter((j) => hasNoResponse(j.id, logsByJob, j.created_at, noResponseThresholdHours));
+  const leaderboard = computeRepLeaderboard(sortedJobs, logsByJob);
+  const pendingOnly = sortedJobs.filter((j) => String(j.status || "").toLowerCase() === "pending");
+  const missedInbox = jobs.filter((j) =>
+    hasNoResponse(j.id, logsByJob as Map<number, LogForInsights[]>, j.created_at, noResponseThresholdHours)
+  );
+  const timelineEmail = normalizeEmail(typeof params.customer === "string" ? params.customer : jobs[0]?.email || "");
+  const timeline = supabase && timelineEmail ? await fetchCustomerTimelineByEmail(supabase, timelineEmail) : null;
 
   return (
     <main className="min-h-screen bg-black text-white">
@@ -203,14 +230,45 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           <h2 className="mt-2 text-lg font-semibold">Ultimate Command Center</h2>
           <p className="mt-2 text-xs text-slate-400">Role: {profile.role}</p>
           <nav className="mt-6 grid gap-2 text-sm">
-            <a className="rounded-lg border border-amber-400/50 bg-amber-500/15 px-3 py-2 font-semibold text-amber-200" href="#calendar">
+            <a
+              className={`rounded-lg border px-3 py-2 font-semibold ${
+                activeView === "calendar"
+                  ? "border-amber-400/50 bg-amber-500/15 text-amber-200"
+                  : "border-white/10 text-slate-300 hover:bg-white/[0.04]"
+              }`}
+              href="/admin?view=calendar"
+            >
               Calendar
             </a>
-            <a className="rounded-lg border border-white/10 px-3 py-2 text-slate-300 hover:bg-white/[0.04]" href="#pipeline">
+            <a
+              className={`rounded-lg border px-3 py-2 ${
+                activeView === "pipeline"
+                  ? "border-blue-400/45 bg-blue-500/12 font-semibold text-blue-200"
+                  : "border-white/10 text-slate-300 hover:bg-white/[0.04]"
+              }`}
+              href="/admin?view=pipeline"
+            >
               Lead Pipeline
             </a>
+            <a
+              className={`rounded-lg border px-3 py-2 ${
+                activeView === "inbox"
+                  ? "border-rose-400/45 bg-rose-500/12 font-semibold text-rose-200"
+                  : "border-white/10 text-slate-300 hover:bg-white/[0.04]"
+              }`}
+              href="/admin?view=inbox"
+            >
+              Missed Inbox
+            </a>
             {isAdmin ? (
-              <a className="rounded-lg border border-white/10 px-3 py-2 text-slate-300 hover:bg-white/[0.04]" href="#team">
+              <a
+                className={`rounded-lg border px-3 py-2 ${
+                  activeView === "team"
+                    ? "border-emerald-400/45 bg-emerald-500/12 font-semibold text-emerald-200"
+                    : "border-white/10 text-slate-300 hover:bg-white/[0.04]"
+                }`}
+                href="/admin?view=team"
+              >
                 Team Settings
               </a>
             ) : null}
@@ -254,10 +312,11 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           )}
 
           <div id="calendar" className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-            <CalendarPanel jobs={jobs} />
+            <CalendarPanel jobs={jobs} rescheduleAction={rescheduleJobAction} cancelAction={cancelJobAction} />
             <ScriptSidebar
               customerName={jobs[0]?.name || "Customer"}
               packageName={jobs[0]?.service_package || "Detail Package"}
+              jobStatus={jobs[0]?.status || "pending"}
               reviewLink={process.env.REVIEW_REQUEST_URL || "https://www.google.com/search?q=Shine+N+Time+detailing+reviews"}
             />
           </div>
@@ -272,10 +331,20 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
               </form>
             </div>
             <div className="mt-4 grid gap-3">
-              {jobs.map((job) => {
+              {prioritizedJobs.map((job) => {
                 const status = toStatus(job.status);
                 const mapQuery = encodeURIComponent([job.address, job.city, job.state, job.zip].filter(Boolean).join(", "));
                 const jobLogs = logsByJob.get(job.id) || [];
+                const tone = slaTone(job.created_at);
+                const noResponseBreached = hasNoResponse(job.id, logsByJob as Map<number, LogForInsights[]>, job.created_at, noResponseHours);
+                const conflict = hasCalendarConflict(job as JobForInsights, jobs as JobForInsights[]);
+                const score = quoteScore(job as JobForInsights);
+                const toneClass =
+                  tone === "red"
+                    ? "border-red-400/50 bg-red-500/15 text-red-200"
+                    : tone === "yellow"
+                      ? "border-amber-400/50 bg-amber-500/15 text-amber-200"
+                      : "border-emerald-400/45 bg-emerald-500/12 text-emerald-200";
                 return (
                   <article key={job.id} className="rounded-xl border border-white/10 bg-black/25 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -284,7 +353,20 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                         <p className="text-xs text-slate-400">{formatPhoneUs(job.phone)} · {normalizeEmail(job.email) || "no email"}</p>
                         <p className="text-xs text-slate-400">{job.car_make_model || "Vehicle TBD"} · {(job.service_package || "package").toUpperCase()}</p>
                       </div>
-                      <span className={`inline-flex rounded-md border px-2 py-1 text-xs ${statusClass(status)}`}>{status}</span>
+                      <div className="flex flex-wrap items-center justify-end gap-2">
+                        <span className={`inline-flex rounded-md border px-2 py-1 text-[10px] uppercase ${toneClass}`}>
+                          SLA {slaLabel(job.created_at)}
+                        </span>
+                        <span className="inline-flex rounded-md border border-fuchsia-400/45 bg-fuchsia-500/12 px-2 py-1 text-[10px] uppercase text-fuchsia-200">
+                          Score {score}
+                        </span>
+                        {conflict ? (
+                          <span className="inline-flex rounded-md border border-rose-400/45 bg-rose-500/12 px-2 py-1 text-[10px] uppercase text-rose-200">
+                            Conflict
+                          </span>
+                        ) : null}
+                        <span className={`inline-flex rounded-md border px-2 py-1 text-xs ${statusClass(status)}`}>{status}</span>
+                      </div>
                     </div>
 
                     <div className="mt-3 grid gap-2 text-xs text-slate-300 md:grid-cols-2">
@@ -367,6 +449,28 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                           Alert Team
                         </button>
                       </form>
+                      {noResponseBreached ? (
+                        <form action={escalateNoResponseAction} className="inline-flex">
+                          <input type="hidden" name="id" value={job.id} />
+                          <button
+                            type="submit"
+                            className="rounded border border-red-400/40 bg-red-500/10 px-2 py-1 text-[10px] uppercase text-red-200"
+                          >
+                            Escalate
+                          </button>
+                        </form>
+                      ) : null}
+                      <form action={addFollowUpTemplateLogAction} className="inline-flex items-center gap-1 rounded border border-white/15 px-2 py-1">
+                        <input type="hidden" name="job_id" value={job.id} />
+                        <input type="hidden" name="status" value={status} />
+                        <input type="hidden" name="customer" value={job.name || "Customer"} />
+                        <input type="hidden" name="package" value={(job.service_package || "package").toUpperCase()} />
+                        <select name="channel" className="rounded bg-black px-2 py-1 text-[10px]">
+                          <option value="email">email template</option>
+                          <option value="sms">sms template</option>
+                        </select>
+                        <button type="submit" className="text-[10px] uppercase">Use template</button>
+                      </form>
                     </div>
 
                     <div className="mt-3 rounded-md border border-white/10 bg-black/35 p-2 text-[11px] text-slate-400">
@@ -389,6 +493,122 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                   No jobs found yet.
                 </div>
               ) : null}
+            </div>
+          </section>
+
+          <section id="leaderboard" className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-300">Rep Leaderboard</h3>
+            <div className="mt-3 overflow-x-auto rounded-xl border border-white/10">
+              <table className="min-w-full text-left text-xs">
+                <thead className="bg-white/[0.03] text-slate-400">
+                  <tr>
+                    <th className="px-3 py-2">Rep</th>
+                    <th className="px-3 py-2">Assigned</th>
+                    <th className="px-3 py-2">Completed</th>
+                    <th className="px-3 py-2">Close Rate</th>
+                    <th className="px-3 py-2">Avg Response</th>
+                    <th className="px-3 py-2">Revenue Closed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {leaderboard.map((row) => (
+                    <tr key={row.rep} className="border-t border-white/10">
+                      <td className="px-3 py-2 text-slate-200">{row.rep}</td>
+                      <td className="px-3 py-2 text-slate-300">{row.assigned}</td>
+                      <td className="px-3 py-2 text-slate-300">{row.completed}</td>
+                      <td className="px-3 py-2 text-slate-300">{row.closeRate}%</td>
+                      <td className="px-3 py-2 text-slate-300">
+                        {row.avgResponseMin == null ? "—" : `${row.avgResponseMin} min`}
+                      </td>
+                      <td className="px-3 py-2 font-semibold text-emerald-300">${row.revenueClosed.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="timeline" className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-300">Customer Timeline</h3>
+              <form method="get" className="inline-flex items-center gap-2">
+                <input type="hidden" name="view" value={activeView} />
+                <input
+                  name="timelineEmail"
+                  defaultValue={timelineEmail}
+                  placeholder="customer@email.com"
+                  className="rounded border border-white/15 bg-black/50 px-2 py-1 text-xs"
+                />
+                <button className="rounded border border-white/15 px-2 py-1 text-[10px] uppercase">Load</button>
+              </form>
+            </div>
+            {timeline ? (
+              <div className="mt-3 space-y-3">
+                <p className="text-xs text-slate-400">
+                  {timeline.jobs.length} jobs · {timeline.logs.length} logs · {timeline.images.length} images
+                </p>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="rounded-lg border border-white/10 bg-black/25 p-3 text-xs text-slate-300">
+                    <p className="mb-2 font-semibold text-slate-200">Job History</p>
+                    {timeline.jobs.length ? (
+                      timeline.jobs.slice(0, 8).map((j) => (
+                        <p key={j.id}>
+                          #{j.id} · {j.car_make_model || "Vehicle"} · {j.service_package || "pkg"} · {j.status || "Pending"}
+                        </p>
+                      ))
+                    ) : (
+                      <p>No jobs.</p>
+                    )}
+                  </div>
+                  <div className="rounded-lg border border-white/10 bg-black/25 p-3 text-xs text-slate-300">
+                    <p className="mb-2 font-semibold text-slate-200">Communication</p>
+                    {timeline.logs.length ? (
+                      timeline.logs.slice(0, 8).map((l) => (
+                        <p key={l.id}>
+                          {new Date(l.created_at).toLocaleString()} · {l.channel} · {l.note}
+                        </p>
+                      ))
+                    ) : (
+                      <p>No logs.</p>
+                    )}
+                  </div>
+                </div>
+                {timeline.images.length ? (
+                  <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                    {timeline.images.slice(0, 12).map((img) => (
+                      <a key={img.path} href={img.publicUrl} target="_blank" rel="noreferrer" className="group rounded-lg border border-white/10 bg-black/20 p-2 text-[10px]">
+                        <p className="truncate text-slate-400 group-hover:text-slate-200">{img.path}</p>
+                      </a>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <p className="mt-3 text-xs text-slate-500">Enter an email to load full customer timeline.</p>
+            )}
+          </section>
+
+          <section id="inbox" className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-300">Missed Call/Email Inbox</h3>
+            <p className="mt-1 text-xs text-slate-500">Jobs without any comm log within {noResponseHours}h are shown here.</p>
+            <div className="mt-3 space-y-2">
+              {missedInbox.length ? (
+                missedInbox.map((job) => (
+                  <div key={`missed-${job.id}`} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-red-400/25 bg-red-500/10 px-3 py-2 text-xs">
+                    <span className="text-red-100">
+                      #{job.id} · {job.name || "Customer"} · {normalizeEmail(job.email) || formatPhoneUs(job.phone)} · {slaLabel(job.created_at)}
+                    </span>
+                    <form action={escalateNoResponseAction}>
+                      <input type="hidden" name="id" value={job.id} />
+                      <button className="rounded border border-red-400/40 bg-red-500/20 px-2 py-1 uppercase text-red-100">
+                        Escalate
+                      </button>
+                    </form>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-slate-500">No missed leads right now.</p>
+              )}
             </div>
           </section>
 
@@ -442,8 +662,95 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             )}
           </section>
 
+          <section id="inbox" className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-300">Missed Call / Email Inbox</h3>
+              <span className="text-xs text-slate-400">{missedInbox.length} open</span>
+            </div>
+            <div className="mt-3 grid gap-2">
+              {missedInbox.length ? (
+                missedInbox.map((item) => (
+                  <article key={`inbox-${item.id}`} className="rounded-lg border border-rose-400/30 bg-rose-500/8 p-3 text-xs">
+                    <p className="font-semibold text-rose-100">{item.name || item.email || "Unknown contact"}</p>
+                    <p className="mt-1 text-slate-300">
+                      {(item.lastChannel || "none").toUpperCase()} · {item.lastAt || "n/a"}
+                    </p>
+                    <p className="mt-1 text-slate-400">
+                      Last note: {item.lastNote || "No logged response yet"}
+                    </p>
+                  </article>
+                ))
+              ) : (
+                <p className="text-sm text-slate-500">Inbox is clear.</p>
+              )}
+            </div>
+          </section>
+
+          <section id="timeline" className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-300">Customer Timeline</h3>
+            <form className="mt-3 flex flex-wrap gap-2">
+              <input
+                type="hidden"
+                name="view"
+                value={activeView}
+              />
+              <input
+                type="email"
+                name="customer_email"
+                defaultValue={timelineEmail}
+                placeholder="customer@email.com"
+                className="min-w-[220px] flex-1 rounded-lg border border-white/15 bg-black/60 px-3 py-2 text-sm"
+              />
+              <button className="rounded-lg border border-amber-400/45 bg-amber-500/10 px-3 py-2 text-xs uppercase text-amber-200">
+                Load timeline
+              </button>
+            </form>
+            {timeline ? (
+              <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                <div className="rounded-xl border border-white/10 bg-black/25 p-3">
+                  <p className="text-xs uppercase tracking-widest text-slate-500">Jobs</p>
+                  <div className="mt-2 space-y-2 text-xs">
+                    {timeline.jobs.map((job) => (
+                      <div key={`t-job-${job.id}`} className="rounded border border-white/10 bg-black/35 p-2">
+                        <p className="font-semibold text-slate-200">
+                          #{job.id} · {(job.service_package || "package").toUpperCase()} · {job.status || "Pending"}
+                        </p>
+                        <p className="text-slate-400">{job.car_make_model || "Vehicle TBD"} · {job.preferred_date || "TBD"}</p>
+                      </div>
+                    ))}
+                    {!timeline.jobs.length ? <p className="text-slate-500">No jobs.</p> : null}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/25 p-3">
+                  <p className="text-xs uppercase tracking-widest text-slate-500">Communication + Photos</p>
+                  <div className="mt-2 max-h-56 space-y-1 overflow-auto text-xs">
+                    {timeline.logs.map((log) => (
+                      <p key={`t-log-${log.id}`} className="rounded border border-white/10 bg-black/35 p-2 text-slate-300">
+                        <span className="uppercase text-slate-500">{log.channel}</span> · {log.note}
+                      </p>
+                    ))}
+                    {!timeline.logs.length ? <p className="text-slate-500">No communication logs.</p> : null}
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    {timeline.images.slice(0, 9).map((img) => (
+                      <a key={img.path} href={img.publicUrl} target="_blank" rel="noreferrer" className="truncate rounded border border-white/10 bg-black/35 px-2 py-1 text-[10px] text-slate-300">
+                        {img.path.split("/").pop()}
+                      </a>
+                    ))}
+                    {!timeline.images.length ? <p className="col-span-3 text-slate-500">No uploaded photos.</p> : null}
+                  </div>
+                </div>
+              </div>
+            ) : timelineEmail ? (
+              <p className="mt-3 text-xs text-slate-500">No timeline records for that email yet.</p>
+            ) : (
+              <p className="mt-3 text-xs text-slate-500">Enter an email to view complete customer history.</p>
+            )}
+          </section>
+
           <section className="rounded-xl border border-white/10 bg-black/30 p-3 text-xs text-slate-400">
             Mobile Action Center active: Navigate, Call/SMS, and Photos upload to Supabase `job-images` bucket.
+            <span className="ml-2 text-slate-500">For daily digest: call /api/admin/digest with x-digest-token header.</span>
           </section>
         </section>
       </div>

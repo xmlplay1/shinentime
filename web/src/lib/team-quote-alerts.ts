@@ -42,6 +42,20 @@ async function sendByResend(to: string[], subject: string, html: string, text: s
   return true;
 }
 
+async function sendTeamEmail(subject: string, text: string, html?: string): Promise<boolean> {
+  const recipients = await resolveTeamRecipients();
+  if (!recipients.length) {
+    console.warn("[alerts] no admin/service-rep recipients configured");
+    return false;
+  }
+  return sendByResend(
+    recipients,
+    subject,
+    html || `<pre style="font-family:Inter,Arial,sans-serif;white-space:pre-wrap">${text}</pre>`,
+    text
+  );
+}
+
 async function resolveTeamRecipients(): Promise<string[]> {
   const out = new Set<string>();
   const envRecipients = String(process.env.ADMIN_NOTIFICATION_EMAIL || "")
@@ -66,12 +80,6 @@ async function resolveTeamRecipients(): Promise<string[]> {
 }
 
 export async function notifyTeamNewQuote(payload: QuoteAlertPayload): Promise<boolean> {
-  const recipients = await resolveTeamRecipients();
-  if (!recipients.length) {
-    console.warn("[alerts] no admin/service-rep recipients configured");
-    return false;
-  }
-
   const subject = `New Quote • ${payload.name || "Customer"} • ${(payload.service_package || "package").toUpperCase()}`;
   const location = [payload.address, payload.city, payload.state, payload.zip].filter(Boolean).join(", ");
   const lines = [
@@ -86,8 +94,7 @@ export async function notifyTeamNewQuote(payload: QuoteAlertPayload): Promise<bo
     `Status: ${payload.status || "Pending"}`
   ];
   const text = lines.join("\n");
-  const html = `<pre style="font-family:Inter,Arial,sans-serif;white-space:pre-wrap">${text}</pre>`;
-  return sendByResend(recipients, subject, html, text);
+  return sendTeamEmail(subject, text);
 }
 
 export async function resendTeamAlertForJob(jobId: number): Promise<boolean> {
@@ -100,4 +107,27 @@ export async function resendTeamAlertForJob(jobId: number): Promise<boolean> {
     .maybeSingle();
   if (!data) return false;
   return notifyTeamNewQuote(data as QuoteAlertPayload);
+}
+
+export async function sendAdminDailyDigest(input: {
+  totalNewLeads: number;
+  pendingFollowUps: number;
+  completedToday: number;
+  escalations: { id: number; name: string; ageHours: number }[];
+}): Promise<boolean> {
+  const subject = `Daily Digest • Leads ${input.totalNewLeads} • Pending ${input.pendingFollowUps} • Completed ${input.completedToday}`;
+  const escalationLines = input.escalations.length
+    ? input.escalations.map((e) => `- #${e.id} ${e.name} (${e.ageHours}h old)`).join("\n")
+    : "- none";
+  const text = [
+    "Shine N Time Daily Digest",
+    "",
+    `New leads (24h): ${input.totalNewLeads}`,
+    `Pending follow-ups: ${input.pendingFollowUps}`,
+    `Completed today: ${input.completedToday}`,
+    "",
+    "Escalations:",
+    escalationLines
+  ].join("\n");
+  return sendTeamEmail(subject, text);
 }

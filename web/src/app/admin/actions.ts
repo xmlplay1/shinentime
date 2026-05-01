@@ -6,6 +6,7 @@ import { ADMIN_COOKIE_NAME, expectedAdminToken, getAdminPassword } from "@/lib/a
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizePhone } from "@/lib/phone";
 import { sendTeamQuoteAlertForJob } from "@/lib/team-quote-alerts";
+import { followUpTemplateFor } from "@/lib/admin-insights";
 
 function ensureAdminSession() {
   const expectedPassword = getAdminPassword();
@@ -54,7 +55,7 @@ export async function updateJobStatusAction(formData: FormData) {
   const id = Number.parseInt(idRaw, 10);
   if (!Number.isFinite(id)) redirect("/admin");
 
-  const allowed = new Set(["Pending", "Confirmed", "Completed"]);
+  const allowed = new Set(["Pending", "Confirmed", "Completed", "Cancelled"]);
   if (!allowed.has(nextStatus)) redirect("/admin");
 
   const supabase = createAdminClient();
@@ -64,6 +65,48 @@ export async function updateJobStatusAction(formData: FormData) {
   if (error) {
     console.error("[admin] update status error", error);
     redirect("/admin?error=update");
+  }
+  redirect("/admin");
+}
+
+export async function rescheduleJobAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const id = Number.parseInt(String(formData.get("id") || ""), 10);
+  const preferredDate = String(formData.get("preferred_date") || "").trim();
+  const preferredTime = String(formData.get("preferred_time") || "").trim().toLowerCase();
+  if (!Number.isFinite(id) || !preferredDate) redirect("/admin");
+  if (!["morning", "afternoon", "evening"].includes(preferredTime)) redirect("/admin");
+
+  const dateObj = new Date(`${preferredDate}T12:00:00`);
+  if (Number.isNaN(dateObj.getTime())) redirect("/admin");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (dateObj < today || dateObj.getDay() === 0) redirect("/admin");
+
+  const { error } = await supabase
+    .from("jobs")
+    .update({ preferred_date: preferredDate, preferred_time: preferredTime, status: "Confirmed" })
+    .eq("id", id);
+  if (error) {
+    console.error("[admin] reschedule error", error);
+    redirect("/admin?error=reschedule");
+  }
+  redirect("/admin");
+}
+
+export async function cancelJobAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+  const id = Number.parseInt(String(formData.get("id") || ""), 10);
+  if (!Number.isFinite(id)) redirect("/admin");
+  const { error } = await supabase.from("jobs").update({ status: "Cancelled" }).eq("id", id);
+  if (error) {
+    console.error("[admin] cancel error", error);
+    redirect("/admin?error=cancel");
   }
   redirect("/admin");
 }
@@ -225,4 +268,58 @@ export async function resendQuoteAlertAction(formData: FormData) {
     redirect("/admin?error=alert-failed");
   }
   redirect("/admin?alert=resent");
+}
+
+export async function escalateNoResponseAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const id = Number.parseInt(String(formData.get("id") || ""), 10);
+  if (!Number.isFinite(id)) redirect("/admin");
+
+  const { data: job } = await supabase
+    .from("jobs")
+    .select("id,name,email,phone,car_make_model,service_package,preferred_date,preferred_time,status,created_at")
+    .eq("id", id)
+    .maybeSingle();
+  if (!job) redirect("/admin?error=job-not-found");
+
+  const sent = await sendTeamQuoteAlertForJob(supabase, job as Record<string, unknown>, "No response escalation");
+  if (!sent) redirect("/admin?error=escalation-alert-failed");
+
+  await supabase.from("job_communication_logs").insert({
+    job_id: id,
+    channel: "internal",
+    note: "Escalation alert sent (no response SLA breached).",
+    created_by: "system"
+  });
+  redirect("/admin?escalation=sent");
+}
+
+export async function addFollowUpTemplateLogAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const jobId = Number.parseInt(String(formData.get("job_id") || ""), 10);
+  const status = String(formData.get("status") || "pending");
+  const channel = String(formData.get("channel") || "email").toLowerCase();
+  const customer = String(formData.get("customer") || "Customer");
+  const pkg = String(formData.get("package") || "detail package");
+  if (!Number.isFinite(jobId)) redirect("/admin");
+  if (!(channel === "email" || channel === "sms")) redirect("/admin");
+
+  const template = followUpTemplateFor(status, customer, pkg, channel as "email" | "sms");
+  const { error } = await supabase.from("job_communication_logs").insert({
+    job_id: jobId,
+    channel: channel === "email" ? "email" : "sms",
+    note: `Template used (${channel}): ${template}`,
+    created_by: "template"
+  });
+  if (error) {
+    console.error("[admin] template log error", error);
+    redirect("/admin?error=template-log");
+  }
+  redirect("/admin?template=logged");
 }
