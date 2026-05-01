@@ -8,6 +8,8 @@ import { normalizePhone } from "@/lib/phone";
 import { sendTeamQuoteAlertForJob } from "@/lib/team-quote-alerts";
 import { followUpTemplateFor } from "@/lib/admin-insights";
 import { sendMail } from "@/lib/mailer";
+import { isStrictEmail, normalizeCustomerEmail } from "@/lib/email-validation";
+import { priceFor, type PackageId, type VehicleCategory } from "@/lib/package-pricing";
 
 function ensureAdminSession() {
   const expectedPassword = getAdminPassword();
@@ -95,6 +97,53 @@ export async function createTestJobAction() {
     redirect("/admin?error=create");
   }
   redirect("/admin");
+}
+
+export async function createJobAdminAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const name = String(formData.get("name") || "").trim();
+  const email = normalizeCustomerEmail(String(formData.get("email") || ""));
+  const emailConfirm = normalizeCustomerEmail(String(formData.get("email_confirm") || ""));
+  const phone = normalizePhone(String(formData.get("phone") || ""));
+  const carMakeModel = String(formData.get("car_make_model") || "").trim();
+  const servicePackage = String(formData.get("service_package") || "").toLowerCase();
+  const vehicleTypeRaw = String(formData.get("vehicle_type") || "").toLowerCase();
+  const preferredDate = String(formData.get("preferred_date") || "").trim();
+  const preferredTime = String(formData.get("preferred_time") || "").toLowerCase();
+
+  if (name.length < 2) redirect("/admin?error=create-name");
+  if (!isStrictEmail(email) || email !== emailConfirm) redirect("/admin?error=create-email");
+  if (carMakeModel.length < 2) redirect("/admin?error=create-car");
+  if (!["silver", "gold", "platinum"].includes(servicePackage)) redirect("/admin?error=create-package");
+  if (!["sedan", "suv"].includes(vehicleTypeRaw)) redirect("/admin?error=create-vehicle");
+  if (!["morning", "afternoon", "evening"].includes(preferredTime)) redirect("/admin?error=create-time");
+  if (!preferredDate) redirect("/admin?error=create-date");
+
+  const vehicleType = (vehicleTypeRaw === "suv" ? "suv" : "sedan") as VehicleCategory;
+  const pkg = servicePackage as PackageId;
+  const estimated = priceFor(pkg, vehicleType);
+
+  const { error } = await supabase.from("jobs").insert({
+    name,
+    email,
+    phone: phone.length >= 10 ? phone : null,
+    car_make_model: carMakeModel,
+    service_package: servicePackage,
+    vehicle_type: vehicleType,
+    preferred_date: preferredDate,
+    preferred_time: preferredTime,
+    status: "Pending",
+    price: estimated,
+    estimated_price: estimated
+  });
+  if (error) {
+    console.error("[admin] create job error", error);
+    redirect("/admin?error=create-job");
+  }
+  redirect("/admin?created=1");
 }
 
 export async function addCommunicationLogAction(formData: FormData) {
