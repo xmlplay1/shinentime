@@ -10,23 +10,26 @@ import {
   createTeamMemberAction,
   createTestJobAction,
   deleteJobAction,
+  duplicateJobAction,
+  quickNoteJobAction,
   rescheduleJobAction,
+  resendQuoteAlertAction,
   restoreArchivedJobAction,
-  sendTestAdminEmailAction,
   updateJobStatusAction,
   uploadJobImageAction
 } from "@/app/admin/actions";
+import { CreateJobForm } from "@/app/admin/CreateJobForm";
 import { CalendarPanel } from "@/app/admin/CalendarPanel";
 import { ScriptSidebar } from "@/app/admin/ScriptSidebar";
 import { DashboardCharts } from "@/app/admin/widgets";
+import { sameDayZipClusters } from "@/lib/route-cluster";
+import { bookingPortalUrl } from "@/lib/customer-notifications";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { formatPhoneUs, inferMonthlyProfit, monthKey, normalizeEmail } from "@/lib/admin-format";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CircleCheckBig, Clock3, DollarSign, FileClock, TrendingUp } from "lucide-react";
 
 type Role = "ADMIN" | "SERVICE_REP";
-type JobStatus = "Pending" | "Confirmed" | "Completed";
-
 type JobRow = {
   id: number;
   name: string | null;
@@ -49,6 +52,8 @@ type JobRow = {
   zip: string | null;
   notes: string | null;
   assigned_rep: string | null;
+  lead_source: string | null;
+  customer_portal_token?: string | null;
 };
 
 type CommunicationLog = {
@@ -86,14 +91,25 @@ function statusClass(status: string | null | undefined): string {
   if (s === "archived") return "border-violet-400/45 bg-violet-500/12 text-violet-200";
   if (s === "completed") return "border-emerald-400/45 bg-emerald-500/12 text-emerald-200";
   if (s === "confirmed") return "border-blue-400/45 bg-blue-500/12 text-blue-200";
+  if (s === "cancelled") return "border-rose-400/45 bg-rose-500/12 text-rose-200";
   return "border-amber-400/45 bg-amber-500/12 text-amber-200";
 }
 
-function toStatus(status: string | null | undefined): JobStatus {
+function statusBadgeLabel(status: string | null | undefined): string {
   const s = String(status || "").toLowerCase();
-  if (s === "archived") return "Pending";
+  if (s === "archived") return "Archived";
   if (s === "completed") return "Completed";
   if (s === "confirmed") return "Confirmed";
+  if (s === "cancelled") return "Cancelled";
+  return "Pending";
+}
+
+function statusSelectValue(status: string | null | undefined): string {
+  const s = String(status || "").toLowerCase();
+  if (s === "confirmed") return "Confirmed";
+  if (s === "completed") return "Completed";
+  if (s === "archived") return "Archived";
+  if (s === "cancelled") return "Cancelled";
   return "Pending";
 }
 
@@ -207,6 +223,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
   const sortedReps = reps.filter((r) => r.role === "SERVICE_REP" || isAdmin);
 
+  const routeClusters = sameDayZipClusters(jobs.map((j) => ({ id: j.id, zip: j.zip, preferred_date: j.preferred_date, status: j.status })));
+
   return (
     <main className="min-h-screen bg-black text-white">
       <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[250px_1fr]">
@@ -220,6 +238,12 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             </a>
             <a className="rounded-lg border border-white/10 px-3 py-2 text-slate-300 hover:bg-white/[0.04]" href="#pipeline">
               Lead Pipeline
+            </a>
+            <a className="rounded-lg border border-white/10 px-3 py-2 text-slate-300 hover:bg-white/[0.04]" href="#create-lead">
+              Add lead
+            </a>
+            <a className="rounded-lg border border-white/10 px-3 py-2 text-slate-300 hover:bg-white/[0.04]" href="/admin/customers">
+              Customers
             </a>
             {isAdmin ? (
               <a className="rounded-lg border border-white/10 px-3 py-2 text-slate-300 hover:bg-white/[0.04]" href="#team">
@@ -265,6 +289,25 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             </div>
           )}
 
+          {routeClusters.length ? (
+            <aside className="rounded-2xl border border-emerald-500/25 bg-emerald-500/8 p-4 text-sm backdrop-blur-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-200">Same-day ZIP clusters</p>
+              <p className="mt-2 text-xs text-emerald-100/85">
+                Book these back-to-back to save windshield time — same ZIP and date (Pending / Confirmed only).
+              </p>
+              <ul className="mt-4 space-y-3">
+                {routeClusters.slice(0, 6).map((c) => (
+                  <li key={`${c.date}-${c.zip}`} className="rounded-lg border border-white/10 bg-black/30 px-3 py-2">
+                    <p className="font-medium text-emerald-50">{c.date} · ZIP {c.zip}</p>
+                    <p className="mt-1 text-xs text-emerald-200/85">
+                      {c.ids.length} jobs · IDs #{c.ids.join(", #")}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </aside>
+          ) : null}
+
           <div id="calendar" className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
             <CalendarPanel jobs={jobs} rescheduleAction={rescheduleJobAction} cancelAction={cancelJobAction} />
             <ScriptSidebar
@@ -274,15 +317,20 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             />
           </div>
 
+          <section id="create-lead" className="rounded-2xl border border-amber-400/25 bg-amber-500/6 p-5">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-200">Add lead (not from website)</h3>
+            <p className="mt-2 max-w-2xl text-xs text-amber-100/80">
+              Instagram DMs, phone calls, referrals — same email rules as the site. Optional address helps routing and quotes.
+            </p>
+            <div className="mt-4">
+              <CreateJobForm />
+            </div>
+          </section>
+
           <section id="pipeline" className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-300">Lead Pipeline</h3>
               <div className="flex flex-wrap items-center gap-2">
-                <form action={sendTestAdminEmailAction}>
-                  <button className="rounded-lg border border-blue-400/40 bg-blue-500/12 px-3 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-blue-200">
-                    Test Admin Email
-                  </button>
-                </form>
                 <form action={createTestJobAction}>
                   <button className="rounded-lg border border-amber-400/40 bg-amber-500/12 px-3 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-amber-200">
                     Create Test Job
@@ -304,7 +352,10 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             </div>
             <div className="mt-4 grid gap-3">
               {jobs.map((job) => {
-                const status = toStatus(job.status);
+                const badge = statusBadgeLabel(job.status);
+                const rawStatus = String(job.status || "").toLowerCase();
+                const terminal = rawStatus === "completed" || rawStatus === "cancelled" || rawStatus === "archived";
+                const portalLink = bookingPortalUrl(job.customer_portal_token || null);
                 const mapQuery = encodeURIComponent([job.address, job.city, job.state, job.zip].filter(Boolean).join(", "));
                 const jobLogs = logsByJob.get(job.id) || [];
                 return (
@@ -314,14 +365,78 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                         <p className="text-sm font-semibold">{job.name || "Unknown Customer"}</p>
                         <p className="text-xs text-slate-400">{formatPhoneUs(job.phone)} · {normalizeEmail(job.email) || "no email"}</p>
                         <p className="text-xs text-slate-400">{job.car_make_model || "Vehicle TBD"} · {(job.service_package || "package").toUpperCase()}</p>
+                        {job.lead_source ? (
+                          <p className="mt-1 text-[11px] uppercase tracking-wider text-slate-500">Source: {job.lead_source}</p>
+                        ) : null}
                       </div>
-                      <span className={`inline-flex rounded-md border px-2 py-1 text-xs ${statusClass(status)}`}>{status}</span>
+                      <span className={`inline-flex rounded-md border px-2 py-1 text-xs ${statusClass(job.status)}`}>{badge}</span>
                     </div>
 
                     <div className="mt-3 grid gap-2 text-xs text-slate-300 md:grid-cols-2">
                       <p>Date: {job.preferred_date || "TBD"} · {job.preferred_time || "TBD"}</p>
                       <p>Assigned: {job.assigned_rep || job.claimed_by || "Unassigned"}</p>
                     </div>
+
+                    {portalLink ? (
+                      <p className="mt-2 text-[11px] text-slate-500">
+                        Customer status:{" "}
+                        <a href={portalLink} className="text-blue-300 underline-offset-2 hover:underline" target="_blank" rel="noreferrer">
+                          open link
+                        </a>
+                      </p>
+                    ) : null}
+
+                    {!terminal ? (
+                      <div className="mt-3 flex flex-col gap-2 rounded-lg border border-white/10 bg-black/30 p-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Reschedule / cancel</p>
+                        <form action={rescheduleJobAction} className="flex flex-wrap items-end gap-2">
+                          <input type="hidden" name="id" value={job.id} />
+                          <label className="grid gap-1 text-[10px] text-slate-400">
+                            Date
+                            <input
+                              name="preferred_date"
+                              type="date"
+                              required
+                              min={new Date().toISOString().slice(0, 10)}
+                              defaultValue={job.preferred_date || ""}
+                              className="rounded border border-white/15 bg-black px-2 py-1 text-xs text-white"
+                            />
+                          </label>
+                          <label className="grid gap-1 text-[10px] text-slate-400">
+                            Window
+                            <select
+                              name="preferred_time"
+                              defaultValue={(job.preferred_time || "morning").toLowerCase()}
+                              className="rounded border border-white/15 bg-black px-2 py-1 text-xs text-white"
+                            >
+                              <option value="morning">Morning</option>
+                              <option value="afternoon">Afternoon</option>
+                              <option value="evening">Evening</option>
+                            </select>
+                          </label>
+                          <button
+                            type="submit"
+                            className="rounded-md border border-amber-400/35 bg-amber-500/12 px-3 py-1.5 text-[10px] font-semibold uppercase text-amber-100"
+                          >
+                            Reschedule
+                          </button>
+                        </form>
+                        <form action={cancelJobAction} className="flex flex-wrap items-end gap-2">
+                          <input type="hidden" name="id" value={job.id} />
+                          <input
+                            name="cancel_note"
+                            placeholder="Optional note (emailed to customer)"
+                            className="min-w-[180px] flex-1 rounded border border-white/15 bg-black px-2 py-1.5 text-xs text-white placeholder:text-slate-600"
+                          />
+                          <button
+                            type="submit"
+                            className="rounded-md border border-rose-400/45 bg-rose-600/25 px-3 py-1.5 text-[10px] font-bold uppercase text-rose-50"
+                          >
+                            Cancel booking
+                          </button>
+                        </form>
+                      </div>
+                    ) : null}
 
                     <div className="mt-3 flex flex-wrap gap-2">
                       <a
@@ -362,13 +477,63 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                       <form action={updateJobStatusAction} className="inline-flex items-center gap-2">
                         <input type="hidden" name="id" value={job.id} />
-                        <select name="status" defaultValue={status} className="rounded-md border border-white/15 bg-black/60 px-2 py-1 text-xs">
+                        <select
+                          name="status"
+                          defaultValue={statusSelectValue(job.status)}
+                          className="rounded-md border border-white/15 bg-black/60 px-2 py-1 text-xs"
+                        >
                           <option value="Pending">Pending</option>
                           <option value="Confirmed">Confirmed</option>
                           <option value="Completed">Completed</option>
+                          <option value="Cancelled">Cancelled</option>
+                          <option value="Archived">Archived</option>
                         </select>
                         <button type="submit" className="rounded-md border border-amber-400/30 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold uppercase">
                           Update
+                        </button>
+                      </form>
+
+                      <form action={quickNoteJobAction} className="inline-flex flex-wrap items-center gap-2">
+                        <input type="hidden" name="id" value={job.id} />
+                        <input
+                          name="quick_note"
+                          placeholder="Quick internal note → job notes"
+                          className="rounded border border-white/15 bg-black px-2 py-1 text-[10px] sm:min-w-[200px]"
+                        />
+                        <button className="rounded border border-slate-500/40 bg-slate-500/10 px-2 py-1 text-[10px] uppercase text-slate-200">
+                          Save note
+                        </button>
+                      </form>
+
+                      <form action={resendQuoteAlertAction}>
+                        <input type="hidden" name="id" value={job.id} />
+                        <button
+                          type="submit"
+                          className="rounded-md border border-blue-400/35 bg-blue-500/10 px-2 py-1 text-[10px] font-semibold uppercase text-blue-100"
+                        >
+                          Team alert
+                        </button>
+                      </form>
+
+                      <form action={duplicateJobAction} className="inline-flex flex-wrap items-end gap-2">
+                        <input type="hidden" name="id" value={job.id} />
+                        <input
+                          name="preferred_date"
+                          type="date"
+                          required
+                          min={new Date().toISOString().slice(0, 10)}
+                          className="rounded border border-white/15 bg-black px-2 py-1 text-[10px] text-white"
+                        />
+                        <select name="preferred_time" defaultValue="morning" className="rounded border border-white/15 bg-black px-2 py-1 text-[10px] text-white">
+                          <option value="morning">Morning</option>
+                          <option value="afternoon">Afternoon</option>
+                          <option value="evening">Evening</option>
+                        </select>
+                        <button
+                          type="submit"
+                          className="rounded-md border border-violet-400/35 bg-violet-500/10 px-2 py-1 text-[10px] font-semibold uppercase text-violet-100"
+                        >
+                          Duplicate
                         </button>
                       </form>
 
