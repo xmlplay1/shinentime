@@ -7,7 +7,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizePhone } from "@/lib/phone";
 import { sendTeamQuoteAlertForJob } from "@/lib/team-quote-alerts";
 import { followUpTemplateFor } from "@/lib/admin-insights";
-import { sendMail } from "@/lib/mailer";
 import { isStrictEmail, normalizeCustomerEmail } from "@/lib/email-validation";
 import { priceFor, type PackageId, type VehicleCategory } from "@/lib/package-pricing";
 import {
@@ -63,7 +62,7 @@ export async function updateJobStatusAction(formData: FormData) {
   const id = Number.parseInt(idRaw, 10);
   if (!Number.isFinite(id)) redirect("/admin");
 
-  const allowed = new Set(["Pending", "Confirmed", "Completed", "Archived"]);
+  const allowed = new Set(["Pending", "Confirmed", "Completed", "Archived", "Cancelled"]);
   if (!allowed.has(nextStatus)) redirect("/admin");
 
   const supabase = createAdminClient();
@@ -111,6 +110,22 @@ export async function updateJobStatusAction(formData: FormData) {
         preferred_date: before.preferred_date as string | null,
         preferred_time: before.preferred_time as string | null,
         customer_portal_token: portalToken
+      }
+    });
+  }
+
+  if (nextStatus === "Cancelled" && prevLc !== "cancelled" && before) {
+    await sendCustomerBookingUpdateEmails({
+      kind: "cancelled",
+      row: {
+        name: before.name as string | null,
+        email: before.email as string | null,
+        phone: before.phone as string | null,
+        car_make_model: before.car_make_model as string | null,
+        service_package: before.service_package as string | null,
+        preferred_date: before.preferred_date as string | null,
+        preferred_time: before.preferred_time as string | null,
+        customer_portal_token: before.customer_portal_token as string | null
       }
     });
   }
@@ -282,6 +297,12 @@ export async function createJobAdminAction(formData: FormData) {
   const email = normalizeCustomerEmail(String(formData.get("email") || ""));
   const emailConfirm = normalizeCustomerEmail(String(formData.get("email_confirm") || ""));
   const phone = normalizePhone(String(formData.get("phone") || ""));
+  const address = String(formData.get("address") || "").trim().slice(0, 280) || null;
+  const city = String(formData.get("city") || "").trim().slice(0, 120) || null;
+  const state = String(formData.get("state") || "").trim().slice(0, 32) || null;
+  const zip = String(formData.get("zip") || "").trim().slice(0, 20) || null;
+  const leadSource = String(formData.get("lead_source") || "").trim().slice(0, 80) || null;
+  const notes = String(formData.get("notes") || "").trim().slice(0, 4000) || null;
   const carMakeModel = String(formData.get("car_make_model") || "").trim();
   const servicePackage = String(formData.get("service_package") || "").toLowerCase();
   const vehicleTypeRaw = String(formData.get("vehicle_type") || "").toLowerCase();
@@ -300,10 +321,14 @@ export async function createJobAdminAction(formData: FormData) {
   const pkg = servicePackage as PackageId;
   const estimated = priceFor(pkg, vehicleType);
 
-  const { error } = await supabase.from("jobs").insert({
+  const insertRow: Record<string, unknown> = {
     name,
     email,
     phone: phone.length >= 10 ? phone : null,
+    address,
+    city,
+    state,
+    zip,
     car_make_model: carMakeModel,
     service_package: servicePackage,
     vehicle_type: vehicleType,
@@ -313,12 +338,91 @@ export async function createJobAdminAction(formData: FormData) {
     price: estimated,
     estimated_price: estimated,
     customer_portal_token: newPortalToken()
-  });
+  };
+  if (leadSource) insertRow.lead_source = leadSource;
+  if (notes) insertRow.notes = notes;
+
+  const { error } = await supabase.from("jobs").insert(insertRow);
   if (error) {
     console.error("[admin] create job error", error);
     redirect("/admin?error=create-job");
   }
-  redirect("/admin?created=1");
+  redirect("/admin?created=1#create-lead");
+}
+
+export async function quickNoteJobAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const id = Number.parseInt(String(formData.get("id") || ""), 10);
+  const note = String(formData.get("quick_note") || "").trim();
+  if (!Number.isFinite(id) || !note) redirect("/admin");
+
+  const { data: row } = await supabase.from("jobs").select("notes").eq("id", id).maybeSingle();
+  const prev = row?.notes ? String(row.notes) : "";
+  const stamp = new Date().toISOString().slice(0, 16).replace("T", " ");
+  const line = `[${stamp}] ${note}`;
+  const nextNotes = prev ? `${prev}\n${line}` : line;
+
+  const { error } = await supabase.from("jobs").update({ notes: nextNotes }).eq("id", id);
+  if (error) {
+    console.error("[admin] quick note error", error);
+    redirect("/admin?error=note");
+  }
+  redirect("/admin#pipeline");
+}
+
+export async function duplicateJobAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const id = Number.parseInt(String(formData.get("id") || ""), 10);
+  const preferredDate = String(formData.get("preferred_date") || "").trim();
+  const preferredTime = String(formData.get("preferred_time") || "").toLowerCase();
+  if (!Number.isFinite(id)) redirect("/admin");
+  if (!preferredDate) redirect("/admin?error=duplicate-date");
+  if (!["morning", "afternoon", "evening"].includes(preferredTime)) redirect("/admin?error=duplicate-time");
+
+  const { data: src } = await supabase.from("jobs").select("*").eq("id", id).maybeSingle();
+  if (!src) redirect("/admin?error=duplicate-missing");
+
+  const servicePackage = String(src.service_package || "gold").toLowerCase();
+  const vehicleTypeRaw = String(src.vehicle_type || "sedan").toLowerCase();
+  const vehicleType = (vehicleTypeRaw === "suv" ? "suv" : "sedan") as VehicleCategory;
+  const pkg = (["silver", "gold", "platinum"].includes(servicePackage) ? servicePackage : "gold") as PackageId;
+  const estimated = priceFor(pkg, vehicleType);
+
+  const dup: Record<string, unknown> = {
+    name: src.name,
+    email: src.email,
+    phone: src.phone,
+    address: src.address ?? null,
+    city: src.city ?? null,
+    state: src.state ?? null,
+    zip: src.zip ?? null,
+    car_make_model: src.car_make_model,
+    service_package: pkg,
+    vehicle_type: vehicleType,
+    preferred_date: preferredDate,
+    preferred_time: preferredTime,
+    status: "Pending",
+    price: estimated,
+    estimated_price: estimated,
+    customer_portal_token: newPortalToken(),
+    lead_source: src.lead_source ? String(src.lead_source) : "duplicate"
+  };
+  const prevNotes = src.notes ? String(src.notes) : "";
+  const line = `[dup from job #${id}]`;
+  dup.notes = prevNotes ? `${prevNotes}\n${line}` : line;
+
+  const { error } = await supabase.from("jobs").insert(dup);
+  if (error) {
+    console.error("[admin] duplicate job error", error);
+    redirect("/admin?error=duplicate");
+  }
+  redirect("/admin?duplicated=1#pipeline");
 }
 
 export async function addCommunicationLogAction(formData: FormData) {
@@ -580,43 +684,4 @@ export async function clearPipelineAction(formData: FormData) {
     redirect("/admin?error=clear-completed");
   }
   redirect("/admin?cleared=completed");
-}
-
-export async function sendTestAdminEmailAction() {
-  await requireAdminCookie();
-  const supabase = createAdminClient();
-  const recipients = new Set<string>(
-    String(process.env.ADMIN_NOTIFICATION_EMAIL || "")
-      .split(",")
-      .map((v) => v.trim().toLowerCase())
-      .filter((v) => v.includes("@"))
-  );
-  if (supabase) {
-    const { data } = await supabase.from("profiles").select("email, role").in("role", ["ADMIN", "SERVICE_REP"]);
-    for (const row of data || []) {
-      const email = String((row as { email?: string | null }).email || "")
-        .trim()
-        .toLowerCase();
-      if (email.includes("@")) recipients.add(email);
-    }
-  }
-
-  const to = [...recipients];
-  if (!to.length) {
-    redirect("/admin?error=no-admin-email");
-  }
-
-  const sent = await Promise.all(
-    to.map((email) =>
-      sendMail({
-        to: email,
-        subject: "Shine N Time Admin Email Test",
-        text: "Test successful: admin notification path is working from /admin."
-      })
-    )
-  );
-  if (!sent.some(Boolean)) {
-    redirect("/admin?error=test-email-failed");
-  }
-  redirect("/admin?test-email=sent");
 }

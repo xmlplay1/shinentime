@@ -117,31 +117,47 @@ export function CalendarPanel({ jobs, rescheduleAction, cancelAction }: Calendar
                   <p className="mt-2 text-xs text-slate-300">
                     {job.service_package || "Package TBD"} · {job.preferred_time || "Time TBD"}
                   </p>
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <form action={rescheduleAction} className="inline-flex items-center gap-2 rounded-md border border-white/15 px-2 py-1">
+                  <div className="mt-3 flex flex-col gap-2">
+                    <form
+                      action={rescheduleAction}
+                      className="flex flex-wrap items-center gap-2 rounded-md border border-white/15 px-2 py-2 sm:inline-flex sm:items-center"
+                    >
                       <input type="hidden" name="id" value={job.id} />
                       <input
                         name="preferred_date"
                         type="date"
                         min={new Date().toISOString().slice(0, 10)}
                         defaultValue={job.preferred_date || ""}
-                        className="rounded bg-black px-2 py-1 text-[11px] text-white"
+                        className="min-w-0 flex-1 rounded bg-black px-2 py-1.5 text-[11px] text-white sm:flex-none"
                       />
                       <select
                         name="preferred_time"
                         defaultValue={(job.preferred_time || "morning").toLowerCase()}
-                        className="rounded bg-black px-2 py-1 text-[11px] text-white"
+                        className="rounded bg-black px-2 py-1.5 text-[11px] text-white"
                       >
                         <option value="morning">Morning</option>
                         <option value="afternoon">Afternoon</option>
                         <option value="evening">Evening</option>
                       </select>
-                      <button className="text-[11px] font-semibold uppercase">Reschedule</button>
+                      <button
+                        type="submit"
+                        className="w-full rounded-md border border-amber-400/40 bg-amber-500/15 px-3 py-2 text-[11px] font-semibold uppercase text-amber-100 sm:w-auto"
+                      >
+                        Reschedule
+                      </button>
                     </form>
-                    <form action={cancelAction}>
+                    <form action={cancelAction} className="flex flex-col gap-1 rounded-md border border-rose-400/35 bg-rose-500/10 p-2">
                       <input type="hidden" name="id" value={job.id} />
-                      <button className="rounded-md border border-rose-400/35 bg-rose-500/10 px-2 py-1 text-[11px] font-semibold uppercase text-rose-100">
-                        Cancel
+                      <input
+                        name="cancel_note"
+                        placeholder="Optional note (customer email)"
+                        className="w-full rounded border border-white/15 bg-black px-2 py-1.5 text-[11px] text-white placeholder:text-slate-500"
+                      />
+                      <button
+                        type="submit"
+                        className="w-full rounded-md border border-rose-400/50 bg-rose-600/30 px-3 py-2 text-xs font-bold uppercase tracking-wide text-rose-50"
+                      >
+                        Cancel booking
                       </button>
                     </form>
                   </div>
