@@ -43,9 +43,12 @@ export function CreateJobForm() {
       <input name="car_make_model" required placeholder="Vehicle make & model" className="rounded border border-white/15 bg-black px-2 py-1.5" />
       <div className="grid grid-cols-2 gap-2">
         <select name="service_package" required className="rounded border border-white/15 bg-black px-2 py-1.5">
-          <option value="silver">Silver</option>
-          <option value="gold">Gold</option>
-          <option value="platinum">Platinum</option>
+          <option value="basic_interior">Basic Interior ($85 / $95)</option>
+          <option value="full_interior">Full Interior ($120 / $135)</option>
+          <option value="basic_exterior">Basic Exterior ($50 / $60)</option>
+          <option value="ceramic_seal">Ceramic Seal ($85 / $95)</option>
+          <option value="basic_combo">Basic In &amp; Out ($130 / $145)</option>
+          <option value="full_combo">Full In &amp; Out ($165 / $185)</option>
         </select>
         <select name="vehicle_type" required className="rounded border border-white/15 bg-black px-2 py-1.5">
           <option value="sedan">Sedan</option>

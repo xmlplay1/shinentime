@@ -26,9 +26,12 @@ const services: readonly {
   readonly id: PackageId;
   readonly label: string;
 }[] = [
-  { id: "silver", label: "Silver" },
-  { id: "gold", label: "Gold" },
-  { id: "platinum", label: "Platinum" }
+  { id: "basic_interior", label: "Basic Interior" },
+  { id: "full_interior", label: "Full Interior" },
+  { id: "basic_exterior", label: "Basic Exterior" },
+  { id: "ceramic_seal", label: "Ceramic Seal" },
+  { id: "basic_combo", label: "Basic In & Out" },
+  { id: "full_combo", label: "Full In & Out" }
 ];
 
 const pkgLabel = (id: PackageId) => services.find((s) => s.id === id)?.label ?? id;
@@ -330,11 +333,15 @@ export function BookingForm() {
               <div className="mt-4 grid gap-3">
                 {(
                   [
-                    { id: "sedan" as const, title: "Sedan / coupe", hint: `Silver from $${PACKAGE_PRICING.silver.sedan}` },
+                    {
+                      id: "sedan" as const,
+                      title: "Sedan / coupe",
+                      hint: `Menu starts at $${PACKAGE_PRICING.basic_exterior.sedan} (Basic Exterior)`
+                    },
                     {
                       id: "suv" as const,
                       title: "SUV / truck / van",
-                      hint: `Silver from $${PACKAGE_PRICING.silver.suv}`
+                      hint: `Menu starts at $${PACKAGE_PRICING.basic_exterior.suv} (Basic Exterior)`
                     }
                   ] as const
                 ).map((v) => (

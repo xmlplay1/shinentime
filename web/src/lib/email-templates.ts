@@ -20,10 +20,18 @@ const timeLabel: Record<string, string> = {
 
 function prettifyPackage(v: string): string {
   const s = String(v || "").toLowerCase();
-  if (s === "silver") return "Silver";
-  if (s === "gold") return "Gold";
-  if (s === "platinum") return "Platinum";
-  return v;
+  const labels: Record<string, string> = {
+    basic_interior: "Basic Interior Detail",
+    full_interior: "Full Interior Detail",
+    basic_exterior: "Basic Exterior Wash",
+    ceramic_seal: "Ceramic Seal Package",
+    basic_combo: "Basic Interior & Exterior",
+    full_combo: "Full Interior & Exterior",
+    silver: "Silver",
+    gold: "Gold",
+    platinum: "Platinum"
+  };
+  return labels[s] ?? v;
 }
 
 export function quoteReceiptHtml(input: QuoteEmailInput): string {

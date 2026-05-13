@@ -1,10 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { normalizeCustomerEmail } from "@/lib/email-validation";
+import { estimatePriceFromJobFields } from "@/lib/package-pricing";
 
 export type CustomerJobRow = {
   id: number;
   car_make_model: string | null;
   service_package: string | null;
+  vehicle_type: string | null;
   status: string | null;
   preferred_date: string | null;
   price: number | null;
@@ -21,14 +23,12 @@ export type CustomerSummary = {
   referral_code: string;
 };
 
-const PACKAGE_BASE: Record<string, number> = { silver: 37, gold: 99, platinum: 129 };
-
 function inferJobPrice(job: CustomerJobRow): number {
   const candidates = [job.final_price, job.price, job.estimated_price];
   for (const value of candidates) {
     if (typeof value === "number" && Number.isFinite(value) && value > 0) return Number(value);
   }
-  return PACKAGE_BASE[String(job.service_package || "").toLowerCase()] || 0;
+  return estimatePriceFromJobFields(job);
 }
 
 export function computeLifetimeValue(jobs: CustomerJobRow[]): number {
@@ -63,7 +63,8 @@ export async function fetchCustomerByEmail(
   const { data: customer } = await supabase.from("customers").select("id,email,full_name,phone,referral_code").eq("email", email).maybeSingle();
   if (!customer?.id) return null;
 
-  const selectCols = "id,car_make_model,service_package,status,preferred_date,price,estimated_price,final_price,created_at";
+  const selectCols =
+    "id,car_make_model,service_package,vehicle_type,status,preferred_date,price,estimated_price,final_price,created_at";
 
   const [{ data: byLink }, { data: byEmail }] = await Promise.all([
     supabase.from("jobs").select(selectCols).eq("customer_id", customer.id).order("created_at", { ascending: false }),

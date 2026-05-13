@@ -22,6 +22,7 @@ import { DashboardCharts } from "@/app/admin/widgets";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { formatPhoneUs, inferMonthlyProfit, monthKey, normalizeEmail } from "@/lib/admin-format";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { estimatePriceFromJobFields } from "@/lib/package-pricing";
 import { CircleCheckBig, Clock3, DollarSign, FileClock, TrendingUp } from "lucide-react";
 
 type Role = "ADMIN" | "SERVICE_REP";
@@ -67,14 +68,12 @@ type Profile = {
   role: Role;
 };
 
-const PACKAGE_BASE: Record<string, number> = { silver: 37, gold: 99, platinum: 129 };
-
 function inferPrice(job: JobRow): number {
   const candidates = [job.final_price, job.price, job.estimated_price];
   for (const value of candidates) {
     if (typeof value === "number" && Number.isFinite(value) && value > 0) return value;
   }
-  return PACKAGE_BASE[String(job.service_package || "").toLowerCase()] || 0;
+  return estimatePriceFromJobFields(job);
 }
 
 function isCompleted(status: string | null | undefined) {

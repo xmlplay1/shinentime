@@ -14,7 +14,13 @@ import {
 import { ReferralStatus } from "@/components/ReferralStatus";
 
 type PackageCard = {
-  id: "silver" | "gold" | "platinum";
+  id:
+    | "basic_interior"
+    | "full_interior"
+    | "basic_exterior"
+    | "ceramic_seal"
+    | "basic_combo"
+    | "full_combo";
   name: string;
   price: string;
   popular?: boolean;
@@ -23,44 +29,48 @@ type PackageCard = {
 
 const packages: readonly PackageCard[] = [
   {
-    id: "silver",
-    name: "Silver",
-    price: "From $37 sedan · $49 SUV",
+    id: "basic_interior",
+    name: "Basic Interior Detail",
+    price: "Sedan: $85 · SUV & truck: $95",
     bullets: [
-      "Exterior hand wash & rinse",
-      "Windows cleaned inside & out",
-      "Tire & rim shine",
-      "Door jambs wiped down",
-      "Light interior dust-down of hard surfaces",
-      "Pet hair — light pickup (heavy shedding may need an add-on)"
+      "Full interior vacuum, seat & carpet shampoo",
+      "Surface cleaning, door jambs"
     ]
   },
   {
-    id: "gold",
-    name: "Gold",
-    price: "From $99 sedan · $115 SUV",
+    id: "full_interior",
+    name: "Full Interior Detail",
+    price: "Sedan: $120 · SUV & truck: $135",
     popular: true,
     bullets: [
-      "Everything in Silver",
-      "Full interior vacuum (seats, carpets, crevices)",
-      "Seat & carpet shampoo / extraction",
-      "Odor neutralization treatment",
-      "Pet hair removal (moderate)",
-      "Salt & sand extraction from carpets & mats",
-      "Spot treatment on stains (within reason)"
+      "Includes Basic Interior +",
+      "Leather conditioner, steam cleaning",
+      "Vinyl, rubber & plastic dressing"
     ]
   },
   {
-    id: "platinum",
-    name: "Platinum",
-    price: "From $129 sedan · $149 SUV",
-    bullets: [
-      "Silver + Gold-level interior depth",
-      "Steam cleaning on appropriate surfaces",
-      "Clay bar treatment (paint decontamination)",
-      "Ceramic-style sealant for gloss & UV protection on treated panels",
-      "Finishing wipe-down & final inspection walkthrough"
-    ]
+    id: "basic_exterior",
+    name: "Basic Exterior Wash",
+    price: "Sedan: $50 · SUV & truck: $60",
+    bullets: ["Hand wash, streak-free windows", "Tire & rim cleaning, door jambs"]
+  },
+  {
+    id: "ceramic_seal",
+    name: "Ceramic Seal Package",
+    price: "Sedan: $85 · SUV & truck: $95",
+    bullets: ["Includes Basic Exterior +", "Clay bar, ceramic sealant, tire shine"]
+  },
+  {
+    id: "basic_combo",
+    name: "Basic Interior & Exterior",
+    price: "Sedan: $130 · SUV & truck: $145",
+    bullets: ["Basic Interior + Basic Exterior"]
+  },
+  {
+    id: "full_combo",
+    name: "Full Interior & Exterior",
+    price: "Sedan: $165 · SUV & truck: $185",
+    bullets: ["Full Interior + Ceramic Seal Package"]
   }
 ];
 
@@ -207,8 +217,13 @@ export default function Home() {
         <section id="packages" className="border-t border-white/5 px-5 py-20 md:px-8 md:py-28">
           <div className="mx-auto max-w-6xl">
             <h2 className="text-center text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Packages</h2>
-            <p className="mt-3 text-center text-2xl font-semibold text-white md:text-3xl">Simple tiers. Serious results.</p>
-            <div className="mt-14 grid gap-6 md:grid-cols-3">
+            <p className="mt-3 text-center text-2xl font-semibold text-white md:text-3xl">
+              Package menu (starting at)
+            </p>
+            <p className="mx-auto mt-2 max-w-2xl text-center text-sm text-slate-500">
+              Matches our Instagram menu. SUV &amp; truck rates apply to larger vehicles. Final price confirmed on site.
+            </p>
+            <div className="mt-14 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {packages.map((pkg, i) => (
                 <motion.article
                   key={pkg.id}

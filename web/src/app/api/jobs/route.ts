@@ -5,7 +5,7 @@ import { isStrictEmail, normalizeCustomerEmail } from "@/lib/email-validation";
 import { createResendClient, getResendFrom } from "@/lib/resend";
 import { sendMail } from "@/lib/mailer";
 import { adminNewQuoteText, quoteReceiptHtml, quoteReceiptText } from "@/lib/email-templates";
-import { priceFor, type PackageId, type VehicleCategory } from "@/lib/package-pricing";
+import { isCurrentPackageId, priceFor, type PackageId, type VehicleCategory } from "@/lib/package-pricing";
 
 function normalizeEmail(value: string | null | undefined): string | null {
   const email = String(value || "").trim().toLowerCase();
@@ -164,7 +164,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Emails must match and use a valid address." }, { status: 400 });
   }
   if (car_make_model.length < 2) return NextResponse.json({ error: "Vehicle is required." }, { status: 400 });
-  if (!["silver", "gold", "platinum"].includes(service_package)) {
+  if (!isCurrentPackageId(service_package)) {
     return NextResponse.json({ error: "Invalid service package." }, { status: 400 });
   }
 

@@ -9,21 +9,16 @@ export const metadata: Metadata = {
 
 const serviceAreaCore = ["Canton", "Plymouth", "Northville", "Westland", "Livonia", "Novi"] as const;
 
-const silverChecklist = [
-  "Exterior hand wash and rinse",
-  "Windows cleaned (inside + out)",
-  "Tire and rim shine",
-  "Door jamb wipe-down",
-  "Light interior dust-down"
+const basicExteriorMenu = [
+  "Hand wash, streak-free windows",
+  "Tire & rim cleaning, door jambs"
 ] as const;
 
-const goldChecklist = [
-  "Everything in Silver",
-  "Full interior vacuum (seats/carpets/crevices)",
-  "Seat and carpet shampoo / extraction",
-  "Odor neutralization treatment",
-  "Pet hair removal",
-  "Salt and sand extraction"
+const fullInteriorMenu = [
+  "Includes Basic Interior depth",
+  "Leather conditioner, steam cleaning",
+  "Vinyl, rubber & plastic dressing",
+  "Vacuum, shampoo seats & carpets"
 ] as const;
 
 export default function PrepPage() {
@@ -86,9 +81,9 @@ export default function PrepPage() {
 
         <section className="grid gap-6 md:grid-cols-2">
           <article className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl">
-            <h3 className="text-lg font-semibold text-white">Silver Package Checklist</h3>
+            <h3 className="text-lg font-semibold text-white">Basic Exterior Wash (menu)</h3>
             <ul className="mt-4 space-y-2 text-sm text-slate-300">
-              {silverChecklist.map((item) => (
+              {basicExteriorMenu.map((item) => (
                 <li key={item} className="flex items-start gap-2">
                   <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-400" />
                   {item}
@@ -98,9 +93,9 @@ export default function PrepPage() {
           </article>
 
           <article className="rounded-3xl border border-amber-400/20 bg-white/[0.03] p-6 backdrop-blur-xl">
-            <h3 className="text-lg font-semibold text-white">Gold Package Checklist</h3>
+            <h3 className="text-lg font-semibold text-white">Full Interior Detail (menu)</h3>
             <ul className="mt-4 space-y-2 text-sm text-slate-300">
-              {goldChecklist.map((item) => (
+              {fullInteriorMenu.map((item) => (
                 <li key={item} className="flex items-start gap-2">
                   <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-amber-300" />
                   {item}

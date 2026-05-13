@@ -213,13 +213,15 @@ export function PackageDetailCallout() {
         <li className="flex gap-2">
           <BadgeCheck className="mt-0.5 size-4 shrink-0 text-emerald-400/90" aria-hidden />
           <span>
-            <strong className="text-slate-200">Heavy pet hair, sand, or stains</strong> may need add-ons — we&apos;ll tell you before we start.
+            <strong className="text-slate-200">Add-ons</strong> (pet hair, steam, leather, dressing, windows, tire shine)
+            are flat menu prices — we only charge what applies.
           </span>
         </li>
         <li className="flex gap-2">
           <BadgeCheck className="mt-0.5 size-4 shrink-0 text-emerald-400/90" aria-hidden />
           <span>
-            <strong className="text-slate-200">Platinum</strong> adds steam, clay bar, and a ceramic-style sealant for gloss and UV protection on treated surfaces.
+            <strong className="text-slate-200">Combos</strong> bundle interior + exterior tiers; ceramic seal packages add
+            paint prep and protection on treated panels.
           </span>
         </li>
       </ul>

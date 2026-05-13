@@ -9,7 +9,7 @@ import { sendTeamQuoteAlertForJob } from "@/lib/team-quote-alerts";
 import { followUpTemplateFor } from "@/lib/admin-insights";
 import { sendMail } from "@/lib/mailer";
 import { isStrictEmail, normalizeCustomerEmail } from "@/lib/email-validation";
-import { priceFor, type PackageId, type VehicleCategory } from "@/lib/package-pricing";
+import { isCurrentPackageId, priceFor, type PackageId, type VehicleCategory } from "@/lib/package-pricing";
 
 function ensureAdminSession() {
   const expectedPassword = getAdminPassword();
@@ -141,13 +141,13 @@ export async function createTestJobAction() {
   const payload = {
     name: "Test Customer",
     phone: "7340000000",
-    service_package: "gold",
+    service_package: "full_interior",
     car_make_model: "Honda CR-V",
     preferred_date: new Date().toISOString().slice(0, 10),
     preferred_time: "afternoon",
     status: "Pending",
     vehicle_type: "suv",
-    price: 99,
+    price: 135,
     email: "test@example.com"
   };
 
@@ -177,7 +177,7 @@ export async function createJobAdminAction(formData: FormData) {
   if (name.length < 2) redirect("/admin?error=create-name");
   if (!isStrictEmail(email) || email !== emailConfirm) redirect("/admin?error=create-email");
   if (carMakeModel.length < 2) redirect("/admin?error=create-car");
-  if (!["silver", "gold", "platinum"].includes(servicePackage)) redirect("/admin?error=create-package");
+  if (!isCurrentPackageId(servicePackage)) redirect("/admin?error=create-package");
   if (!["sedan", "suv"].includes(vehicleTypeRaw)) redirect("/admin?error=create-vehicle");
   if (!["morning", "afternoon", "evening"].includes(preferredTime)) redirect("/admin?error=create-time");
   if (!preferredDate) redirect("/admin?error=create-date");

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { estimatePriceFromJobFields } from "@/lib/package-pricing";
 
 export type JobForInsights = {
   id: number;
@@ -28,14 +29,17 @@ export type LogForInsights = {
   created_by: string | null;
 };
 
-const PACKAGE_BASE: Record<string, number> = { silver: 37, gold: 99, platinum: 129 };
-
-export function inferPrice(job: Pick<JobForInsights, "final_price" | "price" | "estimated_price" | "service_package">): number {
+export function inferPrice(
+  job: Pick<
+    JobForInsights,
+    "final_price" | "price" | "estimated_price" | "service_package" | "vehicle_type"
+  >
+): number {
   const candidates = [job.final_price, job.price, job.estimated_price];
   for (const value of candidates) {
     if (typeof value === "number" && Number.isFinite(value) && value > 0) return value;
   }
-  return PACKAGE_BASE[String(job.service_package || "").toLowerCase()] || 0;
+  return estimatePriceFromJobFields(job);
 }
 
 export function slaTone(createdAt: string | null): "green" | "yellow" | "red" {
@@ -63,8 +67,10 @@ export function quoteScore(job: JobForInsights): number {
   const pkg = String(job.service_package || "").toLowerCase();
   const status = String(job.status || "").toLowerCase();
   const price = inferPrice(job);
-  if (pkg === "platinum") score += 35;
-  else if (pkg === "gold") score += 24;
+  if (pkg === "full_combo" || pkg === "platinum") score += 35;
+  else if (pkg === "basic_combo" || pkg === "full_interior" || pkg === "gold") score += 28;
+  else if (pkg === "ceramic_seal") score += 22;
+  else if (pkg === "basic_interior" || pkg === "basic_exterior") score += 18;
   else if (pkg === "silver") score += 12;
   score += Math.min(25, Math.round(price / 8));
   if (String(job.vehicle_type || "").toLowerCase() === "suv") score += 6;
