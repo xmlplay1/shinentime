@@ -23,6 +23,7 @@ html {
 
 body {
   margin: 0;
+  padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
   font-family: "Inter", "DM Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   color: var(--text);
   /* Spotlight: charcoal center → true black edges (luxury depth) */
@@ -1304,6 +1305,21 @@ h3 {
   margin-top: 1rem;
 }
 
+.pricing-grid--menu {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.pricing-addons-list {
+  columns: 2;
+  column-gap: 1.5rem;
+}
+
+@media (max-width: 600px) {
+  .pricing-addons-list {
+    columns: 1;
+  }
+}
+
 .price-tag {
   margin: 0.75rem 0 0;
   font-weight: 800;
@@ -2385,6 +2401,69 @@ body.lightbox-open {
   display: none;
 }
 
+.quote-step-meta {
+  margin: 0 0 0.65rem;
+  text-align: center;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #d6e4f7;
+  letter-spacing: 0.02em;
+}
+
+.vehicle-size-pick {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 0.75rem;
+}
+
+.vehicle-size-btn {
+  cursor: pointer;
+  min-height: 52px;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(15, 25, 42, 0.65);
+  color: #e7f0ff;
+  font: inherit;
+  font-weight: 800;
+  font-size: 0.92rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.vehicle-size-btn:hover,
+.vehicle-size-btn:focus-visible {
+  border-color: rgba(242, 192, 75, 0.55);
+  outline: none;
+}
+
+.vehicle-size-btn.is-selected {
+  border-color: rgba(242, 192, 75, 0.85);
+  background: rgba(242, 192, 75, 0.14);
+  color: #fff8e6;
+  box-shadow: 0 0 0 1px rgba(242, 192, 75, 0.22);
+}
+
+.addons-flat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.45rem 0.75rem;
+}
+
+.addon-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  font-weight: 600;
+  color: #e7f0ff;
+  font-size: 0.88rem;
+}
+
 .quote-step-btn {
   min-height: 40px;
   border-radius: 0.65rem;
@@ -2451,7 +2530,7 @@ body.lightbox-open {
   right: 0;
   bottom: 0;
   z-index: 45;
-  display: none;
+  display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.55rem;
   padding: 0.6rem;
@@ -2538,14 +2617,6 @@ body.lightbox-open {
 }
 
 @media (max-width: 760px) {
-  body {
-    padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
-  }
-
-  .floating-action-bar {
-    display: grid;
-  }
-
   .quote-steps-nav {
     grid-template-columns: 1fr;
   }
