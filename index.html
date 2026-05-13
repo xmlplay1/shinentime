@@ -16,7 +16,7 @@
   <link rel="preload" as="image" href="./EXPHOTO2.JPG" />
   <link rel="preload" as="image" href="./B4CHEV1_sm.webp?v=17" />
   <link rel="preload" as="image" href="./AFTCHEV4_sm.webp?v=17" />
-  <link rel="stylesheet" href="./style.min.css" />
+  <link rel="stylesheet" href="./style.min.css?v=20" />
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -57,7 +57,7 @@
           <p class="hero-lead">We are young, hungry, and focused on quality work. Straight answers, fair estimates, and results you can see.</p>
           <p class="hero-reply-note">We usually reply within a few hours (same day most days).</p>
           <div class="hero-actions">
-            <a class="btn btn-primary btn-pulse" id="heroQuoteBtn" href="#quote">Get a Quote</a>
+            <a class="btn btn-primary btn-pulse" id="heroQuoteBtn" href="#quote">Get Instant Quote</a>
             <a class="btn btn-secondary" href="tel:+17344191846">Call 734-419-1846</a>
             <a class="btn btn-ghost" href="sms:+17344191846">Text us</a>
           </div>
@@ -271,41 +271,65 @@
 
     <section id="pricing" class="section section-alt section-pricing-luxury">
       <div class="container">
-        <h2 class="section-title">Estimated Package Pricing</h2>
-        <p class="section-copy">Based on our package menu. Final price may change after in-person inspection and vehicle condition check.</p>
-        <div class="cards pricing-grid">
+        <h2 class="section-title">Package Menu (starting at)</h2>
+        <p class="section-copy">Pricing matches our current menu. SUV &amp; truck rates apply to larger vehicles. Final price confirmed on site after inspection.</p>
+        <div class="cards pricing-grid pricing-grid--menu">
           <article class="card">
-            <h3>Silver Package</h3>
+            <h3>Basic Interior Detail</h3>
             <ul class="mini-list">
-              <li>Exterior hand wash</li>
-              <li>Clean windows</li>
-              <li>Tire and rim shine</li>
-              <li>Door jamb cleaning</li>
+              <li>Full interior vacuum, seat &amp; carpet shampoo</li>
+              <li>Surface cleaning, door jambs</li>
             </ul>
-            <p class="price-tag">Sedan: $37 | SUV/Truck: $49</p>
+            <p class="price-tag">Sedan: $85 · SUV &amp; truck: $95</p>
           </article>
           <article class="card pricing-card pricing-card--featured">
-            <p class="package-badge">Most Popular</p>
-            <h3>Gold Package</h3>
+            <p class="package-badge">Upgrade</p>
+            <h3>Full Interior Detail</h3>
+            <p class="price-note">Includes Basic Interior +</p>
             <ul class="mini-list">
-              <li>Silver package plus</li>
-              <li>Full interior vacuum</li>
-              <li>Seat and carpet shampoo</li>
-              <li>Odor removal</li>
+              <li>Leather conditioner, steam cleaning</li>
+              <li>Vinyl, rubber &amp; plastic dressing</li>
             </ul>
-            <p class="price-tag">Sedan: $99 | SUV/Truck: $115</p>
+            <p class="price-tag">Sedan: $120 · SUV &amp; truck: $135</p>
           </article>
           <article class="card">
-            <h3>Platinum Package</h3>
+            <h3>Basic Exterior Wash</h3>
             <ul class="mini-list">
-              <li>Silver + Gold package plus</li>
-              <li>Steam cleaning</li>
-              <li>Clay bar treatment</li>
-              <li>Ceramic sealant</li>
+              <li>Hand wash, streak-free windows</li>
+              <li>Tire &amp; rim cleaning, door jambs</li>
             </ul>
-            <p class="price-tag">Sedan: $129 | SUV/Truck: $149</p>
+            <p class="price-tag">Sedan: $50 · SUV &amp; truck: $60</p>
+          </article>
+          <article class="card">
+            <h3>Ceramic Seal Package</h3>
+            <p class="price-note">Includes Basic Exterior +</p>
+            <ul class="mini-list">
+              <li>Clay bar, ceramic sealant, tire shine</li>
+            </ul>
+            <p class="price-tag">Sedan: $85 · SUV &amp; truck: $95</p>
+          </article>
+          <article class="card">
+            <h3>Basic Interior &amp; Exterior</h3>
+            <p class="price-note">Basic Interior + Basic Exterior</p>
+            <p class="price-tag">Sedan: $130 · SUV &amp; truck: $145</p>
+          </article>
+          <article class="card">
+            <h3>Full Interior &amp; Exterior</h3>
+            <p class="price-note">Full Interior + Ceramic Seal Package</p>
+            <p class="price-tag">Sedan: $165 · SUV &amp; truck: $185</p>
           </article>
         </div>
+        <article class="card add-ons-card" style="margin-top: 1rem">
+          <h3 class="section-title" style="margin-bottom: 0.5rem">Add-ons</h3>
+          <ul class="mini-list pricing-addons-list">
+            <li>Pet hair removal — $15</li>
+            <li>Add steam — $20</li>
+            <li>Leather conditioner — $10</li>
+            <li>Vinyl, rubber &amp; plastic dressing — $20</li>
+            <li>Window cleaning (streak-free) — $10</li>
+            <li>Tire shine — $10</li>
+          </ul>
+        </article>
       </div>
     </section>
 
@@ -313,7 +337,7 @@
       <div class="container">
         <h2 class="section-title">How pricing works</h2>
         <ul class="mini-list pricing-steps">
-          <li><strong>Estimate from the form</strong> — based on your package pick, vehicle size, condition, and selected extras.</li>
+          <li><strong>Estimate from the form</strong> — based on your package pick, vehicle size, and selected add-ons.</li>
           <li><strong>Final price after we see the car</strong> — we confirm the real scope on site before you pay.</li>
           <li><strong>Travel fee if far</strong> — depends on distance from Canton (see table below).</li>
           <li><strong>Extras only if needed</strong> — you only pay for what actually applies.</li>
@@ -410,7 +434,7 @@
         <div class="quote-lead">
           <div class="quote-intro">
             <h2>Get Your Quote</h2>
-            <p>Fill this out for an estimated quote. We use package pricing from our menu plus condition/extras. This estimate is not the final price.</p>
+            <p>Fill this out for an estimated quote — <strong>6 quick steps</strong>. One email field (your browser will flag typos). We use menu pricing plus any add-ons you pick.</p>
             <p class="small-note">You can also DM us on Instagram: <a href="https://instagram.com/shine_n_time" target="_blank" rel="noopener">@shine_n_time</a></p>
           </div>
           <div class="estimate-box" id="estimateBox" aria-live="polite">
@@ -444,21 +468,26 @@
               <div class="quote-progress-fill" id="quoteProgressFill"></div>
             </div>
           </div>
+          <p class="quote-step-meta" id="quoteStepMeta" aria-live="polite">Step 1 of 6</p>
           <div class="quote-steps-nav" role="tablist" aria-label="Quote steps">
             <button type="button" class="quote-step-btn is-active" data-step-trigger="1" aria-current="step">1. Contact</button>
             <button type="button" class="quote-step-btn" data-step-trigger="2">2. Vehicle</button>
-            <button type="button" class="quote-step-btn" data-step-trigger="3">3. Service</button>
+            <button type="button" class="quote-step-btn" data-step-trigger="3">3. Package</button>
             <button type="button" class="quote-step-btn" data-step-trigger="4">4. Schedule</button>
             <button type="button" class="quote-step-btn" data-step-trigger="5">5. Details</button>
             <button type="button" class="quote-step-btn" data-step-trigger="6">6. Confirm</button>
           </div>
           <div class="quote-grid">
+            <input type="hidden" name="serviceFocus" id="serviceFocus" value="interior" />
+            <input type="hidden" name="serviceScope" id="serviceScope" value="interior" />
+            <input type="hidden" name="carCount" id="carCount" value="1" />
+
             <div class="quote-section quote-span-2 quote-step-panel" data-step="1">
               <h3 class="quote-section-title">Contact</h3>
               <div class="quote-row-3">
                 <div class="field">
                   <label for="name">Full Name *</label>
-                  <input id="name" name="name" type="text" required />
+                  <input id="name" name="name" type="text" autocomplete="name" required />
                 </div>
                 <div class="field">
                   <label for="phone">Phone</label>
@@ -474,159 +503,88 @@
                 </div>
                 <div class="field">
                   <label for="email">Email</label>
-                  <input id="email" name="email" type="email" placeholder="you@example.com" />
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autocomplete="email"
+                    enterkeyhint="done"
+                    placeholder="you@example.com"
+                  />
                 </div>
               </div>
-              <p class="field-hint">Leave at least phone or email so we can reply.</p>
+              <p class="field-hint">One email field — your browser will warn you if it looks mistyped. Leave at least phone or email so we can reply.</p>
             </div>
 
             <div class="quote-section quote-span-2 quote-step-panel" data-step="2">
               <h3 class="quote-section-title">Vehicle</h3>
-              <div class="quote-row-3">
-                <div class="field">
-                  <label for="vehicleType">Size *</label>
-                  <select id="vehicleType" name="vehicleType" required>
-                    <option value="">Select</option>
-                    <option value="sedan">Sedan / Coupe</option>
-                    <option value="suv">SUV / Truck / Van</option>
-                  </select>
-                </div>
-                <div class="field">
+              <p class="quote-helper">Pick size first so your estimate matches our menu.</p>
+              <div class="vehicle-size-pick" role="group" aria-label="Vehicle size">
+                <button type="button" class="vehicle-size-btn" data-vehicle-value="sedan">Sedan / Coupe</button>
+                <button type="button" class="vehicle-size-btn" data-vehicle-value="suv">SUV / Truck / Van</button>
+              </div>
+              <div class="field vehicle-type-field">
+                <label for="vehicleType">Size *</label>
+                <select id="vehicleType" name="vehicleType" required>
+                  <option value="">Tap a size above</option>
+                  <option value="sedan">Sedan / Coupe</option>
+                  <option value="suv">SUV / Truck / Van</option>
+                </select>
+              </div>
+              <div class="quote-row-3 vehicle-after-size">
+                <div class="field quote-span-2">
                   <label for="vehicle">Make / model / year *</label>
-                  <input id="vehicle" name="vehicle" type="text" required placeholder="2021 Honda Accord" />
+                  <input id="vehicle" name="vehicle" type="text" required placeholder="2022 BMW X5" enterkeyhint="next" />
                 </div>
                 <div class="field">
                   <label for="zipCode">Zip *</label>
-                  <input id="zipCode" name="zipCode" type="text" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" required placeholder="48187" />
+                  <input
+                    id="zipCode"
+                    name="zipCode"
+                    type="text"
+                    inputmode="numeric"
+                    pattern="[0-9]{5}"
+                    maxlength="5"
+                    required
+                    placeholder="48187"
+                    autocomplete="postal-code"
+                  />
                 </div>
               </div>
             </div>
 
             <div class="quote-section quote-span-2 quote-step-panel" data-step="3">
-              <h3 class="quote-section-title">Service type *</h3>
-              <div class="field">
-                <label class="visually-hidden" for="serviceFocus">Service type</label>
-                <select id="serviceFocus" name="serviceFocus" required>
-                  <option value="">Select service type</option>
-                  <option value="interior" selected>Deep Interior Detail</option>
-                  <option value="exterior">Exterior Wash + Shine</option>
-                  <option value="full">Interior + Exterior Complete</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="quote-section quote-step-panel" data-step="3">
-              <h3 class="quote-section-title">Cars *</h3>
-              <div class="field">
-                <label class="visually-hidden" for="carCount">Number of cars</label>
-                <select id="carCount" name="carCount" required>
-                  <option value="1" selected>1 car</option>
-                  <option value="2">2 cars (bundle discount)</option>
-                  <option value="3">3 cars</option>
-                  <option value="4">4 cars</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="quote-section quote-step-panel" data-step="3">
-              <h3 class="quote-section-title">Bundle</h3>
-              <p class="quote-helper" id="bundleNote">Book 2 cars at once and get 10% off the package portion.</p>
-            </div>
-
-            <div class="quote-section quote-span-2 quote-step-panel" data-step="3">
-              <h3 class="quote-section-title">Service Scope *</h3>
-              <div class="field">
-                <label class="visually-hidden" for="serviceScope">Service scope</label>
-                <select id="serviceScope" name="serviceScope" required>
-                  <option value="">Select scope</option>
-                  <option value="interior">Interior only</option>
-                  <option value="exterior">Exterior only</option>
-                  <option value="both">Interior + Exterior</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="quote-section quote-step-panel" data-step="3">
               <h3 class="quote-section-title">Package *</h3>
+              <p class="quote-helper">Starting-at prices from our menu (Sedan / SUV &amp; truck).</p>
               <div class="field">
                 <label class="visually-hidden" for="package">Package</label>
                 <select id="package" name="package" required>
                   <option value="">Select package</option>
-                  <option value="silver">Silver</option>
-                  <option value="gold">Gold</option>
-                  <option value="platinum">Platinum</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="quote-section quote-step-panel" data-step="3">
-              <h3 class="quote-section-title">Condition *</h3>
-              <div class="field">
-                <label class="visually-hidden" for="conditionLevel">Interior condition</label>
-                <select id="conditionLevel" name="conditionLevel" required>
-                  <option value="">Select</option>
-                  <option value="light">Light</option>
-                  <option value="medium">Medium</option>
-                  <option value="heavy">Heavy</option>
+                  <option value="basic_interior">Basic Interior Detail — $85 / $95</option>
+                  <option value="full_interior">Full Interior Detail — $120 / $135</option>
+                  <option value="basic_exterior">Basic Exterior Wash — $50 / $60</option>
+                  <option value="ceramic_seal">Ceramic Seal Package — $85 / $95</option>
+                  <option value="basic_combo">Basic Interior &amp; Exterior — $130 / $145</option>
+                  <option value="full_combo">Full Interior &amp; Exterior — $165 / $185</option>
                 </select>
               </div>
             </div>
 
             <fieldset class="extras-group quote-section quote-span-2 quote-step-panel" id="extrasFieldset" data-step="3">
-              <legend>Extras (if needed)</legend>
-              <p class="quote-helper">Light pet hair, sand, salt, bio, or mold is included in the estimate (no extra). Medium or heavy adds a fair add-on.</p>
-              <div class="extra-row">
-                <label class="extra-check"><input type="checkbox" name="extras" value="petHair" data-label="Pet hair removal" data-base="20" /> Pet hair</label>
-                <label class="extra-sub" for="petHairLevel">Severity</label>
-                <select id="petHairLevel" name="petHairLevel">
-                  <option value="light" selected>Light (no extra)</option>
-                  <option value="medium">Medium</option>
-                  <option value="heavy">Heavy</option>
-                </select>
-              </div>
-              <div class="extra-row">
-                <label class="extra-check"><input type="checkbox" name="extras" value="sandSalt" data-label="Sand/mud heavy cleanup" data-base="15" /> Sand/mud</label>
-                <label class="extra-sub" for="sandLevel">Severity</label>
-                <select id="sandLevel" name="sandLevel">
-                  <option value="light" selected>Light (no extra)</option>
-                  <option value="medium">Medium</option>
-                  <option value="heavy">Heavy</option>
-                </select>
-              </div>
-              <div class="extra-row">
-                <label class="extra-check"><input type="checkbox" name="extras" value="roadSalt" data-label="Road salt neutralizing wash" data-base="18" /> Road salt</label>
-                <label class="extra-sub" for="saltLevel">Severity</label>
-                <select id="saltLevel" name="saltLevel">
-                  <option value="light" selected>Light (no extra)</option>
-                  <option value="medium">Medium</option>
-                  <option value="heavy">Heavy</option>
-                </select>
-              </div>
-              <div class="extra-row">
-                <label class="extra-check"><input type="checkbox" name="extras" value="bioClean" data-label="Vomit/biological cleanup" data-base="35" /> Bio cleanup</label>
-                <label class="extra-sub" for="bioLevel">Severity</label>
-                <select id="bioLevel" name="bioLevel">
-                  <option value="light" selected>Light (no extra)</option>
-                  <option value="medium">Medium</option>
-                  <option value="heavy">Heavy</option>
-                </select>
-              </div>
-              <div class="extra-row">
-                <label class="extra-check"><input type="checkbox" name="extras" value="moldRisk" data-label="Surface mold treatment" data-base="60" /> Mold</label>
-                <label class="extra-sub" for="moldLevel">Severity</label>
-                <select id="moldLevel" name="moldLevel">
-                  <option value="light" selected>Light (no extra)</option>
-                  <option value="medium">Medium</option>
-                  <option value="heavy">Heavy</option>
-                </select>
-              </div>
-              <div class="extras-inline">
-                <label><input type="checkbox" name="extras" value="smokeOdor" data-label="Smoke odor treatment" data-base="25" /> Smoke (+$25)</label>
+              <legend>Add-ons (optional)</legend>
+              <p class="quote-helper">Flat add-ons from our menu.</p>
+              <div class="addons-flat-grid">
+                <label class="addon-check"><input type="checkbox" name="extras" value="addon_pet_hair" data-label="Pet hair removal (+$15)" /> Pet hair (+$15)</label>
+                <label class="addon-check"><input type="checkbox" name="extras" value="addon_steam" data-label="Add steam (+$20)" /> Add steam (+$20)</label>
+                <label class="addon-check"><input type="checkbox" name="extras" value="addon_leather" data-label="Leather conditioner (+$10)" /> Leather conditioner (+$10)</label>
+                <label class="addon-check"><input type="checkbox" name="extras" value="addon_dressing" data-label="Vinyl/rubber/plastic dressing (+$20)" /> Dressing (+$20)</label>
+                <label class="addon-check"><input type="checkbox" name="extras" value="addon_windows" data-label="Window cleaning streak-free (+$10)" /> Windows (+$10)</label>
+                <label class="addon-check"><input type="checkbox" name="extras" value="addon_tire_shine" data-label="Tire shine (+$10)" /> Tire shine (+$10)</label>
               </div>
             </fieldset>
 
             <div class="quote-section quote-span-2 discount-row quote-step-panel" data-step="3">
-              <label class="discount-label"><input id="firstDetailDiscount" name="firstDetailDiscount" type="checkbox" checked /> First-time 20% off package</label>
+              <label class="discount-label"><input id="firstDetailDiscount" name="firstDetailDiscount" type="checkbox" /> Promotion / first-time discount (we&apos;ll confirm on site)</label>
             </div>
 
             <div class="quote-section quote-step-panel" data-step="4">
@@ -800,6 +758,6 @@
     </div>
   </div>
 
-  <script src="./script.js" defer></script>
+  <script src="./script.js?v=20" defer></script>
 </body>
 </html>
