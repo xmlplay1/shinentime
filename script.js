@@ -318,9 +318,21 @@ function initSiteLogo() {
 initSiteLogo();
 
 const PACKAGE_PRICING = {
-  silver: { sedan: 37, suvTruck: 49 },
-  gold: { sedan: 99, suvTruck: 115 },
-  platinum: { sedan: 129, suvTruck: 149 }
+  basic_interior: { sedan: 85, suvTruck: 95 },
+  full_interior: { sedan: 120, suvTruck: 135 },
+  basic_exterior: { sedan: 50, suvTruck: 60 },
+  ceramic_seal: { sedan: 85, suvTruck: 95 },
+  basic_combo: { sedan: 130, suvTruck: 145 },
+  full_combo: { sedan: 165, suvTruck: 185 }
+};
+
+const PACKAGE_LABELS = {
+  basic_interior: "Basic Interior Detail",
+  full_interior: "Full Interior Detail",
+  basic_exterior: "Basic Exterior Wash",
+  ceramic_seal: "Ceramic Seal Package",
+  basic_combo: "Basic Interior & Exterior",
+  full_combo: "Full Interior & Exterior"
 };
 
 function packageMenuLineFromForm(form) {
@@ -341,44 +353,70 @@ function packageMenuLineFromForm(form) {
   if (!row || !priceKey || row[priceKey] == null) {
     return "Pick vehicle size + package to see menu base.";
   }
-  const label =
-    pkg === "silver" ? "Silver" : pkg === "gold" ? "Gold" : pkg === "platinum" ? "Platinum" : pkg;
+  const label = PACKAGE_LABELS[pkg] || pkg;
   const sizeLabel = vehicle === "suv" ? "SUV / truck / van" : "Sedan / coupe";
-  return `Package: ${label} (${sizeLabel}) — $${row[priceKey]}`;
+  return `Package: ${label} (${sizeLabel}) — $${row[priceKey]} starting-at`;
 }
 
 const TWO_CAR_BUNDLE_DISCOUNT = 0.1;
 
+/** Menu add-ons — flat amounts (matches onsite pricing card). */
 const EXTRA_PRICING = {
-  petHair: { low: 20, high: 20 },
-  sandSalt: { low: 15, high: 15 },
-  roadSalt: { low: 18, high: 18 },
-  bioClean: { low: 35, high: 35 },
-  smokeOdor: { low: 25, high: 25 },
-  moldRisk: { low: 60, high: 60 },
-  exteriorFoamWash: { low: 28, high: 40 },
-  wheelDecon: { low: 20, high: 28 },
-  spraySealant: { low: 25, high: 38 },
-  bugTarRemoval: { low: 15, high: 25 },
-  saltNeutralizer: { low: 18, high: 28 }
+  addon_pet_hair: { low: 15, high: 15 },
+  addon_steam: { low: 20, high: 20 },
+  addon_leather: { low: 10, high: 10 },
+  addon_dressing: { low: 20, high: 20 },
+  addon_windows: { low: 10, high: 10 },
+  addon_tire_shine: { low: 10, high: 10 }
 };
 
-const SEVERITY_MULTIPLIER = {
-  light: 1,
-  medium: 1.35,
-  heavy: 1.75
-};
+function syncServiceHiddenFieldsFromPackage(pkgRaw) {
+  const pkg = String(pkgRaw || "").trim().toLowerCase();
+  const focusEl = document.getElementById("serviceFocus");
+  const scopeEl = document.getElementById("serviceScope");
+  if (!focusEl || !scopeEl) return;
+  let focus = "interior";
+  let scope = "interior";
+  if (pkg === "basic_exterior" || pkg === "ceramic_seal") {
+    focus = "exterior";
+    scope = "exterior";
+  } else if (pkg === "basic_combo" || pkg === "full_combo") {
+    focus = "full";
+    scope = "both";
+  } else if (pkg === "basic_interior" || pkg === "full_interior") {
+    focus = "interior";
+    scope = "interior";
+  }
+  focusEl.value = focus;
+  scopeEl.value = scope;
+}
 
-/** Pet hair, sand/mud, road salt, bio: no charge at "light" severity; medium/heavy add cost. */
-const SEVERITY_GATED_EXTRAS = new Set(["petHair", "sandSalt", "roadSalt", "bioClean", "moldRisk"]);
+function initVehicleSizePickButtons() {
+  const select = document.getElementById("vehicleType");
+  const buttons = Array.from(document.querySelectorAll(".vehicle-size-btn[data-vehicle-value]"));
+  if (!select || !buttons.length) return;
 
-function getSeverityForExtra(key) {
-  if (key === "petHair") return String(document.getElementById("petHairLevel")?.value || "light");
-  if (key === "sandSalt") return String(document.getElementById("sandLevel")?.value || "light");
-  if (key === "roadSalt") return String(document.getElementById("saltLevel")?.value || "light");
-  if (key === "bioClean") return String(document.getElementById("bioLevel")?.value || "light");
-  if (key === "moldRisk") return String(document.getElementById("moldLevel")?.value || "light");
-  return "medium";
+  const syncButtons = () => {
+    const v = String(select.value || "").trim().toLowerCase();
+    buttons.forEach((btn) => {
+      const val = String(btn.getAttribute("data-vehicle-value") || "").toLowerCase();
+      btn.classList.toggle("is-selected", val === v);
+      btn.setAttribute("aria-pressed", val === v ? "true" : "false");
+    });
+  };
+
+  buttons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const val = String(btn.getAttribute("data-vehicle-value") || "").trim();
+      if (!val) return;
+      select.value = val;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+      syncButtons();
+    });
+  });
+
+  select.addEventListener("change", syncButtons);
+  syncButtons();
 }
 
 if (year) {
@@ -649,6 +687,7 @@ window.addEventListener("keydown", (event) => {
 });
 
 function calculateEstimate() {
+  syncServiceHiddenFieldsFromPackage(packageSelect?.value || "");
   if (!vehicleType || !packageSelect || !estimateHidden) return;
   if (!estimateRange && !submitEstimateRange) return;
 
@@ -660,7 +699,7 @@ function calculateEstimate() {
         ? "sedan"
         : rawVehicle;
   const pkg = String(packageSelect.value || "").trim().toLowerCase();
-  const priceKey = vehicle === "suv" ? "suvTruck" : vehicle;
+  const priceKey = vehicle === "suv" ? "suvTruck" : "sedan";
 
   const setPendingEstimate = (message) => {
     if (estimateRange) {
@@ -678,7 +717,7 @@ function calculateEstimate() {
     if (emailEstimate) emailEstimate.value = "";
   };
 
-  if (!vehicle || !pkg || !PACKAGE_PRICING[pkg] || !PACKAGE_PRICING[pkg][priceKey]) {
+  if (!vehicle || !pkg || !PACKAGE_PRICING[pkg] || PACKAGE_PRICING[pkg][priceKey] == null) {
     setPendingEstimate("Pick vehicle size and package to see a ballpark range.");
     return;
   }
@@ -693,17 +732,7 @@ function calculateEstimate() {
   let low = PACKAGE_PRICING[pkg][priceKey];
   let high = PACKAGE_PRICING[pkg][priceKey];
   const extras = [];
-  const conditionLevel = String(document.getElementById("conditionLevel")?.value || "");
   const discountChecked = Boolean(document.getElementById("firstDetailDiscount")?.checked);
-
-  const conditionMultiplier = {
-    light: 1,
-    medium: 1.18,
-    heavy: 1.35
-  };
-  const conditionFactor = conditionMultiplier[conditionLevel] || 1;
-  low = Math.round(low * conditionFactor);
-  high = Math.round(high * conditionFactor);
 
   if (extrasFieldset) {
     const checked = Array.from(extrasFieldset.querySelectorAll("input[type='checkbox']:checked"));
@@ -711,25 +740,9 @@ function calculateEstimate() {
       const key = input.value;
       const pricing = EXTRA_PRICING[key];
       if (!pricing) return;
-
-      let mult = 1;
-      const severity = getSeverityForExtra(key);
-
-      if (SEVERITY_GATED_EXTRAS.has(key)) {
-        if (severity === "light") {
-          extras.push(`${input.dataset.label || key} (light — included, no extra)`);
-          return;
-        }
-        mult = SEVERITY_MULTIPLIER[severity] || SEVERITY_MULTIPLIER.medium;
-      }
-
-      const addLow = Math.round(pricing.low * mult);
-      const addHigh = Math.round(pricing.high * mult);
-      low += addLow;
-      high += addHigh;
-      const label = input.dataset.label || key;
-      const severityLabel = SEVERITY_GATED_EXTRAS.has(key) || key === "moldRisk" ? severity : "add-on";
-      extras.push(`${label} (${severityLabel})`);
+      low += pricing.low;
+      high += pricing.high;
+      extras.push(input.dataset.label || key);
     });
   }
 
@@ -751,15 +764,16 @@ function calculateEstimate() {
     high = Math.round(high);
   }
 
-  const rangeText = `$${low} - $${high}`;
+  const rangeText = low === high ? `$${low}` : `$${low} - $${high}`;
   if (estimateRange) estimateRange.textContent = rangeText;
   if (submitEstimateRange) submitEstimateRange.textContent = rangeText;
-  const extrasText = extras.length ? ` + extras: ${extras.join(", ")}` : "";
+  const extrasText = extras.length ? ` + add-ons: ${extras.join(", ")}` : "";
   const carsText = carCount > 1 ? ` for ${carCount} cars` : " for 1 car";
   const bundleText = bundleEligible ? ` Includes ${Math.round(TWO_CAR_BUNDLE_DISCOUNT * 100)}% bundle discount.` : "";
   const vehicleLabel = vehicle === "sedan" ? "Sedan / coupe" : "SUV / truck / van";
-  const summaryText = `Estimated $${low} - $${high}. Base ${pkg.toUpperCase()} package for ${vehicleLabel}${carsText}${extrasText}.${bundleText} Final quote confirmed after inspection.`;
-  const shortBreakdown = summaryText.replace(/^Estimated \$\d+ - \$\d+\. /, "");
+  const pkgPretty = PACKAGE_LABELS[pkg] || pkg;
+  const summaryText = `Estimated ${rangeText}. ${pkgPretty} (${vehicleLabel})${carsText}${extrasText}.${bundleText} Final quote confirmed after inspection.`;
+  const shortBreakdown = summaryText.replace(/^Estimated (\$\d+(?: - \$\d+)?)\. /, "");
   if (estimateBreakdown) {
     estimateBreakdown.textContent = shortBreakdown;
   }
@@ -772,46 +786,21 @@ function calculateEstimate() {
 }
 
 if (vehicleType) vehicleType.addEventListener("change", calculateEstimate);
-if (packageSelect) packageSelect.addEventListener("change", calculateEstimate);
-const conditionLevelInput = document.getElementById("conditionLevel");
-const firstDetailDiscountInput = document.getElementById("firstDetailDiscount");
-const carCountInput = document.getElementById("carCount");
-const petHairLevelInput = document.getElementById("petHairLevel");
-const sandLevelInput = document.getElementById("sandLevel");
-const roadSaltLevelInput = document.getElementById("saltLevel");
-const bioLevelInput = document.getElementById("bioLevel");
-const moldLevelInput = document.getElementById("moldLevel");
-function toggleExtraSeverityControls() {
-  if (!extrasFieldset) return;
-  const rows = Array.from(extrasFieldset.querySelectorAll(".extra-row"));
-  rows.forEach((row) => {
-    const checkbox = row.querySelector('input[type="checkbox"][name="extras"]');
-    const severityLabel = row.querySelector(".extra-sub");
-    const severitySelect = row.querySelector("select");
-    const enabled = Boolean(checkbox?.checked);
-    if (severityLabel) severityLabel.hidden = !enabled;
-    if (severitySelect) {
-      severitySelect.hidden = !enabled;
-      severitySelect.disabled = !enabled;
-    }
-  });
-}
-
-if (conditionLevelInput) conditionLevelInput.addEventListener("change", calculateEstimate);
-if (firstDetailDiscountInput) firstDetailDiscountInput.addEventListener("change", calculateEstimate);
-if (carCountInput) carCountInput.addEventListener("change", calculateEstimate);
-if (petHairLevelInput) petHairLevelInput.addEventListener("change", calculateEstimate);
-if (sandLevelInput) sandLevelInput.addEventListener("change", calculateEstimate);
-if (roadSaltLevelInput) roadSaltLevelInput.addEventListener("change", calculateEstimate);
-if (bioLevelInput) bioLevelInput.addEventListener("change", calculateEstimate);
-if (moldLevelInput) moldLevelInput.addEventListener("change", calculateEstimate);
-if (extrasFieldset) {
-  extrasFieldset.addEventListener("change", () => {
-    toggleExtraSeverityControls();
+if (packageSelect) {
+  packageSelect.addEventListener("change", () => {
+    syncServiceHiddenFieldsFromPackage(packageSelect.value);
     calculateEstimate();
   });
-  toggleExtraSeverityControls();
 }
+const firstDetailDiscountInput = document.getElementById("firstDetailDiscount");
+const carCountInput = document.getElementById("carCount");
+if (firstDetailDiscountInput) firstDetailDiscountInput.addEventListener("change", calculateEstimate);
+if (carCountInput) carCountInput.addEventListener("change", calculateEstimate);
+if (extrasFieldset) {
+  extrasFieldset.addEventListener("change", calculateEstimate);
+}
+initVehicleSizePickButtons();
+syncServiceHiddenFieldsFromPackage(packageSelect?.value || "");
 calculateEstimate();
 
 function updatePrepSummary() {
@@ -863,12 +852,6 @@ function fillQuoteForm(values) {
     "serviceFocus",
     "serviceScope",
     "package",
-    "conditionLevel",
-    "petHairLevel",
-    "sandLevel",
-    "saltLevel",
-    "bioLevel",
-    "moldLevel",
     "notes",
     "estimateSummary",
     "prepSummary"
@@ -899,6 +882,11 @@ function fillQuoteForm(values) {
     });
   }
   updatePrepSummary();
+  const vt = quoteForm.elements.namedItem("vehicleType");
+  if (vt && typeof vt.dispatchEvent === "function") {
+    vt.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+  syncServiceHiddenFieldsFromPackage(String(quoteForm.elements.namedItem("package")?.value || ""));
   calculateEstimate();
 }
 
@@ -907,7 +895,7 @@ if (quoteForm) {
   const requiredByStep = {
     1: ["name"],
     2: ["vehicle", "vehicleType", "zipCode"],
-    3: ["serviceFocus", "serviceScope", "package", "conditionLevel", "carCount"],
+    3: ["package"],
     4: ["appointmentDate"],
     5: [],
     6: []
@@ -935,10 +923,9 @@ if (quoteForm) {
     const rows = [
       ["Contact", [get("name"), get("phone"), get("email")].filter(Boolean).join(" · ")],
       ["Vehicle", [get("vehicle"), get("vehicleType") ? labelForSelect("vehicleType") : "", get("zipCode")].filter(Boolean).join(" · ")],
-      ["Cars", get("carCount") ? `${get("carCount")} car(s)` : ""],
-      ["Service", [labelForSelect("serviceFocus"), labelForSelect("serviceScope"), labelForSelect("package")].filter(Boolean).join(" · ")],
+      ["Cars", get("carCount") && get("carCount") !== "1" ? `${get("carCount")} vehicles` : ""],
+      ["Package", labelForSelect("package")],
       ["Package menu (base)", packageMenuLineFromForm(quoteForm)],
-      ["Condition", labelForSelect("conditionLevel")],
       ["Date & time", [get("appointmentDate"), get("timeWindow")].filter(Boolean).join(" · ")],
       ["Notes", get("notes")],
       ["Extras", extras.length ? extras.join(", ") : "None selected"],
@@ -986,6 +973,10 @@ if (quoteForm) {
       const width = ((currentQuoteStep - 1) / (QUOTE_TOTAL_STEPS - 1)) * 100;
       quoteProgressFill.style.width = `${width}%`;
     }
+    const stepMeta = document.getElementById("quoteStepMeta");
+    if (stepMeta) {
+      stepMeta.textContent = `Step ${currentQuoteStep} of ${QUOTE_TOTAL_STEPS}`;
+    }
     if (currentQuoteStep === 6) {
       calculateEstimate();
       buildQuoteConfirmSummary();
@@ -1011,6 +1002,12 @@ if (quoteForm) {
         formMessage.textContent = "Leave at least phone or email so we can reply.";
         formMessage.style.color = "#b91c1c";
         quoteForm.elements.namedItem("phone")?.focus?.();
+        return false;
+      }
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        formMessage.textContent = "Please fix your email — one field is enough (no duplicate needed).";
+        formMessage.style.color = "#b91c1c";
+        quoteForm.elements.namedItem("email")?.focus?.();
         return false;
       }
     }
@@ -1046,21 +1043,6 @@ if (quoteForm) {
   });
   showQuoteStep(1);
 
-  // Hide severity controls unless corresponding extra checkbox is checked.
-  const extraRows = Array.from(quoteForm.querySelectorAll(".extra-row"));
-  const toggleExtraSeverity = () => {
-    extraRows.forEach((row) => {
-      const checkbox = row.querySelector('input[type="checkbox"]');
-      const severityLabel = row.querySelector(".extra-sub");
-      const severitySelect = row.querySelector("select");
-      const active = Boolean(checkbox?.checked);
-      if (severityLabel) severityLabel.hidden = !active;
-      if (severitySelect) severitySelect.hidden = !active;
-    });
-  };
-  extrasFieldset?.addEventListener("change", toggleExtraSeverity);
-  toggleExtraSeverity();
-
   quoteForm.addEventListener("input", () => {
     if (Number(quoteForm.dataset.quoteStep) === 6) buildQuoteConfirmSummary();
   });
@@ -1095,7 +1077,7 @@ if (quoteForm) {
     }
     if (!validateStep(6)) return;
     const data = new FormData(quoteForm);
-    const requiredFields = ["name", "vehicle", "zipCode", "vehicleType", "carCount", "package", "serviceScope", "conditionLevel", "appointmentDate"];
+    const requiredFields = ["name", "vehicle", "zipCode", "vehicleType", "carCount", "package", "appointmentDate"];
     const hasMissing = requiredFields.some((field) => !String(data.get(field) || "").trim());
     const phoneValue = String(data.get("phone") || "").trim();
     const emailValue = String(data.get("email") || "").trim();
@@ -1132,12 +1114,6 @@ if (quoteForm) {
       carCount: String(data.get("carCount") || "1").trim(),
       vehicleType: String(data.get("vehicleType") || "").trim(),
       package: String(data.get("package") || "").trim(),
-      conditionLevel: String(data.get("conditionLevel") || "").trim(),
-      petHairLevel: String(data.get("petHairLevel") || "").trim(),
-      sandLevel: String(data.get("sandLevel") || "").trim(),
-      saltLevel: String(data.get("saltLevel") || "").trim(),
-      bioLevel: String(data.get("bioLevel") || "").trim(),
-      moldLevel: String(data.get("moldLevel") || "").trim(),
       notes: String(data.get("notes") || "").trim(),
       estimateSummary: String(document.getElementById("estimateSummary")?.value || "").trim(),
       prepSummary: String(document.getElementById("prepSummary")?.value || "").trim(),
