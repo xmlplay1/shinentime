@@ -903,12 +903,14 @@ function fillQuoteForm(values) {
 }
 
 if (quoteForm) {
-  const QUOTE_TOTAL_STEPS = 4;
+  const QUOTE_TOTAL_STEPS = 6;
   const requiredByStep = {
     1: ["name"],
-    2: ["serviceFocus", "serviceScope", "package", "conditionLevel", "vehicle", "vehicleType", "zipCode"],
-    3: ["appointmentDate"],
-    4: []
+    2: ["vehicle", "vehicleType", "zipCode"],
+    3: ["serviceFocus", "serviceScope", "package", "conditionLevel", "carCount"],
+    4: ["appointmentDate"],
+    5: [],
+    6: []
   };
 
   function labelForSelect(id) {
@@ -984,7 +986,7 @@ if (quoteForm) {
       const width = ((currentQuoteStep - 1) / (QUOTE_TOTAL_STEPS - 1)) * 100;
       quoteProgressFill.style.width = `${width}%`;
     }
-    if (currentQuoteStep === 4) {
+    if (currentQuoteStep === 6) {
       calculateEstimate();
       buildQuoteConfirmSummary();
     }
@@ -1012,7 +1014,7 @@ if (quoteForm) {
         return false;
       }
     }
-    if (step === 4) {
+    if (step === 6) {
       const ack = document.getElementById("quoteConfirmAck");
       if (!ack || ack.type !== "checkbox" || !ack.checked) {
         formMessage.textContent = "Please confirm your details with the checkbox before sending.";
@@ -1060,10 +1062,10 @@ if (quoteForm) {
   toggleExtraSeverity();
 
   quoteForm.addEventListener("input", () => {
-    if (Number(quoteForm.dataset.quoteStep) === 4) buildQuoteConfirmSummary();
+    if (Number(quoteForm.dataset.quoteStep) === 6) buildQuoteConfirmSummary();
   });
   quoteForm.addEventListener("change", () => {
-    if (Number(quoteForm.dataset.quoteStep) === 4) buildQuoteConfirmSummary();
+    if (Number(quoteForm.dataset.quoteStep) === 6) buildQuoteConfirmSummary();
   });
 
   if (editLastQuoteButton) {
@@ -1078,7 +1080,7 @@ if (quoteForm) {
       const ack = document.getElementById("quoteConfirmAck");
       if (ack && "checked" in ack) ack.checked = false;
       showQuoteStep(1);
-      formMessage.textContent = "Last quote loaded. Review each step, then confirm on step 4.";
+      formMessage.textContent = "Last quote loaded. Review each step, then confirm on step 6.";
       formMessage.style.color = "#0f766e";
     });
   }
@@ -1091,7 +1093,7 @@ if (quoteForm) {
       showQuoteStep(QUOTE_TOTAL_STEPS);
       return;
     }
-    if (!validateStep(4)) return;
+    if (!validateStep(6)) return;
     const data = new FormData(quoteForm);
     const requiredFields = ["name", "vehicle", "zipCode", "vehicleType", "carCount", "package", "serviceScope", "conditionLevel", "appointmentDate"];
     const hasMissing = requiredFields.some((field) => !String(data.get(field) || "").trim());
