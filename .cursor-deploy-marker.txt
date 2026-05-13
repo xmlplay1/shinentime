@@ -1,1 +1,1 @@
-cursor-agent-deploy-marker
+deploy probe — safe to delete
