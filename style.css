@@ -2339,7 +2339,7 @@ body.lightbox-open {
 
 .quote-steps-nav {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.5rem;
 }
 
@@ -2381,7 +2381,7 @@ body.lightbox-open {
 }
 
 /* Final summary step is submit-only; hide nav row to avoid NEXT confusion. */
-.quote-form[data-quote-step="4"] .quote-step-actions--nav {
+.quote-form[data-quote-step="6"] .quote-step-actions--nav {
   display: none;
 }
 
@@ -2455,8 +2455,9 @@ body.lightbox-open {
   grid-template-columns: 1fr 1fr;
   gap: 0.55rem;
   padding: 0.6rem;
+  padding-bottom: calc(0.6rem + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(14, 14, 14, 0.72);
+  background: rgba(14, 14, 14, 0.92);
   backdrop-filter: blur(12px);
 }
 
@@ -2538,7 +2539,7 @@ body.lightbox-open {
 
 @media (max-width: 760px) {
   body {
-    padding-bottom: 84px;
+    padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
   }
 
   .floating-action-bar {
