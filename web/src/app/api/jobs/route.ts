@@ -15,6 +15,14 @@ import {
   type PackageId,
   type VehicleCategory
 } from "@/lib/package-pricing";
+import { upsertBookingCustomer } from "@/lib/customers-db";
+import { createReferralIfApplicable, evaluateReferralCodeForNewBooking } from "@/lib/referral-service";
+
+function clientIp(req: Request): string | null {
+  const fwd = req.headers.get("x-forwarded-for");
+  if (fwd) return fwd.split(",")[0]?.trim() || null;
+  return req.headers.get("x-real-ip");
+}
 
 function normalizeEmail(value: string | null | undefined): string | null {
   const email = String(value || "").trim().toLowerCase();
@@ -252,13 +260,25 @@ export async function POST(req: Request) {
   }
 
   const pkg = service_package as PackageId;
-  const estimatedPrice = bookingEstimateTotal({
+  const rawEstimate = bookingEstimateTotal({
     packageId: pkg,
     vehicle: vehicle_type,
     addonIds: addon_ids,
     vehicleCondition: vehicle_condition_raw
   });
+
+  const referredByCodeRaw = String(b.referred_by_code || "");
+  const { discountUsd: referralDiscount, codeStored: referredByCode } = await evaluateReferralCodeForNewBooking(supabase, {
+    codeRaw: referredByCodeRaw,
+    refereePhone: phone,
+    refereeEmail: emailOpt
+  });
+
+  const estimatedPrice = Math.max(0, rawEstimate - referralDiscount);
   const estimateLines = buildEstimateLines(pkg, vehicle_type, addon_ids, vehicle_condition_raw);
+  if (referralDiscount > 0 && referredByCode) {
+    estimateLines.push(`Referral discount (${referredByCode}): -$${referralDiscount}`);
+  }
 
   const zipDigits = zip.replace(/\D/g, "").slice(0, 5);
   const service_address = [streetAddress, `${city}, ${state} ${zipDigits}`].filter(Boolean).join(" · ");
@@ -267,6 +287,9 @@ export async function POST(req: Request) {
     addon_ids,
     vehicle_condition: vehicle_condition_raw
   };
+
+  const signupFingerprint = typeof b.client_fingerprint === "string" ? b.client_fingerprint : null;
+  const ip = clientIp(req);
 
   const row = {
     name,
@@ -278,6 +301,8 @@ export async function POST(req: Request) {
     preferred_date: preferred_date_raw,
     preferred_time: preferred_time_raw,
     referred_by_phone: referred_by_phone && referred_by_phone.length >= 10 ? referred_by_phone : null,
+    referred_by_code: referredByCode,
+    referral_discount_amount: referralDiscount,
     created_at: new Date().toISOString(),
     booking_addons,
     service_address,
@@ -285,18 +310,46 @@ export async function POST(req: Request) {
     price: estimatedPrice
   };
 
-  const { error } = await supabase.from("jobs").insert(row);
+  const { data: jobRow, error } = await supabase.from("jobs").insert(row).select("id").single();
 
-  if (error) {
+  if (error || jobRow == null) {
     console.error("[jobs] insert error", error);
     return NextResponse.json(
       {
         error:
-          error.message ||
-          "Could not save booking. If this persists, ensure Supabase migrations are applied (optional email, booking_addons, service_address)."
+          error?.message ||
+          "Could not save booking. If this persists, ensure Supabase migrations are applied (referral columns, booking_addons, service_address)."
       },
       { status: 500 }
     );
+  }
+
+  const jobIdRaw = (jobRow as { id: number | string }).id;
+  const jobId = typeof jobIdRaw === "string" ? Number.parseInt(jobIdRaw, 10) : jobIdRaw;
+  if (!Number.isFinite(jobId)) {
+    console.error("[jobs] invalid job id", jobRow);
+    return NextResponse.json({ error: "Could not read new booking id." }, { status: 500 });
+  }
+
+  const cust = await upsertBookingCustomer(supabase, {
+    fullName: name,
+    phone,
+    emailOpt,
+    signupIp: ip,
+    signupFingerprint
+  });
+
+  if (cust?.id) {
+    await supabase.from("jobs").update({ customer_id: cust.id }).eq("id", jobId);
+    await createReferralIfApplicable(supabase, {
+      refereeCustomerId: cust.id,
+      refereeJobId: jobId,
+      referredByCode: referredByCode,
+      signupIp: ip,
+      signupFingerprint,
+      refereePhone: phone,
+      refereeDiscountUsd: referralDiscount
+    });
   }
 
   const customerMailOk = await sendCustomerQuoteReceipt({
@@ -335,5 +388,5 @@ export async function POST(req: Request) {
   if (!adminAlertOk) {
     console.warn("[jobs] quote saved but admin alert email failed");
   }
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, referral_code: cust?.referral_code ?? "" });
 }

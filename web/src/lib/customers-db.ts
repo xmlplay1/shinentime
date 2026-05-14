@@ -1,6 +1,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { normalizeCustomerEmail, isStrictEmail } from "@/lib/email-validation";
+import { normalizePhone } from "@/lib/phone";
 import { suggestReferralCodeFromName } from "@/lib/referral-code";
+
+/** Stable synthetic identity when booking is SMS-only (customers.email must remain unique). */
+export function bookingCustomerEmail(phone: string, emailOpt: string | null | undefined): string {
+  const raw = emailOpt?.trim();
+  if (raw && isStrictEmail(normalizeCustomerEmail(raw))) return normalizeCustomerEmail(raw);
+  const d = normalizePhone(phone);
+  return `cust_${d}@referrals.shinentime.invalid`;
+}
 
 export type UpsertCustomerInput = {
   fullName: string;
@@ -8,6 +17,20 @@ export type UpsertCustomerInput = {
   signupIp?: string | null;
   signupFingerprint?: string | null;
 };
+
+export async function upsertBookingCustomer(
+  supabase: SupabaseClient,
+  params: UpsertCustomerInput & { emailOpt: string | null }
+): Promise<{ id: string; email: string; referral_code: string } | null> {
+  const phone = params.phone?.replace(/\s/g, "") || "";
+  const email = bookingCustomerEmail(phone, params.emailOpt);
+  return upsertCustomerRecord(supabase, email, {
+    fullName: params.fullName,
+    phone,
+    signupIp: params.signupIp ?? null,
+    signupFingerprint: params.signupFingerprint ?? null
+  });
+}
 
 export async function upsertCustomerRecord(
   supabase: SupabaseClient,

@@ -107,6 +107,10 @@ export function BookingForm() {
   const [status, setStatus] = useState<"idle" | "loading" | "error" | "success">("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [shareUrl, setShareUrl] = useState("");
+  const [referralPreview, setReferralPreview] = useState<{ discountUsd: number; codeStored: string | null }>({
+    discountUsd: 0,
+    codeStored: null
+  });
 
   useEffect(() => {
     const ref = searchParams.get("ref");
@@ -121,18 +125,30 @@ export function BookingForm() {
 
   const quotedTotal =
     service && vehicleCategory && vehicleCondition
-      ? bookingEstimateTotal({
-          packageId: service as PackageId,
-          vehicle: vehicleCategory as VehicleCategory,
-          addonIds,
-          vehicleCondition
-        })
+      ? Math.max(
+          0,
+          bookingEstimateTotal({
+            packageId: service as PackageId,
+            vehicle: vehicleCategory as VehicleCategory,
+            addonIds,
+            vehicleCondition
+          }) - referralPreview.discountUsd
+        )
       : null;
 
-  const estimateLines =
-    service && vehicleCategory && vehicleCondition
-      ? buildLocalEstimateLines(service as PackageId, vehicleCategory as VehicleCategory, addonIds, vehicleCondition)
-      : [];
+  const estimateLines = useMemo(() => {
+    if (!service || !vehicleCategory || !vehicleCondition) return [];
+    const lines = buildLocalEstimateLines(
+      service as PackageId,
+      vehicleCategory as VehicleCategory,
+      addonIds,
+      vehicleCondition
+    );
+    if (referralPreview.discountUsd > 0 && referralPreview.codeStored) {
+      lines.push(`Referral discount (${referralPreview.codeStored}): -$${referralPreview.discountUsd}`);
+    }
+    return lines;
+  }, [service, vehicleCategory, vehicleCondition, addonIds, referralPreview.discountUsd, referralPreview.codeStored]);
 
   const canNext = () => {
     if (step === "name") return name.trim().length >= 2;
@@ -173,6 +189,36 @@ export function BookingForm() {
   useEffect(() => {
     if (!isReviewStep) setConfirmed(false);
   }, [stepIndex, isReviewStep]);
+
+  useEffect(() => {
+    if (!isReviewStep) {
+      setReferralPreview({ discountUsd: 0, codeStored: null });
+      return;
+    }
+    const pn = normalizePhone(phone);
+    if (pn.length < 10 || !referredBy.trim()) {
+      setReferralPreview({ discountUsd: 0, codeStored: null });
+      return;
+    }
+    const qs = new URLSearchParams({
+      code: referredBy.trim().toUpperCase(),
+      phone: pn,
+      email: email.trim()
+    });
+    const ac = new AbortController();
+    void fetch(`/api/referrals/evaluate?${qs}`, { signal: ac.signal })
+      .then((r) => r.json())
+      .then((data: { discountUsd?: unknown; codeStored?: unknown }) => {
+        setReferralPreview({
+          discountUsd: typeof data.discountUsd === "number" ? data.discountUsd : 0,
+          codeStored: typeof data.codeStored === "string" ? data.codeStored : null
+        });
+      })
+      .catch(() => {
+        if (!ac.signal.aborted) setReferralPreview({ discountUsd: 0, codeStored: null });
+      });
+    return () => ac.abort();
+  }, [isReviewStep, phone, referredBy, email]);
 
   const toggleAddon = (id: AddonId) => {
     setAddonMap((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -507,7 +553,9 @@ export function BookingForm() {
             <div>
               <label className="block text-sm font-medium text-slate-300">Referral code (optional)</label>
               <p className="mt-1 text-xs text-slate-500">
-                Reward unlocks after your friend completes their first paid detail — codes are capped to prevent gaming.
+                Valid friend codes take <strong className="text-slate-300">$10 off</strong> your quote today. Your friend earns{" "}
+                <strong className="text-slate-300">$10 account credit</strong> when we mark your detail completed (one reward per referral). Self-referrals
+                are blocked.
               </p>
               <input
                 autoFocus

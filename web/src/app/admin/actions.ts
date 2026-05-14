@@ -10,6 +10,12 @@ import { followUpTemplateFor } from "@/lib/admin-insights";
 import { sendMail } from "@/lib/mailer";
 import { isStrictEmail, normalizeCustomerEmail } from "@/lib/email-validation";
 import { isCurrentPackageId, bookingEstimateTotal, isAddonId, type PackageId, type VehicleCategory } from "@/lib/package-pricing";
+import { upsertBookingCustomer } from "@/lib/customers-db";
+import {
+  createReferralIfApplicable,
+  evaluateReferralCodeForNewBooking,
+  settleReferralRewardsOnJobCompleted
+} from "@/lib/referral-service";
 
 function ensureAdminSession() {
   const expectedPassword = getAdminPassword();
@@ -68,6 +74,9 @@ export async function updateJobStatusAction(formData: FormData) {
   if (error) {
     console.error("[admin] update status error", error);
     redirect("/admin?error=update");
+  }
+  if (nextStatus === "Completed") {
+    await settleReferralRewardsOnJobCompleted(supabase, id);
   }
   redirect("/admin");
 }
@@ -174,6 +183,8 @@ export async function createJobAdminAction(formData: FormData) {
   const preferredTime = String(formData.get("preferred_time") || "").toLowerCase();
   const vehicleCondition = String(formData.get("vehicle_condition") || "light").toLowerCase();
 
+  const referralCodeRaw = String(formData.get("referral_code") || "");
+
   const addonIds = formData
     .getAll("addon_id")
     .map((v) => String(v))
@@ -193,33 +204,75 @@ export async function createJobAdminAction(formData: FormData) {
 
   const vehicleType = (vehicleTypeRaw === "suv" ? "suv" : "sedan") as VehicleCategory;
   const pkg = servicePackage as PackageId;
-  const estimated = bookingEstimateTotal({
-    packageId: pkg,
-    vehicle: vehicleType,
-    addonIds,
-    vehicleCondition
+
+  const { discountUsd: referralDiscount, codeStored: referredByCode } = await evaluateReferralCodeForNewBooking(supabase, {
+    codeRaw: referralCodeRaw,
+    refereePhone: phone,
+    refereeEmail: emailForDb
   });
+
+  const estimated = Math.max(
+    0,
+    bookingEstimateTotal({
+      packageId: pkg,
+      vehicle: vehicleType,
+      addonIds,
+      vehicleCondition
+    }) - referralDiscount
+  );
 
   const booking_addons = { addon_ids: addonIds, vehicle_condition: vehicleCondition };
 
-  const { error } = await supabase.from("jobs").insert({
-    name,
-    email: emailForDb,
-    phone,
-    car_make_model: carMakeModel,
-    service_package: servicePackage,
-    vehicle_type: vehicleType,
-    preferred_date: preferredDate,
-    preferred_time: preferredTime,
-    status: "Pending",
-    price: estimated,
-    estimated_price: estimated,
-    booking_addons
-  });
-  if (error) {
+  const { data: inserted, error } = await supabase
+    .from("jobs")
+    .insert({
+      name,
+      email: emailForDb,
+      phone,
+      car_make_model: carMakeModel,
+      service_package: servicePackage,
+      vehicle_type: vehicleType,
+      preferred_date: preferredDate,
+      preferred_time: preferredTime,
+      status: "Pending",
+      price: estimated,
+      estimated_price: estimated,
+      booking_addons,
+      referred_by_code: referredByCode,
+      referral_discount_amount: referralDiscount
+    })
+    .select("id")
+    .single();
+
+  if (error || inserted == null) {
     console.error("[admin] create job error", error);
     redirect("/admin?error=create-job");
   }
+
+  const newJobIdRaw = (inserted as { id: number | string }).id;
+  const newJobId = typeof newJobIdRaw === "string" ? Number.parseInt(newJobIdRaw, 10) : newJobIdRaw;
+
+  const cust = await upsertBookingCustomer(supabase, {
+    fullName: name,
+    phone,
+    emailOpt: emailForDb,
+    signupIp: null,
+    signupFingerprint: null
+  });
+
+  if (cust?.id && Number.isFinite(newJobId)) {
+    await supabase.from("jobs").update({ customer_id: cust.id }).eq("id", newJobId);
+    await createReferralIfApplicable(supabase, {
+      refereeCustomerId: cust.id,
+      refereeJobId: newJobId,
+      referredByCode: referredByCode,
+      signupIp: null,
+      signupFingerprint: null,
+      refereePhone: phone,
+      refereeDiscountUsd: referralDiscount
+    });
+  }
+
   redirect("/admin?created=1");
 }
 

@@ -24,6 +24,11 @@ export function CreateJobForm() {
         className="rounded border border-white/15 bg-black px-2 py-1.5"
       />
       <input name="car_make_model" required placeholder="Vehicle make & model" className="rounded border border-white/15 bg-black px-2 py-1.5" />
+      <input
+        name="referral_code"
+        placeholder="Friend's referral code (optional, −$10)"
+        className="rounded border border-white/15 bg-black px-2 py-1.5 font-mono uppercase"
+      />
       <div className="grid grid-cols-2 gap-2">
         <select name="service_package" required className="rounded border border-white/15 bg-black px-2 py-1.5">
           <option value="basic_interior">Basic Interior ($85 / $95)</option>

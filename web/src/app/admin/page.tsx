@@ -50,6 +50,9 @@ type JobRow = {
   zip: string | null;
   notes: string | null;
   assigned_rep: string | null;
+  customer_id?: string | null;
+  referred_by_code?: string | null;
+  referral_discount_amount?: number | null;
 };
 
 type CommunicationLog = {
@@ -66,6 +69,30 @@ type Profile = {
   email: string;
   full_name: string | null;
   role: Role;
+};
+
+type ReferralRow = {
+  id: string;
+  referrer_customer_id: string;
+  referee_customer_id: string;
+  referee_first_job_id: number | null;
+  status: string | null;
+  referrer_code_used: string | null;
+  referrer_credit_usd: number | null;
+  referee_discount_usd: number | null;
+  rewards_settled_at: string | null;
+  validated_at: string | null;
+  abuse_reason: string | null;
+  created_at: string | null;
+};
+
+type CustomerMini = {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
+  referral_code: string | null;
+  credit_balance: number | null;
 };
 
 function inferPrice(job: JobRow): number {
@@ -128,20 +155,44 @@ async function loadData(actorEmail: string, includeArchived: boolean) {
   const jobsQuery = supabase.from("jobs").select("*").order("created_at", { ascending: false });
   if (!includeArchived) jobsQuery.neq("status", "Archived");
 
-  const [{ data: jobs, error: jobsError }, { data: logs }, { data: reps }] = await Promise.all([
-    jobsQuery,
-    supabase.from("job_communication_logs").select("*").order("created_at", { ascending: false }),
-    supabase.from("profiles").select("id,email,full_name,role").order("created_at", { ascending: false })
-  ]);
+  const [{ data: jobs, error: jobsError }, { data: logs }, { data: reps }, { data: referralRows, error: referralsError }] =
+    await Promise.all([
+      jobsQuery,
+      supabase.from("job_communication_logs").select("*").order("created_at", { ascending: false }),
+      supabase.from("profiles").select("id,email,full_name,role").order("created_at", { ascending: false }),
+      supabase.from("referrals").select("*").order("created_at", { ascending: false }).limit(80)
+    ]);
   if (jobsError) {
     console.error("[admin] jobs query error", jobsError);
-    return { profile, jobs: [], logs: [], reps: (reps || []) as Profile[] };
+    return { profile, jobs: [], logs: [], reps: (reps || []) as Profile[], referrals: [], referralCustomers: new Map() };
   }
+  if (referralsError) {
+    console.error("[admin] referrals query error", referralsError);
+  }
+
+  const referrals = (referralRows || []) as ReferralRow[];
+  const custIds = new Set<string>();
+  for (const r of referrals) {
+    custIds.add(r.referrer_customer_id);
+    custIds.add(r.referee_customer_id);
+  }
+  let referralCustomers = new Map<string, CustomerMini>();
+  if (custIds.size > 0) {
+    const { data: custRows, error: custErr } = await supabase
+      .from("customers")
+      .select("id,full_name,email,phone,referral_code,credit_balance")
+      .in("id", [...custIds]);
+    if (custErr) console.error("[admin] referral customers query error", custErr);
+    referralCustomers = new Map((custRows || []).map((c) => [String((c as CustomerMini).id), c as CustomerMini]));
+  }
+
   return {
     profile,
     jobs: (jobs || []) as JobRow[],
     logs: (logs || []) as CommunicationLog[],
-    reps: (reps || []) as Profile[]
+    reps: (reps || []) as Profile[],
+    referrals,
+    referralCustomers
   };
 }
 
@@ -184,7 +235,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   if (!data) {
     return <main className="min-h-screen bg-black p-8 text-white">Missing Supabase configuration.</main>;
   }
-  const { profile, jobs, logs, reps } = data;
+  const { profile, jobs, logs, reps, referrals, referralCustomers } = data;
   const isAdmin = profile.role === "ADMIN";
   const completed = jobs.filter((j) => isCompleted(j.status));
   const totalRevenue = completed.reduce((sum, j) => sum + inferPrice(j), 0);
@@ -220,6 +271,11 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             <a className="rounded-lg border border-white/10 px-3 py-2 text-slate-300 hover:bg-white/[0.04]" href="#pipeline">
               Lead Pipeline
             </a>
+            {isAdmin ? (
+              <a className="rounded-lg border border-white/10 px-3 py-2 text-slate-300 hover:bg-white/[0.04]" href="#referrals">
+                Referrals
+              </a>
+            ) : null}
             {isAdmin ? (
               <a className="rounded-lg border border-white/10 px-3 py-2 text-slate-300 hover:bg-white/[0.04]" href="#team">
                 Team Settings
@@ -313,6 +369,12 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                         <p className="text-sm font-semibold">{job.name || "Unknown Customer"}</p>
                         <p className="text-xs text-slate-400">{formatPhoneUs(job.phone)} · {normalizeEmail(job.email) || "no email"}</p>
                         <p className="text-xs text-slate-400">{job.car_make_model || "Vehicle TBD"} · {(job.service_package || "package").toUpperCase()}</p>
+                        {job.referred_by_code ? (
+                          <p className="mt-1 text-[10px] text-amber-200/90">
+                            Referral <span className="font-mono">{job.referred_by_code}</span> · −$
+                            {Number(job.referral_discount_amount ?? 10)} quote discount
+                          </p>
+                        ) : null}
                       </div>
                       <span className={`inline-flex rounded-md border px-2 py-1 text-xs ${statusClass(status)}`}>{status}</span>
                     </div>
@@ -430,6 +492,60 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
               ) : null}
             </div>
           </section>
+
+          {isAdmin ? (
+            <section id="referrals" className="rounded-2xl border border-amber-400/30 bg-gradient-to-br from-amber-500/12 to-black/40 p-4">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-200">Referrals & credits</h3>
+              <p className="mt-2 max-w-3xl text-xs leading-relaxed text-slate-400">
+                When a guest enters a friend&apos;s code, <strong className="text-slate-200">$10 comes off</strong> their quoted total immediately.
+                When you set that job to <strong className="text-slate-200">Completed</strong>, the code owner gets{" "}
+                <strong className="text-slate-200">$10 added</strong> to <span className="font-mono text-slate-300">credit_balance</span> (once per
+                referral). Rows flagged for abuse do not auto-credit — fix in Supabase if needed.
+              </p>
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full min-w-[680px] border-collapse text-left text-[11px]">
+                  <thead>
+                    <tr className="border-b border-white/15 text-slate-500">
+                      <th className="py-2 pr-2 font-semibold uppercase tracking-wide">Status</th>
+                      <th className="py-2 pr-2 font-semibold uppercase tracking-wide">Code</th>
+                      <th className="py-2 pr-2 font-semibold uppercase tracking-wide">Referrer</th>
+                      <th className="py-2 pr-2 font-semibold uppercase tracking-wide">Referee</th>
+                      <th className="py-2 pr-2 font-semibold uppercase tracking-wide">−$ off job</th>
+                      <th className="py-2 pr-2 font-semibold uppercase tracking-wide">+$ credit</th>
+                      <th className="py-2 pr-2 font-semibold uppercase tracking-wide">Settled</th>
+                      <th className="py-2 font-semibold uppercase tracking-wide">Job id</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {referrals.map((r) => {
+                      const ref = referralCustomers.get(r.referrer_customer_id);
+                      const ru = referralCustomers.get(r.referee_customer_id);
+                      return (
+                        <tr key={r.id} className="border-b border-white/5 text-slate-300">
+                          <td className="py-2 pr-2 align-top uppercase text-slate-400">{r.status || "—"}</td>
+                          <td className="py-2 pr-2 align-top font-mono text-amber-100/90">{r.referrer_code_used || "—"}</td>
+                          <td className="py-2 pr-2 align-top">
+                            <div>{ref?.full_name || ref?.email || `${r.referrer_customer_id.slice(0, 8)}…`}</div>
+                            <div className="text-slate-500">Credit bal ${Number(ref?.credit_balance ?? 0)}</div>
+                          </td>
+                          <td className="py-2 pr-2 align-top">{ru?.full_name || formatPhoneUs(ru?.phone) || ru?.email || "—"}</td>
+                          <td className="py-2 pr-2 align-top tabular-nums">${Number(r.referee_discount_usd ?? 0)}</td>
+                          <td className="py-2 pr-2 align-top tabular-nums">${Number(r.referrer_credit_usd ?? 0)}</td>
+                          <td className="py-2 pr-2 align-top text-slate-500">
+                            {r.rewards_settled_at ? new Date(r.rewards_settled_at).toLocaleString() : "—"}
+                          </td>
+                          <td className="py-2 align-top font-mono text-slate-400">{r.referee_first_job_id ?? "—"}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {!referrals.length ? (
+                  <p className="mt-4 text-sm text-slate-500">No referral activity logged yet — bookings with codes will appear here.</p>
+                ) : null}
+              </div>
+            </section>
+          ) : null}
 
           <section className="grid gap-6 lg:grid-cols-[1fr_1fr]">
             <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
