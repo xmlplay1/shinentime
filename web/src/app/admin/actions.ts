@@ -9,7 +9,7 @@ import { sendTeamQuoteAlertForJob } from "@/lib/team-quote-alerts";
 import { followUpTemplateFor } from "@/lib/admin-insights";
 import { sendMail } from "@/lib/mailer";
 import { isStrictEmail, normalizeCustomerEmail } from "@/lib/email-validation";
-import { isCurrentPackageId, priceFor, type PackageId, type VehicleCategory } from "@/lib/package-pricing";
+import { isCurrentPackageId, bookingEstimateTotal, isAddonId, type PackageId, type VehicleCategory } from "@/lib/package-pricing";
 
 function ensureAdminSession() {
   const expectedPassword = getAdminPassword();
@@ -165,31 +165,47 @@ export async function createJobAdminAction(formData: FormData) {
   if (!supabase) redirect("/admin?error=db");
 
   const name = String(formData.get("name") || "").trim();
-  const email = normalizeCustomerEmail(String(formData.get("email") || ""));
-  const emailConfirm = normalizeCustomerEmail(String(formData.get("email_confirm") || ""));
+  const emailRaw = normalizeCustomerEmail(String(formData.get("email") || ""));
   const phone = normalizePhone(String(formData.get("phone") || ""));
   const carMakeModel = String(formData.get("car_make_model") || "").trim();
   const servicePackage = String(formData.get("service_package") || "").toLowerCase();
   const vehicleTypeRaw = String(formData.get("vehicle_type") || "").toLowerCase();
   const preferredDate = String(formData.get("preferred_date") || "").trim();
   const preferredTime = String(formData.get("preferred_time") || "").toLowerCase();
+  const vehicleCondition = String(formData.get("vehicle_condition") || "light").toLowerCase();
+
+  const addonIds = formData
+    .getAll("addon_id")
+    .map((v) => String(v))
+    .filter((id) => isAddonId(id));
 
   if (name.length < 2) redirect("/admin?error=create-name");
-  if (!isStrictEmail(email) || email !== emailConfirm) redirect("/admin?error=create-email");
+  if (phone.length < 10) redirect("/admin?error=create-phone");
+  if (emailRaw && !isStrictEmail(emailRaw)) redirect("/admin?error=create-email");
+  const emailForDb = emailRaw && isStrictEmail(emailRaw) ? emailRaw : null;
+
   if (carMakeModel.length < 2) redirect("/admin?error=create-car");
   if (!isCurrentPackageId(servicePackage)) redirect("/admin?error=create-package");
   if (!["sedan", "suv"].includes(vehicleTypeRaw)) redirect("/admin?error=create-vehicle");
   if (!["morning", "afternoon", "evening"].includes(preferredTime)) redirect("/admin?error=create-time");
   if (!preferredDate) redirect("/admin?error=create-date");
+  if (!["light", "moderate", "heavy"].includes(vehicleCondition)) redirect("/admin?error=create-condition");
 
   const vehicleType = (vehicleTypeRaw === "suv" ? "suv" : "sedan") as VehicleCategory;
   const pkg = servicePackage as PackageId;
-  const estimated = priceFor(pkg, vehicleType);
+  const estimated = bookingEstimateTotal({
+    packageId: pkg,
+    vehicle: vehicleType,
+    addonIds,
+    vehicleCondition
+  });
+
+  const booking_addons = { addon_ids: addonIds, vehicle_condition: vehicleCondition };
 
   const { error } = await supabase.from("jobs").insert({
     name,
-    email,
-    phone: phone.length >= 10 ? phone : null,
+    email: emailForDb,
+    phone,
     car_make_model: carMakeModel,
     service_package: servicePackage,
     vehicle_type: vehicleType,
@@ -197,7 +213,8 @@ export async function createJobAdminAction(formData: FormData) {
     preferred_time: preferredTime,
     status: "Pending",
     price: estimated,
-    estimated_price: estimated
+    estimated_price: estimated,
+    booking_addons
   });
   if (error) {
     console.error("[admin] create job error", error);

@@ -4,12 +4,37 @@ import { normalizePhone } from "@/lib/phone";
 import { isStrictEmail, normalizeCustomerEmail } from "@/lib/email-validation";
 import { createResendClient, getResendFrom } from "@/lib/resend";
 import { sendMail } from "@/lib/mailer";
-import { adminNewQuoteText, quoteReceiptHtml, quoteReceiptText } from "@/lib/email-templates";
-import { isCurrentPackageId, priceFor, type PackageId, type VehicleCategory } from "@/lib/package-pricing";
+import { adminNewQuoteText, prettifyPackage, quoteReceiptHtml, quoteReceiptText } from "@/lib/email-templates";
+import {
+  BOOKING_ADDONS,
+  bookingEstimateTotal,
+  conditionLaborAdjustment,
+  isAddonId,
+  isCurrentPackageId,
+  priceFor,
+  type PackageId,
+  type VehicleCategory
+} from "@/lib/package-pricing";
 
 function normalizeEmail(value: string | null | undefined): string | null {
   const email = String(value || "").trim().toLowerCase();
   return email.includes("@") ? email : null;
+}
+
+function buildEstimateLines(
+  pkg: PackageId,
+  vt: VehicleCategory,
+  addonIds: readonly string[],
+  vehicleCondition: string
+): string[] {
+  const lines: string[] = [`${prettifyPackage(pkg)} (package): $${priceFor(pkg, vt)}`];
+  for (const id of addonIds) {
+    const row = BOOKING_ADDONS.find((a) => a.id === id);
+    if (row) lines.push(`${row.label}: +$${row.price}`);
+  }
+  const adj = conditionLaborAdjustment(vehicleCondition);
+  if (adj > 0) lines.push(`Soil level (${vehicleCondition}): +$${adj}`);
+  return lines;
 }
 
 async function resolveAdminRecipients(): Promise<string[]> {
@@ -72,7 +97,7 @@ async function sendAdminQuoteAlert(input: {
 
 async function sendCustomerQuoteReceipt(input: {
   customerName: string;
-  customerEmail: string;
+  customerEmail: string | null;
   phone: string;
   carMakeModel: string;
   vehicleType: VehicleCategory;
@@ -80,29 +105,38 @@ async function sendCustomerQuoteReceipt(input: {
   preferredDate: string;
   preferredTime: "morning" | "afternoon" | "evening";
   estimatedPrice: number;
+  estimateLines: readonly string[];
 }): Promise<boolean> {
+  const em = input.customerEmail?.trim() ?? "";
+  if (!em || !isStrictEmail(normalizeCustomerEmail(em))) {
+    return true;
+  }
+  const customerEmail = normalizeCustomerEmail(em);
+
   const subject = `Shine N Time Quote Received • ${input.customerName}`;
   const html = quoteReceiptHtml({
     customerName: input.customerName,
-    customerEmail: input.customerEmail,
+    customerEmail,
     phone: input.phone,
     carMakeModel: input.carMakeModel,
     vehicleType: input.vehicleType,
     servicePackage: input.servicePackage,
     preferredDate: input.preferredDate,
     preferredTime: input.preferredTime,
-    estimatedPrice: input.estimatedPrice
+    estimatedPrice: input.estimatedPrice,
+    estimateLines: input.estimateLines
   });
   const text = quoteReceiptText({
     customerName: input.customerName,
-    customerEmail: input.customerEmail,
+    customerEmail,
     phone: input.phone,
     carMakeModel: input.carMakeModel,
     vehicleType: input.vehicleType,
     servicePackage: input.servicePackage,
     preferredDate: input.preferredDate,
     preferredTime: input.preferredTime,
-    estimatedPrice: input.estimatedPrice
+    estimatedPrice: input.estimatedPrice,
+    estimateLines: input.estimateLines
   });
 
   try {
@@ -110,7 +144,7 @@ async function sendCustomerQuoteReceipt(input: {
     if (resend) {
       const { error } = await resend.emails.send({
         from: getResendFrom(),
-        to: [input.customerEmail],
+        to: [customerEmail],
         subject,
         html,
         text
@@ -123,7 +157,7 @@ async function sendCustomerQuoteReceipt(input: {
   }
 
   return sendMail({
-    to: input.customerEmail,
+    to: customerEmail,
     subject,
     text,
     html
@@ -149,8 +183,8 @@ export async function POST(req: Request) {
   const b = body as Record<string, unknown>;
   const name = String(b.name || "").trim();
   const phone = normalizePhone(String(b.phone || ""));
-  const email = normalizeCustomerEmail(String(b.email || ""));
-  const emailConfirm = normalizeCustomerEmail(String(b.email_confirm || ""));
+  const emailRaw = normalizeCustomerEmail(String(b.email || ""));
+  const emailOpt = emailRaw.length > 0 ? emailRaw : null;
   const car_make_model = String(b.car_make_model || "").trim();
   const service_package = String(b.service_package || "").toLowerCase();
   const vehicle_type_raw = String(b.vehicle_type || "").toLowerCase();
@@ -159,10 +193,39 @@ export async function POST(req: Request) {
   const preferred_date_raw = b.preferred_date != null ? String(b.preferred_date).trim() : "";
   const preferred_time_raw = b.preferred_time != null ? String(b.preferred_time).trim().toLowerCase() : "";
 
-  if (name.length < 2) return NextResponse.json({ error: "Name is required." }, { status: 400 });
-  if (!isStrictEmail(email) || email !== emailConfirm) {
-    return NextResponse.json({ error: "Emails must match and use a valid address." }, { status: 400 });
+  const streetAddress = String(b.address || "").trim();
+  const city = String(b.city || "").trim();
+  const state = String(b.state || "").trim().toUpperCase().slice(0, 2);
+  const zip = String(b.zip || "").trim();
+  const vehicle_condition_raw = String(b.vehicle_condition || "").toLowerCase();
+
+  const addonRaw = b.addon_ids;
+  const addon_ids: string[] = [];
+  if (Array.isArray(addonRaw)) {
+    for (const x of addonRaw) {
+      if (typeof x === "string" && isAddonId(x)) addon_ids.push(x);
+    }
   }
+
+  if (name.length < 2) return NextResponse.json({ error: "Name is required." }, { status: 400 });
+  if (phone.length < 10) return NextResponse.json({ error: "A valid mobile number is required so we can text you to confirm." }, { status: 400 });
+  if (emailOpt != null && !isStrictEmail(emailOpt)) {
+    return NextResponse.json({ error: "If you enter an email, it must be a valid address." }, { status: 400 });
+  }
+
+  if (
+    streetAddress.length < 4 ||
+    city.length < 2 ||
+    state.length < 2 ||
+    zip.replace(/\D/g, "").length < 5
+  ) {
+    return NextResponse.json({ error: "Please enter a complete service address." }, { status: 400 });
+  }
+
+  if (!["light", "moderate", "heavy"].includes(vehicle_condition_raw)) {
+    return NextResponse.json({ error: "Vehicle condition is required." }, { status: 400 });
+  }
+
   if (car_make_model.length < 2) return NextResponse.json({ error: "Vehicle is required." }, { status: 400 });
   if (!isCurrentPackageId(service_package)) {
     return NextResponse.json({ error: "Invalid service package." }, { status: 400 });
@@ -188,17 +251,38 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Preferred time is required." }, { status: 400 });
   }
 
+  const pkg = service_package as PackageId;
+  const estimatedPrice = bookingEstimateTotal({
+    packageId: pkg,
+    vehicle: vehicle_type,
+    addonIds: addon_ids,
+    vehicleCondition: vehicle_condition_raw
+  });
+  const estimateLines = buildEstimateLines(pkg, vehicle_type, addon_ids, vehicle_condition_raw);
+
+  const zipDigits = zip.replace(/\D/g, "").slice(0, 5);
+  const service_address = [streetAddress, `${city}, ${state} ${zipDigits}`].filter(Boolean).join(" · ");
+
+  const booking_addons = {
+    addon_ids,
+    vehicle_condition: vehicle_condition_raw
+  };
+
   const row = {
     name,
-    phone: phone.length >= 10 ? phone : null,
-    email,
+    phone,
+    email: emailOpt,
     car_make_model,
     service_package,
     vehicle_type,
     preferred_date: preferred_date_raw,
     preferred_time: preferred_time_raw,
     referred_by_phone: referred_by_phone && referred_by_phone.length >= 10 ? referred_by_phone : null,
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
+    booking_addons,
+    service_address,
+    estimated_price: estimatedPrice,
+    price: estimatedPrice
   };
 
   const { error } = await supabase.from("jobs").insert(row);
@@ -209,25 +293,25 @@ export async function POST(req: Request) {
       {
         error:
           error.message ||
-          "Could not save booking. Ensure a `jobs` table exists with columns: name, phone, car_make_model, service_package, preferred_date, preferred_time, referred_by_phone (nullable), created_at."
+          "Could not save booking. If this persists, ensure Supabase migrations are applied (optional email, booking_addons, service_address)."
       },
       { status: 500 }
     );
   }
 
-  const estimatedPrice = priceFor(service_package as PackageId, vehicle_type);
   const customerMailOk = await sendCustomerQuoteReceipt({
     customerName: name,
-    customerEmail: email,
+    customerEmail: emailOpt,
     phone,
     carMakeModel: car_make_model,
     vehicleType: vehicle_type,
-    servicePackage: service_package as PackageId,
+    servicePackage: pkg,
     preferredDate: preferred_date_raw,
     preferredTime: preferred_time_raw as "morning" | "afternoon" | "evening",
-    estimatedPrice
+    estimatedPrice,
+    estimateLines
   });
-  if (!customerMailOk) {
+  if (!customerMailOk && emailOpt) {
     console.warn("[jobs] quote saved but customer receipt email failed");
   }
 
@@ -237,14 +321,15 @@ export async function POST(req: Request) {
     subject: `New Quote • ${name} • ${service_package.toUpperCase()}`,
     text: adminNewQuoteText({
       customerName: name,
-      customerEmail: email,
+      customerEmail: emailOpt,
       phone,
       carMakeModel: car_make_model,
       vehicleType: vehicle_type,
       servicePackage: service_package,
       preferredDate: preferred_date_raw,
       preferredTime: preferred_time_raw,
-      estimatedPrice
+      estimatedPrice,
+      estimateLines
     })
   });
   if (!adminAlertOk) {

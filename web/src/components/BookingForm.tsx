@@ -7,10 +7,33 @@ import { format } from "date-fns";
 import { ClipboardCheck, Loader2 } from "lucide-react";
 import { normalizePhone } from "@/lib/phone";
 import { PreferredDateTime, type PreferredTime } from "@/components/PreferredDateTime";
-import { PACKAGE_PRICING, priceFor, type PackageId, type VehicleCategory } from "@/lib/package-pricing";
+import {
+  BOOKING_ADDONS,
+  PACKAGE_PRICING,
+  bookingEstimateTotal,
+  conditionLaborAdjustment,
+  priceFor,
+  type AddonId,
+  type PackageId,
+  type VehicleCategory
+} from "@/lib/package-pricing";
 import { isStrictEmail, normalizeCustomerEmail } from "@/lib/email-validation";
+import { prettifyPackage } from "@/lib/email-templates";
 
-const STEPS = ["name", "email", "email2", "phone", "address", "car", "vehicle", "condition", "service", "schedule", "referral", "review"] as const;
+const STEPS = [
+  "name",
+  "phone",
+  "email",
+  "address",
+  "car",
+  "vehicle",
+  "condition",
+  "service",
+  "addons",
+  "schedule",
+  "referral",
+  "review"
+] as const;
 
 function clientFingerprint(): string {
   if (typeof window === "undefined") return "";
@@ -42,13 +65,32 @@ const timeLabels: Record<PreferredTime, string> = {
   evening: "Evening (4pm – 8pm)"
 };
 
+function selectedAddonIds(map: Partial<Record<AddonId, boolean>>): AddonId[] {
+  return BOOKING_ADDONS.filter((a) => map[a.id]).map((a) => a.id);
+}
+
+function buildLocalEstimateLines(
+  pkg: PackageId,
+  vt: VehicleCategory,
+  addonIds: readonly AddonId[],
+  vehicleCondition: string
+): string[] {
+  const lines: string[] = [`${prettifyPackage(pkg)} (package): $${priceFor(pkg, vt)}`];
+  for (const id of addonIds) {
+    const row = BOOKING_ADDONS.find((a) => a.id === id);
+    if (row) lines.push(`${row.label}: +$${row.price}`);
+  }
+  const adj = conditionLaborAdjustment(vehicleCondition);
+  if (adj > 0) lines.push(`Soil level (${vehicleCondition}): +$${adj}`);
+  return lines;
+}
+
 export function BookingForm() {
   const searchParams = useSearchParams();
   const [stepIndex, setStepIndex] = useState(0);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [emailConfirm, setEmailConfirm] = useState("");
   const [streetAddress, setStreetAddress] = useState("");
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
@@ -57,6 +99,7 @@ export function BookingForm() {
   const [vehicleCategory, setVehicleCategory] = useState<VehicleCategory | "">("");
   const [vehicleCondition, setVehicleCondition] = useState<"light" | "moderate" | "heavy" | "">("");
   const [service, setService] = useState<PackageId | "">("");
+  const [addonMap, setAddonMap] = useState<Partial<Record<AddonId, boolean>>>({});
   const [preferredDate, setPreferredDate] = useState<Date | undefined>(undefined);
   const [preferredTime, setPreferredTime] = useState<PreferredTime | "">("");
   const [referredBy, setReferredBy] = useState("");
@@ -74,27 +117,43 @@ export function BookingForm() {
   const progress = useMemo(() => ((stepIndex + 1) / STEPS.length) * 100, [stepIndex]);
   const isReviewStep = step === "review";
 
+  const addonIds = useMemo(() => selectedAddonIds(addonMap), [addonMap]);
+
+  const quotedTotal =
+    service && vehicleCategory && vehicleCondition
+      ? bookingEstimateTotal({
+          packageId: service as PackageId,
+          vehicle: vehicleCategory as VehicleCategory,
+          addonIds,
+          vehicleCondition
+        })
+      : null;
+
+  const estimateLines =
+    service && vehicleCategory && vehicleCondition
+      ? buildLocalEstimateLines(service as PackageId, vehicleCategory as VehicleCategory, addonIds, vehicleCondition)
+      : [];
+
   const canNext = () => {
     if (step === "name") return name.trim().length >= 2;
-    if (step === "email") return isStrictEmail(email);
-    if (step === "email2") {
-      const a = normalizeCustomerEmail(email);
-      const b = normalizeCustomerEmail(emailConfirm);
-      return isStrictEmail(emailConfirm) && a === b && a.length > 0;
+    if (step === "phone") return normalizePhone(phone).length >= 10;
+    if (step === "email") {
+      const t = email.trim();
+      return t.length === 0 || isStrictEmail(normalizeCustomerEmail(t));
     }
-    if (step === "phone") return true;
     if (step === "address") {
       return (
         streetAddress.trim().length >= 4 &&
         city.trim().length >= 2 &&
         state.trim().length >= 2 &&
-        zip.trim().length >= 5
+        zip.trim().replace(/\D/g, "").length >= 5
       );
     }
     if (step === "car") return car.trim().length >= 2;
     if (step === "vehicle") return vehicleCategory === "sedan" || vehicleCategory === "suv";
     if (step === "condition") return Boolean(vehicleCondition);
     if (step === "service") return Boolean(service);
+    if (step === "addons") return true;
     if (step === "schedule") return Boolean(preferredDate) && Boolean(preferredTime);
     if (step === "referral") return true;
     if (step === "review") return confirmed;
@@ -115,9 +174,20 @@ export function BookingForm() {
     if (!isReviewStep) setConfirmed(false);
   }, [stepIndex, isReviewStep]);
 
+  const toggleAddon = (id: AddonId) => {
+    setAddonMap((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
   const submit = async () => {
-    if (normalizeCustomerEmail(email) !== normalizeCustomerEmail(emailConfirm)) {
-      setErrorMsg("Email addresses must match.");
+    const pn = normalizePhone(phone);
+    if (pn.length < 10) {
+      setErrorMsg("Phone number is required.");
+      setStatus("error");
+      return;
+    }
+    const em = normalizeCustomerEmail(email);
+    if (em && !isStrictEmail(em)) {
+      setErrorMsg("If you enter an email, it must be valid.");
       setStatus("error");
       return;
     }
@@ -130,15 +200,13 @@ export function BookingForm() {
     setErrorMsg("");
     try {
       const preferred_date = preferredDate ? preferredDate.toISOString().slice(0, 10) : null;
-      const pn = normalizePhone(phone);
       const res = await fetch("/api/jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
-          phone: pn.length >= 10 ? pn : "",
-          email: normalizeCustomerEmail(email),
-          email_confirm: normalizeCustomerEmail(emailConfirm),
+          phone: pn,
+          email: em || "",
           address: streetAddress.trim(),
           city: city.trim(),
           state: state.trim(),
@@ -147,8 +215,10 @@ export function BookingForm() {
           vehicle_type: vehicleCategory,
           vehicle_condition: vehicleCondition,
           service_package: service,
+          addon_ids: addonIds,
           preferred_date,
           preferred_time: preferredTime || null,
+          referred_by_phone: null,
           referred_by_code: referredBy.trim().toUpperCase() || null,
           client_fingerprint: clientFingerprint()
         })
@@ -166,8 +236,6 @@ export function BookingForm() {
   };
 
   const serviceLabel = service ? pkgLabel(service as PackageId) : "—";
-  const quotedTotal =
-    service && vehicleCategory ? priceFor(service as PackageId, vehicleCategory as VehicleCategory) : null;
 
   if (status === "success") {
     return (
@@ -180,7 +248,8 @@ export function BookingForm() {
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300">You&apos;re booked in our queue</p>
         <h3 className="mt-3 text-2xl font-semibold text-white">Thank you, {name.split(" ")[0]}</h3>
         <p className="mx-auto mt-3 max-w-md text-sm text-slate-400">
-          We&apos;ll text you shortly to confirm details. Share Shine N Time and earn credit toward your next detail.
+          We&apos;ll text you shortly to confirm details.
+          {normalizeCustomerEmail(email) ? " If you added an email, you&apos;ll get a copy there too." : ""} Share Shine N Time and earn credit toward your next detail.
         </p>
         {shareUrl ? (
           <div className="mt-8 rounded-2xl border border-white/10 bg-black/40 p-4 text-left">
@@ -233,9 +302,25 @@ export function BookingForm() {
               />
             </div>
           )}
+          {step === "phone" && (
+            <div>
+              <label className="block text-sm font-medium text-slate-300">Mobile number (we&apos;ll text you to confirm)</label>
+              <input
+                autoFocus
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="7344191846"
+                className="mt-3 w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-4 text-lg text-white outline-none ring-blue-500/40 transition focus:ring-2"
+              />
+              <p className="mt-2 text-xs text-slate-500">Required — US mobile, 10 digits. This is how we confirm your booking.</p>
+            </div>
+          )}
           {step === "email" && (
             <div>
-              <label className="block text-sm font-medium text-slate-300">Email for confirmations & receipt</label>
+              <label className="block text-sm font-medium text-slate-300">Email (optional backup contact)</label>
               <input
                 autoFocus
                 type="email"
@@ -245,37 +330,7 @@ export function BookingForm() {
                 placeholder="you@example.com"
                 className="mt-3 w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-4 text-lg text-white outline-none ring-blue-500/40 transition focus:ring-2"
               />
-              <p className="mt-2 text-xs text-slate-500">Required — this is our primary way to reach you.</p>
-            </div>
-          )}
-          {step === "email2" && (
-            <div>
-              <label className="block text-sm font-medium text-slate-300">Confirm email (type it again)</label>
-              <input
-                autoFocus
-                type="email"
-                value={emailConfirm}
-                onChange={(e) => setEmailConfirm(e.target.value)}
-                placeholder={normalizeCustomerEmail(email) || "repeat@example.com"}
-                className="mt-3 w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-4 text-lg text-white outline-none ring-blue-500/40 transition focus:ring-2"
-              />
-              <p className="mt-2 text-xs text-slate-500">
-                Without a phone fallback, typos hurt — we&apos;ll compare both fields letter-for-letter.
-              </p>
-            </div>
-          )}
-          {step === "phone" && (
-            <div>
-              <label className="block text-sm font-medium text-slate-300">Phone (optional)</label>
-              <input
-                autoFocus
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="7344191846"
-                className="mt-3 w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-4 text-lg text-white outline-none ring-blue-500/40 transition focus:ring-2"
-              />
-              <p className="mt-2 text-xs text-slate-500">Optional — we primarily use email for confirmations.</p>
+              <p className="mt-2 text-xs text-slate-500">Skip if you prefer SMS only — we&apos;ll still send a receipt if you enter one.</p>
             </div>
           )}
           {step === "address" && (
@@ -365,13 +420,13 @@ export function BookingForm() {
           {step === "condition" && (
             <div>
               <p className="text-sm font-medium text-slate-300">Current interior condition</p>
-              <p className="mt-1 text-xs text-slate-500">Helps us estimate labor time and final quote accuracy.</p>
+              <p className="mt-1 text-xs text-slate-500">Helps us estimate labor time — final scope confirmed on site.</p>
               <div className="mt-4 grid gap-3">
                 {(
                   [
                     { id: "light" as const, label: "Light", hint: "Dust + minor crumbs" },
-                    { id: "moderate" as const, label: "Moderate", hint: "Stains / visible dirt" },
-                    { id: "heavy" as const, label: "Heavy", hint: "Pet hair / salt / deep extraction" }
+                    { id: "moderate" as const, label: "Moderate", hint: "Stains / visible dirt (+$15 est.)" },
+                    { id: "heavy" as const, label: "Heavy", hint: "Pet hair / salt / deep extraction (+$35 est.)" }
                   ] as const
                 ).map((c) => (
                   <button
@@ -417,6 +472,29 @@ export function BookingForm() {
               </div>
             </div>
           )}
+          {step === "addons" && (
+            <div>
+              <p className="text-sm font-medium text-slate-300">Add-ons (optional)</p>
+              <p className="mt-1 text-xs text-slate-500">Flat menu prices — select anything that applies. Included in your estimate below.</p>
+              <div className="mt-4 grid gap-2">
+                {BOOKING_ADDONS.map((a) => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => toggleAddon(a.id)}
+                    className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm transition ${
+                      addonMap[a.id]
+                        ? "border-amber-400/50 bg-amber-500/10 text-white"
+                        : "border-white/10 bg-black/40 text-slate-300 hover:border-white/20"
+                    }`}
+                  >
+                    <span>{a.label}</span>
+                    <span className="tabular-nums text-amber-200/90">+${a.price}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           {step === "schedule" && (
             <PreferredDateTime
               selected={preferredDate}
@@ -449,19 +527,21 @@ export function BookingForm() {
                   className="mt-6 rounded-2xl border border-amber-400/35 bg-gradient-to-br from-amber-500/12 to-black/60 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md"
                   aria-label="Estimated quote"
                 >
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-200/95">Estimated quote</p>
-                  <div className="mt-2 flex flex-wrap items-baseline justify-between gap-3">
-                    <p className="text-sm font-medium text-slate-300">
-                      {serviceLabel}{" "}
-                      <span className="text-slate-500">
-                        · {vehicleCategory === "suv" ? "SUV / truck / van" : "Sedan / coupe"}
-                      </span>
-                    </p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-200/95">Estimated total</p>
+                  <ul className="mt-3 space-y-1.5 text-xs text-slate-400">
+                    {estimateLines.map((line) => (
+                      <li key={line}>{line}</li>
+                    ))}
+                  </ul>
+                  <div className="mt-4 flex flex-wrap items-baseline justify-end gap-3 border-t border-white/10 pt-4">
                     <span className="inline-flex items-center gap-1.5 text-2xl font-bold tabular-nums tracking-tight text-white">
                       <ClipboardCheck className="size-5 text-amber-300" aria-hidden />
                       ${quotedTotal}
                     </span>
                   </div>
+                  <p className="mt-3 text-[11px] leading-relaxed text-slate-500">
+                    Final price confirmed on site after we see the vehicle. Travel or extreme buildup may adjust the total — we&apos;ll tell you before we start.
+                  </p>
                 </aside>
               ) : null}
               <dl className="mt-6 space-y-4 rounded-2xl border border-white/10 bg-black/40 p-4 text-sm">
@@ -475,7 +555,7 @@ export function BookingForm() {
                 </div>
                 <div>
                   <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Email</dt>
-                  <dd className="mt-1 text-slate-200">{email || "—"}</dd>
+                  <dd className="mt-1 text-slate-200">{email.trim() ? email : "SMS only"}</dd>
                 </div>
                 <div>
                   <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Vehicle</dt>
@@ -503,6 +583,12 @@ export function BookingForm() {
                 <div>
                   <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Package</dt>
                   <dd className="mt-1 text-slate-200">{serviceLabel}</dd>
+                </div>
+                <div>
+                  <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Add-ons</dt>
+                  <dd className="mt-1 text-slate-200">
+                    {addonIds.length ? addonIds.map((id) => BOOKING_ADDONS.find((a) => a.id === id)?.label).join(", ") : "None"}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Preferred</dt>

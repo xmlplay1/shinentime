@@ -10,6 +10,8 @@ type QuoteEmailInput = {
   preferredDate: string;
   preferredTime: string;
   estimatedPrice: number;
+  /** Human-readable lines: "Pet hair removal (+$35)", etc. */
+  estimateLines?: readonly string[];
 };
 
 const timeLabel: Record<string, string> = {
@@ -18,7 +20,7 @@ const timeLabel: Record<string, string> = {
   evening: "Evening (4pm - 8pm)"
 };
 
-function prettifyPackage(v: string): string {
+export function prettifyPackage(v: string): string {
   const s = String(v || "").toLowerCase();
   const labels: Record<string, string> = {
     basic_interior: "Basic Interior Detail",
@@ -39,6 +41,10 @@ export function quoteReceiptHtml(input: QuoteEmailInput): string {
   const pkg = prettifyPackage(input.servicePackage);
   const size = input.vehicleType === "suv" ? "SUV / truck / van" : "Sedan / coupe";
   const window = timeLabel[input.preferredTime] || input.preferredTime;
+  const breakdown =
+    input.estimateLines && input.estimateLines.length > 0
+      ? `<ul style="margin:8px 0 0; padding-left:18px; color:#cbd5e1;">${input.estimateLines.map((line) => `<li style="margin:4px 0;">${line}</li>`).join("")}</ul>`
+      : "";
 
   return `
   <div style="font-family: Inter, Arial, sans-serif; background:#0b0b0b; color:#f8fafc; padding:24px;">
@@ -52,7 +58,9 @@ export function quoteReceiptHtml(input: QuoteEmailInput): string {
         <p style="margin:4px 0;"><strong>Vehicle:</strong> ${input.carMakeModel}</p>
         <p style="margin:4px 0;"><strong>Package:</strong> ${pkg} (${size})</p>
         <p style="margin:4px 0;"><strong>Preferred:</strong> ${date} · ${window}</p>
-        <p style="margin:8px 0 0; font-size:18px;"><strong>Estimated Quote:</strong> $${input.estimatedPrice}</p>
+        ${breakdown}
+        <p style="margin:12px 0 0; font-size:18px;"><strong>Estimated total:</strong> $${input.estimatedPrice}</p>
+        <p style="margin:8px 0 0; font-size:12px; color:#94a3b8;">Estimate = menu package + selected add-ons + a soil-level allowance. Final price confirmed on site before payment.</p>
       </div>
 
       <div style="margin-top:14px; background:#0f172a; border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:14px;">
@@ -75,6 +83,7 @@ export function quoteReceiptText(input: QuoteEmailInput): string {
   const pkg = prettifyPackage(input.servicePackage);
   const size = input.vehicleType === "suv" ? "SUV / truck / van" : "Sedan / coupe";
   const window = timeLabel[input.preferredTime] || input.preferredTime;
+  const lines = input.estimateLines?.length ? ["Estimate breakdown:", ...input.estimateLines.map((l) => `- ${l}`), ""] : [];
   return [
     `Hi ${input.customerName},`,
     "",
@@ -83,7 +92,10 @@ export function quoteReceiptText(input: QuoteEmailInput): string {
     `Vehicle: ${input.carMakeModel}`,
     `Package: ${pkg} (${size})`,
     `Preferred: ${date} · ${window}`,
-    `Estimated quote: $${input.estimatedPrice}`,
+    "",
+    ...lines,
+    `Estimated total: $${input.estimatedPrice}`,
+    "(Package + add-ons + soil-level allowance; confirmed on site.)",
     "",
     "Prep requirements:",
     "- Driveway access",
@@ -95,6 +107,8 @@ export function quoteReceiptText(input: QuoteEmailInput): string {
 }
 
 export function adminNewQuoteText(input: QuoteEmailInput): string {
+  const breakdown =
+    input.estimateLines && input.estimateLines.length > 0 ? ["Breakdown:", ...input.estimateLines.map((l) => `  • ${l}`), ""] : [];
   return [
     "New quote submitted",
     `Name: ${input.customerName}`,
@@ -104,6 +118,7 @@ export function adminNewQuoteText(input: QuoteEmailInput): string {
     `Package: ${input.servicePackage}`,
     `Size: ${input.vehicleType}`,
     `Preferred: ${input.preferredDate} ${input.preferredTime}`,
+    ...breakdown,
     `Estimate: $${input.estimatedPrice}`
   ].join("\n");
 }

@@ -18,6 +18,7 @@ export type JobForInsights = {
   estimated_price: number | null;
   final_price: number | null;
   car_make_model?: string | null;
+  booking_addons?: unknown;
 };
 
 export type LogForInsights = {
@@ -32,7 +33,7 @@ export type LogForInsights = {
 export function inferPrice(
   job: Pick<
     JobForInsights,
-    "final_price" | "price" | "estimated_price" | "service_package" | "vehicle_type"
+    "final_price" | "price" | "estimated_price" | "service_package" | "vehicle_type" | "booking_addons"
   >
 ): number {
   const candidates = [job.final_price, job.price, job.estimated_price];
