@@ -19,14 +19,18 @@ import {
 import { CalendarPanel } from "@/app/admin/CalendarPanel";
 import { ScriptSidebar } from "@/app/admin/ScriptSidebar";
 import { DashboardCharts } from "@/app/admin/widgets";
+import { BatchJobsProvider, BatchJobsToolbar, JobRowSelectCheckbox } from "@/app/admin/BatchJobsControls";
+import { JobPhotoGallery } from "@/app/admin/JobPhotoGallery";
+import { listJobImagePublicUrls } from "@/app/admin/customer-helpers";
+import { vehicleMixCounts, vehicleMixCompletedRevenue, topServicedZips } from "@/lib/admin-dashboard-metrics";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { formatPhoneUs, inferMonthlyProfit, monthKey, normalizeEmail } from "@/lib/admin-format";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { estimatePriceFromJobFields } from "@/lib/package-pricing";
-import { CircleCheckBig, Clock3, DollarSign, FileClock, TrendingUp } from "lucide-react";
+import { REFERRAL_PROGRAM_ENABLED } from "@/lib/referral-flags";
+import { Clock3, DollarSign, FileClock, TrendingUp } from "lucide-react";
 
 type Role = "ADMIN" | "SERVICE_REP";
-type JobStatus = "Pending" | "Confirmed" | "Completed";
 
 type JobRow = {
   id: number;
@@ -53,6 +57,7 @@ type JobRow = {
   customer_id?: string | null;
   referred_by_code?: string | null;
   referral_discount_amount?: number | null;
+  booking_addons?: unknown;
 };
 
 type CommunicationLog = {
@@ -61,6 +66,15 @@ type CommunicationLog = {
   channel: string;
   note: string;
   created_by: string | null;
+  created_at: string;
+};
+
+type SystemLogRow = {
+  id: number;
+  job_id: number;
+  event_type: string;
+  message: string;
+  actor_name: string | null;
   created_at: string;
 };
 
@@ -107,19 +121,33 @@ function isCompleted(status: string | null | undefined) {
   return String(status || "").toLowerCase() === "completed";
 }
 
-function statusClass(status: string | null | undefined): string {
-  const s = String(status || "").toLowerCase();
-  if (s === "archived") return "border-violet-400/45 bg-violet-500/12 text-violet-200";
-  if (s === "completed") return "border-emerald-400/45 bg-emerald-500/12 text-emerald-200";
-  if (s === "confirmed") return "border-blue-400/45 bg-blue-500/12 text-blue-200";
-  return "border-amber-400/45 bg-amber-500/12 text-amber-200";
-}
-
-function toStatus(status: string | null | undefined): JobStatus {
-  const s = String(status || "").toLowerCase();
-  if (s === "archived") return "Pending";
+function pipelineStatusLabel(raw: string | null | undefined): string {
+  const s = String(raw || "").toLowerCase();
   if (s === "completed") return "Completed";
   if (s === "confirmed") return "Confirmed";
+  if (s === "cancelled") return "Cancelled";
+  if (s === "archived") return "Archived";
+  if (s === "pending") return "Pending";
+  const t = raw?.trim();
+  return t ? String(t) : "Pending";
+}
+
+function pipelineStatusClass(raw: string | null | undefined): string {
+  const s = String(raw || "").toLowerCase();
+  if (s === "completed") return "border-emerald-500/50 bg-emerald-600/15 text-emerald-100";
+  if (s === "cancelled") return "border-rose-500/55 bg-rose-600/18 text-rose-100";
+  if (s === "confirmed") return "border-amber-400/50 bg-amber-500/16 text-amber-100";
+  if (s === "pending") return "border-yellow-500/45 bg-yellow-500/14 text-yellow-100";
+  if (s === "archived") return "border-violet-400/45 bg-violet-500/12 text-violet-200";
+  return "border-slate-500/40 bg-slate-600/15 text-slate-200";
+}
+
+function statusSelectValue(raw: string | null | undefined): string {
+  const s = String(raw || "").toLowerCase();
+  if (s === "completed") return "Completed";
+  if (s === "confirmed") return "Confirmed";
+  if (s === "cancelled") return "Cancelled";
+  if (s === "archived") return "Archived";
   return "Pending";
 }
 
@@ -155,44 +183,78 @@ async function loadData(actorEmail: string, includeArchived: boolean) {
   const jobsQuery = supabase.from("jobs").select("*").order("created_at", { ascending: false });
   if (!includeArchived) jobsQuery.neq("status", "Archived");
 
-  const [{ data: jobs, error: jobsError }, { data: logs }, { data: reps }, { data: referralRows, error: referralsError }] =
+  const [{ data: jobs, error: jobsError }, { data: logs }, { data: reps }, { data: sysRows, error: sysErr }] =
     await Promise.all([
       jobsQuery,
       supabase.from("job_communication_logs").select("*").order("created_at", { ascending: false }),
       supabase.from("profiles").select("id,email,full_name,role").order("created_at", { ascending: false }),
-      supabase.from("referrals").select("*").order("created_at", { ascending: false }).limit(80)
+      supabase.from("job_system_logs").select("*").order("created_at", { ascending: false }).limit(500)
     ]);
   if (jobsError) {
     console.error("[admin] jobs query error", jobsError);
-    return { profile, jobs: [], logs: [], reps: (reps || []) as Profile[], referrals: [], referralCustomers: new Map() };
+    return {
+      profile,
+      jobs: [],
+      logs: [],
+      reps: (reps || []) as Profile[],
+      referrals: [],
+      referralCustomers: new Map(),
+      systemLogs: [],
+      jobImagesByJob: new Map()
+    };
   }
-  if (referralsError) {
-    console.error("[admin] referrals query error", referralsError);
+  if (sysErr) {
+    console.error("[admin] job_system_logs query error — apply migration if missing table", sysErr);
   }
+  const systemLogs = (sysErr ? [] : sysRows || []) as SystemLogRow[];
 
-  const referrals = (referralRows || []) as ReferralRow[];
-  const custIds = new Set<string>();
-  for (const r of referrals) {
-    custIds.add(r.referrer_customer_id);
-    custIds.add(r.referee_customer_id);
-  }
+  const jobList = (jobs || []) as JobRow[];
+  const jobImagesByJob = new Map<number, { name: string; url: string }[]>();
+  await Promise.all(
+    jobList.map(async (j) => {
+      const urls = await listJobImagePublicUrls(supabase, j.id);
+      if (urls.length) jobImagesByJob.set(j.id, urls);
+    })
+  );
+
+  let referrals: ReferralRow[] = [];
   let referralCustomers = new Map<string, CustomerMini>();
-  if (custIds.size > 0) {
-    const { data: custRows, error: custErr } = await supabase
-      .from("customers")
-      .select("id,full_name,email,phone,referral_code,credit_balance")
-      .in("id", [...custIds]);
-    if (custErr) console.error("[admin] referral customers query error", custErr);
-    referralCustomers = new Map((custRows || []).map((c) => [String((c as CustomerMini).id), c as CustomerMini]));
+
+  if (REFERRAL_PROGRAM_ENABLED) {
+    const { data: referralRows, error: referralsError } = await supabase
+      .from("referrals")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(80);
+    if (referralsError) {
+      console.error("[admin] referrals query error", referralsError);
+    } else {
+      referrals = (referralRows || []) as ReferralRow[];
+      const custIds = new Set<string>();
+      for (const r of referrals) {
+        custIds.add(r.referrer_customer_id);
+        custIds.add(r.referee_customer_id);
+      }
+      if (custIds.size > 0) {
+        const { data: custRows, error: custErr } = await supabase
+          .from("customers")
+          .select("id,full_name,email,phone,referral_code,credit_balance")
+          .in("id", [...custIds]);
+        if (custErr) console.error("[admin] referral customers query error", custErr);
+        referralCustomers = new Map((custRows || []).map((c) => [String((c as CustomerMini).id), c as CustomerMini]));
+      }
+    }
   }
 
   return {
     profile,
-    jobs: (jobs || []) as JobRow[],
+    jobs: jobList,
     logs: (logs || []) as CommunicationLog[],
     reps: (reps || []) as Profile[],
     referrals,
-    referralCustomers
+    referralCustomers,
+    systemLogs,
+    jobImagesByJob
   };
 }
 
@@ -235,8 +297,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   if (!data) {
     return <main className="min-h-screen bg-black p-8 text-white">Missing Supabase configuration.</main>;
   }
-  const { profile, jobs, logs, reps, referrals, referralCustomers } = data;
+  const { profile, jobs, logs, reps, referrals, referralCustomers, systemLogs, jobImagesByJob } = data;
   const isAdmin = profile.role === "ADMIN";
+  const actorLabel = profile.full_name || profile.email || "Team";
   const completed = jobs.filter((j) => isCompleted(j.status));
   const totalRevenue = completed.reduce((sum, j) => sum + inferPrice(j), 0);
   const thisMonth = monthKey(new Date());
@@ -246,9 +309,17 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       .reduce((sum, j) => sum + inferPrice(j), 0)
   );
   const conversionRate = jobs.length ? Math.round((completed.length / jobs.length) * 100) : 0;
-  const pending = jobs.filter((j) => !isCompleted(j.status));
-  const sedanCount = jobs.filter((j) => (j.vehicle_type || "").toLowerCase() !== "suv").length;
-  const suvCount = jobs.filter((j) => (j.vehicle_type || "").toLowerCase() === "suv").length;
+  const mix = vehicleMixCounts(jobs);
+  const revenueMix = vehicleMixCompletedRevenue(jobs);
+  const hotZips = topServicedZips(jobs, 8);
+  const systemLogsByJob = new Map<number, SystemLogRow[]>();
+  for (const sl of systemLogs) {
+    if (!systemLogsByJob.has(sl.job_id)) systemLogsByJob.set(sl.job_id, []);
+    systemLogsByJob.get(sl.job_id)!.push(sl);
+  }
+  for (const arr of systemLogsByJob.values()) {
+    arr.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }
   const logsByJob = new Map<number, CommunicationLog[]>();
   for (const log of logs) {
     if (!logsByJob.has(log.job_id)) logsByJob.set(log.job_id, []);
@@ -271,7 +342,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             <a className="rounded-lg border border-white/10 px-3 py-2 text-slate-300 hover:bg-white/[0.04]" href="#pipeline">
               Lead Pipeline
             </a>
-            {isAdmin ? (
+            {isAdmin && REFERRAL_PROGRAM_ENABLED ? (
               <a className="rounded-lg border border-white/10 px-3 py-2 text-slate-300 hover:bg-white/[0.04]" href="#referrals">
                 Referrals
               </a>
@@ -321,7 +392,12 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           )}
 
           <div id="calendar" className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-            <CalendarPanel jobs={jobs} rescheduleAction={rescheduleJobAction} cancelAction={cancelJobAction} />
+            <CalendarPanel
+              jobs={jobs}
+              rescheduleAction={rescheduleJobAction}
+              cancelAction={cancelJobAction}
+              actorName={actorLabel}
+            />
             <ScriptSidebar
               customerName={jobs[0]?.name || "Customer"}
               packageName={jobs[0]?.service_package || "Detail Package"}
@@ -357,13 +433,22 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                 </a>
               </div>
             </div>
-            <div className="mt-4 grid gap-3">
+            <BatchJobsProvider>
+              <BatchJobsToolbar
+                actorName={actorLabel}
+                reps={sortedReps.map((r) => ({ id: r.id, label: String(r.full_name || r.email) }))}
+              />
+              <div className="mt-4 grid gap-3">
               {jobs.map((job) => {
-                const status = toStatus(job.status);
-                const mapQuery = encodeURIComponent([job.address, job.city, job.state, job.zip].filter(Boolean).join(", "));
                 const jobLogs = logsByJob.get(job.id) || [];
+                const sysLogs = systemLogsByJob.get(job.id) || [];
+                const thumbs = jobImagesByJob.get(job.id) ?? [];
+                const mapQuery = encodeURIComponent([job.address, job.city, job.state, job.zip].filter(Boolean).join(", "));
                 return (
                   <article key={job.id} className="rounded-xl border border-white/10 bg-black/25 p-4">
+                    <div className="flex gap-3">
+                      <JobRowSelectCheckbox jobId={job.id} />
+                      <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
                         <p className="text-sm font-semibold">{job.name || "Unknown Customer"}</p>
@@ -376,7 +461,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                           </p>
                         ) : null}
                       </div>
-                      <span className={`inline-flex rounded-md border px-2 py-1 text-xs ${statusClass(status)}`}>{status}</span>
+                      <span className={`inline-flex rounded-md border px-2 py-1 text-xs ${pipelineStatusClass(job.status)}`}>
+                        {pipelineStatusLabel(job.status)}
+                      </span>
                     </div>
 
                     <div className="mt-3 grid gap-2 text-xs text-slate-300 md:grid-cols-2">
@@ -410,6 +497,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                       <form action={claimJobAction} className="flex items-center gap-1 rounded-lg border border-white/15 px-2 py-1">
                         <input type="hidden" name="id" value={job.id} />
                         <input type="hidden" name="phone" value={job.phone || ""} />
+                        <input type="hidden" name="actor_name" value={actorLabel} />
                         <select name="rep" className="rounded bg-black px-2 py-1 text-[10px]">
                           <option value="">Assign rep</option>
                           {sortedReps.map((r) => (
@@ -420,13 +508,18 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                       </form>
                     </div>
 
+                    <JobPhotoGallery items={thumbs} />
+
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                       <form action={updateJobStatusAction} className="inline-flex items-center gap-2">
                         <input type="hidden" name="id" value={job.id} />
-                        <select name="status" defaultValue={status} className="rounded-md border border-white/15 bg-black/60 px-2 py-1 text-xs">
+                        <input type="hidden" name="actor_name" value={actorLabel} />
+                        <select name="status" defaultValue={statusSelectValue(job.status)} className="rounded-md border border-white/15 bg-black/60 px-2 py-1 text-xs">
                           <option value="Pending">Pending</option>
                           <option value="Confirmed">Confirmed</option>
                           <option value="Completed">Completed</option>
+                          <option value="Cancelled">Cancelled</option>
+                          <option value="Archived">Archived</option>
                         </select>
                         <button type="submit" className="rounded-md border border-amber-400/30 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold uppercase">
                           Update
@@ -461,6 +554,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                       </form>
                       <form action={showArchived ? restoreArchivedJobAction : archiveJobAction}>
                         <input type="hidden" name="id" value={job.id} />
+                        <input type="hidden" name="actor_name" value={actorLabel} />
                         <button
                           type="submit"
                           className="rounded-md border border-violet-400/35 bg-violet-500/10 px-2 py-1 text-[10px] font-semibold uppercase text-violet-100"
@@ -470,16 +564,36 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                       </form>
                     </div>
 
+                    <div className="mt-3 rounded-md border border-cyan-500/15 bg-cyan-950/20 p-2 text-[11px] text-slate-400">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-cyan-500/80">System log</p>
+                      {sysLogs.length ? (
+                        sysLogs.slice(0, 4).map((sl) => (
+                          <p key={sl.id} className="mt-1 border-t border-white/5 pt-1 first:mt-0 first:border-t-0 first:pt-0">
+                            <span className="text-slate-500">{new Date(sl.created_at).toLocaleString()}</span>
+                            {" · "}
+                            <span className="text-cyan-200/90">{sl.actor_name || "—"}</span>
+                            {": "}
+                            {sl.message}
+                          </p>
+                        ))
+                      ) : (
+                        <p className="mt-1 text-slate-600">No status or assignment events logged yet.</p>
+                      )}
+                    </div>
+
                     <div className="mt-3 rounded-md border border-white/10 bg-black/35 p-2 text-[11px] text-slate-400">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Communication log</p>
                       {jobLogs.length ? (
                         jobLogs.slice(0, 3).map((log) => (
-                          <p key={log.id}>
+                          <p key={log.id} className="mt-1">
                             <span className="uppercase text-slate-500">{log.channel}</span>: {log.note}
                           </p>
                         ))
                       ) : (
                         <p>No communication logs yet.</p>
                       )}
+                    </div>
+                      </div>
                     </div>
                   </article>
                 );
@@ -491,9 +605,10 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                 </div>
               ) : null}
             </div>
+            </BatchJobsProvider>
           </section>
 
-          {isAdmin ? (
+          {isAdmin && REFERRAL_PROGRAM_ENABLED ? (
             <section id="referrals" className="rounded-2xl border border-amber-400/30 bg-gradient-to-br from-amber-500/12 to-black/40 p-4">
               <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-200">Referrals & credits</h3>
               <p className="mt-2 max-w-3xl text-xs leading-relaxed text-slate-400">
@@ -548,19 +663,46 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           ) : null}
 
           <section className="grid gap-6 lg:grid-cols-[1fr_1fr]">
-            <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-              <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-300">Vehicle Mix</h3>
-              <DashboardCharts sedanCount={sedanCount} suvCount={suvCount} />
-              {!sedanCount && !suvCount ? (
-                <div className="mt-4 rounded-xl border border-white/10 bg-black/25 p-6 text-center text-sm text-slate-400">
-                  <CircleCheckBig className="mx-auto mb-2 size-6 text-slate-500" />
-                  No vehicle data yet.
+            <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 lg:col-span-2">
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-300">Vehicle mix</h3>
+                  <DashboardCharts
+                    sedanCount={mix.sedan}
+                    suvCount={mix.suv}
+                    sedanRevenue={revenueMix.sedan}
+                    suvRevenue={revenueMix.suv}
+                  />
                 </div>
-              ) : null}
+                <div className="w-full shrink-0 lg:w-72">
+                  <h4 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Hot zones · ZIPs</h4>
+                  <p className="mt-1 text-[10px] leading-relaxed text-slate-500">
+                    From job addresses on file (excludes cancelled). Sorted by booking volume.
+                  </p>
+                  {hotZips.length ? (
+                    <ul className="mt-3 space-y-2 rounded-xl border border-white/10 bg-black/30 p-3 text-[11px]">
+                      {hotZips.map((z) => (
+                        <li key={z.zip} className="flex items-center justify-between gap-2 border-b border-white/5 pb-2 last:border-b-0 last:pb-0">
+                          <span className="font-mono text-slate-200">{z.zip}</span>
+                          <span className="text-right text-slate-400">
+                            <span className="tabular-nums text-slate-300">{z.count}</span> jobs
+                            <span className="mx-1 text-slate-600">·</span>
+                            <span className="tabular-nums text-emerald-200/80">${Math.round(z.completedRevenue)}</span> done
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-3 rounded-xl border border-dashed border-white/15 bg-black/20 p-4 text-[11px] text-slate-500">
+                      No ZIP data yet — bookings with a ZIP on the job will populate this list.
+                    </p>
+                  )}
+                </div>
+              </div>
             </section>
 
             {isAdmin ? (
-              <section id="team" className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+              <section id="team" className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 lg:col-span-2">
                 <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-300">Team Settings</h3>
                 <form action={createTeamMemberAction} className="mt-4 grid gap-3">
                   <input
@@ -591,7 +733,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                 </div>
               </section>
             ) : (
-              <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400">
+              <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-400 lg:col-span-2">
                 Financials and team settings are restricted to admins.
               </section>
             )}

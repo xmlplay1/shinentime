@@ -19,8 +19,9 @@ import {
 } from "@/lib/package-pricing";
 import { isStrictEmail, normalizeCustomerEmail } from "@/lib/email-validation";
 import { prettifyPackage } from "@/lib/email-templates";
+import { REFERRAL_PROGRAM_ENABLED } from "@/lib/referral-flags";
 
-const STEPS = [
+const STEPS_ALL = [
   "name",
   "phone",
   "email",
@@ -34,6 +35,12 @@ const STEPS = [
   "referral",
   "review"
 ] as const;
+
+type BookingStep = (typeof STEPS_ALL)[number];
+
+const STEPS: readonly BookingStep[] = REFERRAL_PROGRAM_ENABLED
+  ? STEPS_ALL
+  : STEPS_ALL.filter((s): s is BookingStep => s !== "referral");
 
 function clientFingerprint(): string {
   if (typeof window === "undefined") return "";
@@ -113,8 +120,9 @@ export function BookingForm() {
   });
 
   useEffect(() => {
+    if (!REFERRAL_PROGRAM_ENABLED) return;
     const ref = searchParams.get("ref");
-    if (ref) setReferredBy((prev) => prev || ref.trim().toUpperCase());
+    if (ref) queueMicrotask(() => setReferredBy((prev) => prev || ref.trim().toUpperCase()));
   }, [searchParams]);
 
   const step = STEPS[stepIndex];
@@ -187,17 +195,17 @@ export function BookingForm() {
   };
 
   useEffect(() => {
-    if (!isReviewStep) setConfirmed(false);
+    if (!isReviewStep) queueMicrotask(() => setConfirmed(false));
   }, [stepIndex, isReviewStep]);
 
   useEffect(() => {
-    if (!isReviewStep) {
-      setReferralPreview({ discountUsd: 0, codeStored: null });
+    if (!isReviewStep || !REFERRAL_PROGRAM_ENABLED) {
+      queueMicrotask(() => setReferralPreview({ discountUsd: 0, codeStored: null }));
       return;
     }
     const pn = normalizePhone(phone);
     if (pn.length < 10 || !referredBy.trim()) {
-      setReferralPreview({ discountUsd: 0, codeStored: null });
+      queueMicrotask(() => setReferralPreview({ discountUsd: 0, codeStored: null }));
       return;
     }
     const qs = new URLSearchParams({
@@ -265,7 +273,7 @@ export function BookingForm() {
           preferred_date,
           preferred_time: preferredTime || null,
           referred_by_phone: null,
-          referred_by_code: referredBy.trim().toUpperCase() || null,
+          referred_by_code: REFERRAL_PROGRAM_ENABLED ? referredBy.trim().toUpperCase() || null : null,
           client_fingerprint: clientFingerprint()
         })
       });
@@ -273,7 +281,9 @@ export function BookingForm() {
       if (!res.ok) throw new Error(data.error || "Could not submit booking.");
       const origin = typeof window !== "undefined" ? window.location.origin : "";
       const code = typeof data.referral_code === "string" && data.referral_code.length > 2 ? data.referral_code : "";
-      setShareUrl(code ? `${origin}/share/${encodeURIComponent(code)}` : origin);
+      setShareUrl(
+        REFERRAL_PROGRAM_ENABLED && code ? `${origin}/share/${encodeURIComponent(code)}` : REFERRAL_PROGRAM_ENABLED ? origin : ""
+      );
       setStatus("success");
     } catch (e) {
       setStatus("error");
@@ -295,9 +305,10 @@ export function BookingForm() {
         <h3 className="mt-3 text-2xl font-semibold text-white">Thank you, {name.split(" ")[0]}</h3>
         <p className="mx-auto mt-3 max-w-md text-sm text-slate-400">
           We&apos;ll text you shortly to confirm details.
-          {normalizeCustomerEmail(email) ? " If you added an email, you&apos;ll get a copy there too." : ""} Share Shine N Time and earn credit toward your next detail.
+          {normalizeCustomerEmail(email) ? " If you added an email, you&apos;ll get a copy there too." : ""}
+          {REFERRAL_PROGRAM_ENABLED ? " Share Shine N Time and earn credit toward your next detail." : ""}
         </p>
-        {shareUrl ? (
+        {REFERRAL_PROGRAM_ENABLED && shareUrl ? (
           <div className="mt-8 rounded-2xl border border-white/10 bg-black/40 p-4 text-left">
             <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Your referral link</p>
             <p className="mt-2 break-all font-mono text-sm text-blue-300">{shareUrl}</p>

@@ -18,10 +18,10 @@ type JobItem = {
 };
 
 const statusStyle: Record<string, string> = {
-  pending: "bg-amber-500/25 text-amber-200 border-amber-500/35",
-  confirmed: "bg-emerald-500/25 text-emerald-200 border-emerald-500/35",
-  completed: "bg-blue-500/25 text-blue-200 border-blue-500/35",
-  cancelled: "bg-rose-500/25 text-rose-200 border-rose-500/35"
+  pending: "bg-yellow-500/22 text-yellow-100 border-yellow-500/40",
+  confirmed: "bg-amber-500/22 text-amber-100 border-amber-500/45",
+  completed: "bg-emerald-500/22 text-emerald-100 border-emerald-500/45",
+  cancelled: "bg-rose-500/22 text-rose-100 border-rose-500/45"
 };
 
 function statusColor(status: string): string {
@@ -32,9 +32,10 @@ type CalendarPanelProps = {
   jobs: JobItem[];
   rescheduleAction: (formData: FormData) => Promise<void>;
   cancelAction: (formData: FormData) => Promise<void>;
+  actorName?: string;
 };
 
-export function CalendarPanel({ jobs, rescheduleAction, cancelAction }: CalendarPanelProps) {
+export function CalendarPanel({ jobs, rescheduleAction, cancelAction, actorName = "" }: CalendarPanelProps) {
   const jobsByDate = useMemo(() => {
     const map = new Map<string, JobItem[]>();
     for (const job of jobs) {
@@ -88,10 +89,10 @@ export function CalendarPanel({ jobs, rescheduleAction, cancelAction }: Calendar
             className="mx-auto [&_.rdp-day]:text-white [&_.rdp-caption_label]:text-white [&_.rdp-weekday]:text-slate-400 [&_.rdp-day_button]:text-sm"
           />
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
-            <span className="rounded border border-amber-500/40 bg-amber-500/20 px-2 py-1 text-amber-200">Pending</span>
-            <span className="rounded border border-emerald-500/40 bg-emerald-500/20 px-2 py-1 text-emerald-200">Confirmed</span>
-            <span className="rounded border border-blue-500/40 bg-blue-500/20 px-2 py-1 text-blue-200">Completed</span>
-            <span className="rounded border border-rose-500/40 bg-rose-500/20 px-2 py-1 text-rose-200">Cancelled</span>
+            <span className="rounded border border-yellow-500/40 bg-yellow-500/20 px-2 py-1 text-yellow-100">Pending</span>
+            <span className="rounded border border-amber-500/40 bg-amber-500/20 px-2 py-1 text-amber-100">Confirmed</span>
+            <span className="rounded border border-emerald-500/40 bg-emerald-500/20 px-2 py-1 text-emerald-100">Completed</span>
+            <span className="rounded border border-rose-500/40 bg-rose-500/20 px-2 py-1 text-rose-100">Cancelled</span>
           </div>
         </div>
 
@@ -140,6 +141,7 @@ export function CalendarPanel({ jobs, rescheduleAction, cancelAction }: Calendar
                     </form>
                     <form action={cancelAction}>
                       <input type="hidden" name="id" value={job.id} />
+                      <input type="hidden" name="actor_name" value={actorName} />
                       <button className="rounded-md border border-rose-400/35 bg-rose-500/10 px-2 py-1 text-[11px] font-semibold uppercase text-rose-100">
                         Cancel
                       </button>
@@ -155,16 +157,16 @@ export function CalendarPanel({ jobs, rescheduleAction, cancelAction }: Calendar
       </div>
       <style jsx global>{`
         .rdp-day_pending .rdp-day_button {
+          background: rgba(234, 179, 8, 0.22);
+          border: 1px solid rgba(234, 179, 8, 0.45);
+        }
+        .rdp-day_confirmed .rdp-day_button {
           background: rgba(245, 158, 11, 0.22);
           border: 1px solid rgba(245, 158, 11, 0.45);
         }
-        .rdp-day_confirmed .rdp-day_button {
+        .rdp-day_completed .rdp-day_button {
           background: rgba(16, 185, 129, 0.22);
           border: 1px solid rgba(16, 185, 129, 0.45);
-        }
-        .rdp-day_completed .rdp-day_button {
-          background: rgba(59, 130, 246, 0.22);
-          border: 1px solid rgba(59, 130, 246, 0.45);
         }
         .rdp-day_cancelled .rdp-day_button {
           background: rgba(244, 63, 94, 0.22);

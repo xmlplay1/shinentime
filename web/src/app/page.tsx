@@ -12,6 +12,7 @@ import {
   ServiceAreaSection
 } from "@/components/LandingInfoSections";
 import { ReferralStatus } from "@/components/ReferralStatus";
+import { REFERRAL_PROGRAM_ENABLED } from "@/lib/referral-flags";
 
 type PackageCard = {
   id:
@@ -282,7 +283,7 @@ export default function Home() {
             <p className="mt-2 text-sm text-slate-400">Canton&apos;s premium mobile detailing.</p>
             <p className="mt-4 text-xs text-slate-600">© {new Date().getFullYear()} Shine N Time</p>
           </div>
-          <ReferralStatus />
+          {REFERRAL_PROGRAM_ENABLED ? <ReferralStatus /> : null}
         </div>
       </footer>
     </div>

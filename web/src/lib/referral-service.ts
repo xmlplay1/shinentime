@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { normalizeCustomerEmail } from "@/lib/email-validation";
 import { normalizePhone } from "@/lib/phone";
+import { REFERRAL_PROGRAM_ENABLED } from "@/lib/referral-flags";
 
 type Row = Record<string, unknown>;
 
@@ -13,6 +14,8 @@ export async function evaluateReferralCodeForNewBooking(
   supabase: SupabaseClient,
   input: { codeRaw: string; refereePhone: string; refereeEmail: string | null }
 ): Promise<{ discountUsd: number; codeStored: string | null }> {
+  if (!REFERRAL_PROGRAM_ENABLED) return { discountUsd: 0, codeStored: null };
+
   const code = String(input.codeRaw || "")
     .trim()
     .toUpperCase();
@@ -48,6 +51,8 @@ export async function createReferralIfApplicable(
     refereeDiscountUsd: number;
   }
 ): Promise<void> {
+  if (!REFERRAL_PROGRAM_ENABLED) return;
+
   const code = String(params.referredByCode || "")
     .trim()
     .toUpperCase();
@@ -104,6 +109,8 @@ export async function createReferralIfApplicable(
 
 /** When a job is marked Completed: credit referrer once (pending referrals only; skips flagged). */
 export async function settleReferralRewardsOnJobCompleted(supabase: SupabaseClient, jobId: number): Promise<void> {
+  if (!REFERRAL_PROGRAM_ENABLED) return;
+
   const { data: job } = await supabase
     .from("jobs")
     .select("id,customer_id,status,referred_by_code,referral_discount_amount")

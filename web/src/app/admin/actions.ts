@@ -16,6 +16,7 @@ import {
   evaluateReferralCodeForNewBooking,
   settleReferralRewardsOnJobCompleted
 } from "@/lib/referral-service";
+import { recordJobSystemEvent } from "@/lib/job-system-log";
 
 function ensureAdminSession() {
   const expectedPassword = getAdminPassword();
@@ -64,17 +65,29 @@ export async function updateJobStatusAction(formData: FormData) {
   const id = Number.parseInt(idRaw, 10);
   if (!Number.isFinite(id)) redirect("/admin");
 
-  const allowed = new Set(["Pending", "Confirmed", "Completed", "Archived"]);
+  const allowed = new Set(["Pending", "Confirmed", "Completed", "Archived", "Cancelled"]);
   if (!allowed.has(nextStatus)) redirect("/admin");
 
   const supabase = createAdminClient();
   if (!supabase) redirect("/admin?error=db");
+
+  const actor = String(formData.get("actor_name") || "").trim() || "Team";
+
+  const { data: prevRow } = await supabase.from("jobs").select("status").eq("id", id).maybeSingle();
+  const prevStatus = String(prevRow?.status ?? "Unknown");
 
   const { error } = await supabase.from("jobs").update({ status: nextStatus }).eq("id", id);
   if (error) {
     console.error("[admin] update status error", error);
     redirect("/admin?error=update");
   }
+  await recordJobSystemEvent(supabase, {
+    jobId: id,
+    eventType: "status_change",
+    message: `Status changed: ${prevStatus} → ${nextStatus}`,
+    actorName: actor,
+    meta: { from: prevStatus, to: nextStatus }
+  });
   if (nextStatus === "Completed") {
     await settleReferralRewardsOnJobCompleted(supabase, id);
   }
@@ -130,6 +143,8 @@ export async function cancelJobAction(formData: FormData) {
     notesPatch = prev ? `${prev}\n${stamp}: ${extra}` : `${stamp}: ${extra}`;
   }
 
+  const actor = String(formData.get("actor_name") || "").trim() || "Team";
+
   const { error } = await supabase
     .from("jobs")
     .update({ status: "Cancelled", ...(notesPatch ? { notes: notesPatch } : {}) })
@@ -138,6 +153,12 @@ export async function cancelJobAction(formData: FormData) {
     console.error("[admin] cancel error", error);
     redirect("/admin?error=cancel");
   }
+  await recordJobSystemEvent(supabase, {
+    jobId: id,
+    eventType: "cancel",
+    message: extra ? `Job cancelled (${extra})` : "Job cancelled",
+    actorName: actor
+  });
   redirect("/admin");
 }
 
@@ -372,6 +393,7 @@ export async function claimJobAction(formData: FormData) {
   if (!supabase) redirect("/admin?error=db");
   const id = Number.parseInt(String(formData.get("id") || ""), 10);
   const rep = String(formData.get("rep") || "").trim();
+  const actor = String(formData.get("actor_name") || "").trim() || "Team";
   if (!Number.isFinite(id) || !rep) redirect("/admin");
 
   const { error } = await supabase
@@ -383,6 +405,13 @@ export async function claimJobAction(formData: FormData) {
     console.error("[admin] claim job error", error);
     redirect("/admin?error=claim");
   }
+  await recordJobSystemEvent(supabase, {
+    jobId: id,
+    eventType: "assign",
+    message: `Assigned to ${rep}`,
+    actorName: actor,
+    meta: { rep }
+  });
   redirect("/admin");
 }
 export async function resendQuoteAlertAction(formData: FormData) {
@@ -488,13 +517,23 @@ export async function archiveJobAction(formData: FormData) {
   if (!supabase) redirect("/admin?error=db");
 
   const id = Number.parseInt(String(formData.get("id") || ""), 10);
+  const actor = String(formData.get("actor_name") || "").trim() || "Team";
   if (!Number.isFinite(id)) redirect("/admin");
+
+  const { data: prevRow } = await supabase.from("jobs").select("status").eq("id", id).maybeSingle();
+  const prevStatus = String(prevRow?.status ?? "Unknown");
 
   const { error } = await supabase.from("jobs").update({ status: "Archived" }).eq("id", id);
   if (error) {
     console.error("[admin] archive job error", error);
     redirect("/admin?error=archive");
   }
+  await recordJobSystemEvent(supabase, {
+    jobId: id,
+    eventType: "archive",
+    message: `Archived (was ${prevStatus})`,
+    actorName: actor
+  });
   redirect("/admin?archived=1");
 }
 
@@ -504,6 +543,7 @@ export async function restoreArchivedJobAction(formData: FormData) {
   if (!supabase) redirect("/admin?error=db");
 
   const id = Number.parseInt(String(formData.get("id") || ""), 10);
+  const actor = String(formData.get("actor_name") || "").trim() || "Team";
   if (!Number.isFinite(id)) redirect("/admin");
 
   const { error } = await supabase.from("jobs").update({ status: "Pending" }).eq("id", id);
@@ -511,7 +551,104 @@ export async function restoreArchivedJobAction(formData: FormData) {
     console.error("[admin] restore archived job error", error);
     redirect("/admin?error=restore");
   }
+  await recordJobSystemEvent(supabase, {
+    jobId: id,
+    eventType: "restore",
+    message: "Restored from archive → Pending",
+    actorName: actor
+  });
   redirect("/admin?restored=1");
+}
+
+export async function batchAssignJobsAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const rawIds = String(formData.get("job_ids") || "").trim();
+  const rep = String(formData.get("rep") || "").trim();
+  const actor = String(formData.get("actor_name") || "").trim() || "Team";
+  const ids = rawIds
+    .split(",")
+    .map((s) => Number.parseInt(s.trim(), 10))
+    .filter((n) => Number.isFinite(n));
+  if (!rep || !ids.length) redirect("/admin?error=batch-assign");
+
+  for (const id of ids) {
+    const { error } = await supabase
+      .from("jobs")
+      .update({ claimed_by: rep, assigned_rep: rep })
+      .eq("id", id);
+    if (error) {
+      console.error("[admin] batch assign error", error);
+      redirect("/admin?error=batch-assign");
+    }
+    await recordJobSystemEvent(supabase, {
+      jobId: id,
+      eventType: "assign_batch",
+      message: `Bulk assigned to ${rep}`,
+      actorName: actor,
+      meta: { rep }
+    });
+  }
+  redirect("/admin?batch=assigned");
+}
+
+export async function batchArchiveCompletedJobsAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const rawIds = String(formData.get("job_ids") || "").trim();
+  const actor = String(formData.get("actor_name") || "").trim() || "Team";
+  const ids = rawIds
+    .split(",")
+    .map((s) => Number.parseInt(s.trim(), 10))
+    .filter((n) => Number.isFinite(n));
+  if (!ids.length) redirect("/admin?error=batch-archive");
+
+  for (const id of ids) {
+    const { data: row } = await supabase.from("jobs").select("status").eq("id", id).maybeSingle();
+    if (String(row?.status || "").toLowerCase() !== "completed") continue;
+    const { error } = await supabase.from("jobs").update({ status: "Archived" }).eq("id", id);
+    if (error) {
+      console.error("[admin] batch archive error", error);
+      redirect("/admin?error=batch-archive");
+    }
+    await recordJobSystemEvent(supabase, {
+      jobId: id,
+      eventType: "archive_batch",
+      message: "Archived completed job (bulk)",
+      actorName: actor
+    });
+  }
+  redirect("/admin?batch=archived");
+}
+
+export async function archiveAllCompletedJobsAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const actor = String(formData.get("actor_name") || "").trim() || "Team";
+
+  const { data: rows, error } = await supabase.from("jobs").update({ status: "Archived" }).eq("status", "Completed").select("id");
+  if (error) {
+    console.error("[admin] archive all completed error", error);
+    redirect("/admin?error=archive-all");
+  }
+
+  for (const row of rows || []) {
+    const rid = Number((row as { id: number }).id);
+    if (!Number.isFinite(rid)) continue;
+    await recordJobSystemEvent(supabase, {
+      jobId: rid,
+      eventType: "archive_bulk_all",
+      message: "Archived via “Archive all completed”",
+      actorName: actor
+    });
+  }
+  redirect("/admin?archived=all-completed");
 }
 
 export async function clearPipelineAction(formData: FormData) {
