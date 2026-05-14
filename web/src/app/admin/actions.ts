@@ -189,6 +189,80 @@ export async function createTestJobAction() {
   redirect("/admin");
 }
 
+/** Minimal Pending job from mobile FAB (sedan estimate, light condition). */
+export async function quickPhoneLeadAction(formData: FormData) {
+  await requireAdminCookie();
+  const supabase = createAdminClient();
+  if (!supabase) redirect("/admin?error=db");
+
+  const name = String(formData.get("name") || "").trim();
+  const phone = normalizePhone(String(formData.get("phone") || ""));
+  const car_make_model = String(formData.get("car_make_model") || "").trim() || "Vehicle TBD";
+  const service_package = String(formData.get("service_package") || "basic_interior").toLowerCase();
+  const preferred_date_raw = String(formData.get("preferred_date") || "").trim();
+  const preferred_time = String(formData.get("preferred_time") || "afternoon").toLowerCase();
+
+  if (name.length < 2) redirect("/admin?error=quick-name");
+  if (phone.length < 10) redirect("/admin?error=quick-phone");
+  if (!isCurrentPackageId(service_package)) redirect("/admin?error=quick-pkg");
+  if (!preferred_date_raw) redirect("/admin?error=quick-date");
+  if (!["morning", "afternoon", "evening"].includes(preferred_time)) redirect("/admin?error=quick-time");
+
+  const preferredDateObj = new Date(`${preferred_date_raw}T12:00:00`);
+  if (Number.isNaN(preferredDateObj.getTime())) redirect("/admin?error=quick-date");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (preferredDateObj < today) redirect("/admin?error=quick-date-past");
+  if (preferredDateObj.getDay() === 0) redirect("/admin?error=quick-sunday");
+
+  const pkg = service_package as PackageId;
+  const vehicle_type = "sedan" as VehicleCategory;
+  const booking_addons = { addon_ids: [] as string[], vehicle_condition: "light" };
+  const estimated = bookingEstimateTotal({
+    packageId: pkg,
+    vehicle: vehicle_type,
+    addonIds: [],
+    vehicleCondition: "light"
+  });
+
+  const { data: inserted, error } = await supabase
+    .from("jobs")
+    .insert({
+      name,
+      phone,
+      email: null,
+      car_make_model,
+      service_package,
+      vehicle_type,
+      preferred_date: preferred_date_raw,
+      preferred_time,
+      status: "Pending",
+      price: estimated,
+      estimated_price: estimated,
+      booking_addons
+    })
+    .select("id")
+    .single();
+
+  if (error || !inserted) {
+    console.error("[admin] quick lead error", error);
+    redirect("/admin?error=quick-db");
+  }
+
+  const newIdRaw = (inserted as { id: number | string }).id;
+  const newId = typeof newIdRaw === "string" ? Number.parseInt(newIdRaw, 10) : newIdRaw;
+  if (Number.isFinite(newId)) {
+    await recordJobSystemEvent(supabase, {
+      jobId: newId,
+      eventType: "quick_lead",
+      message: "Lead created from quick-add (FAB)",
+      actorName: "Quick FAB"
+    });
+  }
+
+  redirect("/admin?quick=1");
+}
+
 export async function createJobAdminAction(formData: FormData) {
   await requireAdminCookie();
   const supabase = createAdminClient();

@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import { formatUsPhone } from "@/lib/admin-format";
@@ -33,9 +34,16 @@ type CalendarPanelProps = {
   rescheduleAction: (formData: FormData) => Promise<void>;
   cancelAction: (formData: FormData) => Promise<void>;
   actorName?: string;
+  showArchived?: boolean;
 };
 
-export function CalendarPanel({ jobs, rescheduleAction, cancelAction, actorName = "" }: CalendarPanelProps) {
+export function CalendarPanel({
+  jobs,
+  rescheduleAction,
+  cancelAction,
+  actorName = "",
+  showArchived = false
+}: CalendarPanelProps) {
   const jobsByDate = useMemo(() => {
     const map = new Map<string, JobItem[]>();
     for (const job of jobs) {
@@ -51,6 +59,7 @@ export function CalendarPanel({ jobs, rescheduleAction, cancelAction, actorName 
   const [selected, setSelected] = useState<Date | undefined>(new Date());
   const selectedKey = selected ? selected.toISOString().slice(0, 10) : "";
   const selectedJobs = jobsByDate.get(selectedKey) || [];
+  const jobsPanelRef = useRef<HTMLDivElement>(null);
 
   const modifiers = useMemo(() => {
     const pending: Date[] = [];
@@ -68,6 +77,23 @@ export function CalendarPanel({ jobs, rescheduleAction, cancelAction, actorName 
     });
     return { pending, confirmed, completed, cancelled };
   }, [jobsByDate]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !selectedKey || !selectedJobs.length) return;
+    const mq = window.matchMedia("(max-width: 1023px)");
+    if (!mq.matches) return;
+    const id = window.requestAnimationFrame(() => {
+      jobsPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [selectedKey, selectedJobs.length]);
+
+  const quickBookHref =
+    showArchived && selectedKey
+      ? `/admin?archived=1&quickBook=${encodeURIComponent(selectedKey)}`
+      : selectedKey
+        ? `/admin?quickBook=${encodeURIComponent(selectedKey)}`
+        : "/admin";
 
   return (
     <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-md">
@@ -96,7 +122,12 @@ export function CalendarPanel({ jobs, rescheduleAction, cancelAction, actorName 
           </div>
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+        <div
+          ref={jobsPanelRef}
+          id="calendar-selected-jobs"
+          className="rounded-xl border border-amber-400/20 bg-black/20 p-3 scroll-mt-24 outline-none ring-offset-2 ring-offset-black focus-visible:ring-2 focus-visible:ring-amber-400/40 lg:border-white/10 lg:ring-0"
+          tabIndex={-1}
+        >
           <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
             {selected ? `Jobs for ${selected.toLocaleDateString()}` : "Tap a date"}
           </p>
@@ -119,30 +150,32 @@ export function CalendarPanel({ jobs, rescheduleAction, cancelAction, actorName 
                     {job.service_package || "Package TBD"} · {job.preferred_time || "Time TBD"}
                   </p>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <form action={rescheduleAction} className="inline-flex items-center gap-2 rounded-md border border-white/15 px-2 py-1">
+                    <form action={rescheduleAction} className="inline-flex max-lg:w-full max-lg:flex-col items-start gap-2 rounded-md border border-white/15 px-2 py-2 lg:inline-flex lg:flex-row lg:items-center">
                       <input type="hidden" name="id" value={job.id} />
                       <input
                         name="preferred_date"
                         type="date"
                         min={new Date().toISOString().slice(0, 10)}
                         defaultValue={job.preferred_date || ""}
-                        className="rounded bg-black px-2 py-1 text-[11px] text-white"
+                        className="min-h-[44px] w-full rounded bg-black px-2 py-2 text-[11px] text-white lg:w-auto lg:py-1"
                       />
                       <select
                         name="preferred_time"
                         defaultValue={(job.preferred_time || "morning").toLowerCase()}
-                        className="rounded bg-black px-2 py-1 text-[11px] text-white"
+                        className="min-h-[44px] w-full rounded bg-black px-2 py-2 text-[11px] text-white lg:w-auto lg:py-1"
                       >
                         <option value="morning">Morning</option>
                         <option value="afternoon">Afternoon</option>
                         <option value="evening">Evening</option>
                       </select>
-                      <button className="text-[11px] font-semibold uppercase">Reschedule</button>
+                      <button className="min-h-[44px] w-full rounded-md border border-white/15 px-3 py-2 text-[11px] font-semibold uppercase lg:w-auto lg:py-1">
+                        Reschedule
+                      </button>
                     </form>
                     <form action={cancelAction}>
                       <input type="hidden" name="id" value={job.id} />
                       <input type="hidden" name="actor_name" value={actorName} />
-                      <button className="rounded-md border border-rose-400/35 bg-rose-500/10 px-2 py-1 text-[11px] font-semibold uppercase text-rose-100">
+                      <button className="min-h-[44px] rounded-md border border-rose-400/35 bg-rose-500/10 px-3 py-2 text-[11px] font-semibold uppercase text-rose-100">
                         Cancel
                       </button>
                     </form>
@@ -150,7 +183,17 @@ export function CalendarPanel({ jobs, rescheduleAction, cancelAction, actorName 
                 </article>
               ))
             ) : (
-              <p className="text-sm text-slate-400">No jobs on this date yet.</p>
+              <div className="rounded-lg border border-dashed border-white/15 bg-black/25 p-4 text-center">
+                <p className="text-sm text-slate-400">No jobs on this date yet.</p>
+                {selectedKey ? (
+                  <Link
+                    href={quickBookHref}
+                    className="mt-3 inline-flex min-h-[44px] items-center justify-center rounded-xl border border-amber-400/45 bg-amber-500/15 px-4 text-xs font-semibold uppercase tracking-wide text-amber-100"
+                  >
+                    Book lead for this day
+                  </Link>
+                ) : null}
+              </div>
             )}
           </div>
         </div>

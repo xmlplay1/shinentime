@@ -1,26 +1,20 @@
 import { redirect } from "next/navigation";
 import {
-  addCommunicationLogAction,
-  archiveJobAction,
   adminLoginAction,
   adminLogoutAction,
   cancelJobAction,
   clearPipelineAction,
-  claimJobAction,
   createTeamMemberAction,
   createTestJobAction,
-  deleteJobAction,
   rescheduleJobAction,
-  restoreArchivedJobAction,
-  sendTestAdminEmailAction,
-  updateJobStatusAction,
-  uploadJobImageAction
+  sendTestAdminEmailAction
 } from "@/app/admin/actions";
 import { CalendarPanel } from "@/app/admin/CalendarPanel";
 import { ScriptSidebar } from "@/app/admin/ScriptSidebar";
 import { DashboardCharts } from "@/app/admin/widgets";
-import { BatchJobsProvider, BatchJobsToolbar, JobRowSelectCheckbox } from "@/app/admin/BatchJobsControls";
-import { JobPhotoGallery } from "@/app/admin/JobPhotoGallery";
+import { BatchJobsProvider, BatchJobsToolbar } from "@/app/admin/BatchJobsControls";
+import { AdminQuickFab } from "@/app/admin/AdminQuickFab";
+import { PipelineLeadCard } from "@/app/admin/PipelineLeadCard";
 import { listJobImagePublicUrls } from "@/app/admin/customer-helpers";
 import { vehicleMixCounts, vehicleMixCompletedRevenue, topServicedZips } from "@/lib/admin-dashboard-metrics";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
@@ -28,7 +22,7 @@ import { formatPhoneUs, inferMonthlyProfit, monthKey, normalizeEmail } from "@/l
 import { createAdminClient } from "@/lib/supabase/admin";
 import { estimatePriceFromJobFields } from "@/lib/package-pricing";
 import { REFERRAL_PROGRAM_ENABLED } from "@/lib/referral-flags";
-import { Clock3, DollarSign, FileClock, TrendingUp } from "lucide-react";
+import { Clock3, DollarSign, FileClock } from "lucide-react";
 
 type Role = "ADMIN" | "SERVICE_REP";
 
@@ -293,6 +287,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const params = await searchParams;
   const actorEmail = normalizeEmail(typeof params.as === "string" ? params.as : "") || "shine.n.time.detailing@gmail.com";
   const showArchived = String(params.archived || "").toLowerCase() === "1";
+  const quickBookParam = typeof params.quickBook === "string" ? params.quickBook : "";
   const data = await loadData(actorEmail, showArchived);
   if (!data) {
     return <main className="min-h-screen bg-black p-8 text-white">Missing Supabase configuration.</main>;
@@ -303,15 +298,20 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const completed = jobs.filter((j) => isCompleted(j.status));
   const totalRevenue = completed.reduce((sum, j) => sum + inferPrice(j), 0);
   const thisMonth = monthKey(new Date());
-  const monthlyProfit = inferMonthlyProfit(
-    jobs
-      .filter((j) => monthKey(j.preferred_date || j.created_at || "") === thisMonth && isCompleted(j.status))
-      .reduce((sum, j) => sum + inferPrice(j), 0)
-  );
+  const monthCompletedRevenue = jobs
+    .filter((j) => monthKey(j.preferred_date || j.created_at || "") === thisMonth && isCompleted(j.status))
+    .reduce((sum, j) => sum + inferPrice(j), 0);
+  const monthlyProfit = inferMonthlyProfit(monthCompletedRevenue);
   const conversionRate = jobs.length ? Math.round((completed.length / jobs.length) * 100) : 0;
   const mix = vehicleMixCounts(jobs);
   const revenueMix = vehicleMixCompletedRevenue(jobs);
   const hotZips = topServicedZips(jobs, 8);
+  const revenueGoalUsdRaw = process.env.ADMIN_MONTHLY_REVENUE_GOAL_USD;
+  const revenueGoalUsd = revenueGoalUsdRaw ? Number.parseFloat(revenueGoalUsdRaw) : NaN;
+  const goalProgressPct =
+    Number.isFinite(revenueGoalUsd) && revenueGoalUsd > 0
+      ? Math.min(100, Math.round((monthCompletedRevenue / revenueGoalUsd) * 1000) / 10)
+      : null;
   const systemLogsByJob = new Map<number, SystemLogRow[]>();
   for (const sl of systemLogs) {
     if (!systemLogsByJob.has(sl.job_id)) systemLogsByJob.set(sl.job_id, []);
@@ -331,11 +331,11 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   return (
     <main className="min-h-screen bg-black text-white">
       <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[250px_1fr]">
-        <aside className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-md">
+        <aside className="flex flex-col rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-md lg:min-h-[calc(100vh-3rem)]">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">Shine N Time</p>
           <h2 className="mt-2 text-lg font-semibold">Ultimate Command Center</h2>
           <p className="mt-2 text-xs text-slate-400">Role: {profile.role}</p>
-          <nav className="mt-6 grid gap-2 text-sm">
+          <nav className="mt-6 flex flex-1 flex-col gap-2 text-sm">
             <a className="rounded-lg border border-amber-400/50 bg-amber-500/15 px-3 py-2 font-semibold text-amber-200" href="#calendar">
               Calendar
             </a>
@@ -353,29 +353,48 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
               </a>
             ) : null}
           </nav>
-          <form action={adminLogoutAction} className="mt-8">
-            <button className="w-full rounded-lg border border-white/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
-              Lock
+          <form action={adminLogoutAction} className="mt-6 border-t border-white/10 pt-4 max-lg:mt-6">
+            <button className="w-full rounded-lg border border-white/15 px-3 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-300 max-lg:py-3">
+              Lock session
             </button>
           </form>
         </aside>
 
-        <section className="space-y-6">
+        <section className="space-y-6 pb-28 lg:pb-0">
           {isAdmin ? (
             <div className="grid gap-4 md:grid-cols-3">
               <article className="rounded-2xl border border-white/10 bg-gradient-to-br from-amber-500/18 to-white/[0.03] p-4">
                 <p className="text-xs uppercase tracking-[0.2em] text-amber-200">Total Revenue</p>
                 <p className="mt-2 text-3xl font-bold">${totalRevenue.toLocaleString()}</p>
                 <div className="mt-2 inline-flex items-center gap-1 text-xs text-amber-100">
-                  <DollarSign className="size-4" /> completed jobs
+                  <DollarSign className="size-4" /> completed jobs (all time)
                 </div>
+                {goalProgressPct != null ? (
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between text-[11px] text-amber-100/90">
+                      <span>This month vs goal</span>
+                      <span className="tabular-nums font-semibold">
+                        ${Math.round(monthCompletedRevenue).toLocaleString()} / ${Math.round(revenueGoalUsd).toLocaleString()} ({goalProgressPct}%)
+                      </span>
+                    </div>
+                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-black/50">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-300 transition-[width] duration-300"
+                        style={{ width: `${goalProgressPct}%` }}
+                      />
+                    </div>
+                    <p className="mt-1 text-[10px] text-slate-500">
+                      Set <span className="font-mono text-slate-400">ADMIN_MONTHLY_REVENUE_GOAL_USD</span> in env to tune this bar.
+                    </p>
+                  </div>
+                ) : null}
               </article>
               <article className="rounded-2xl border border-white/10 bg-gradient-to-br from-blue-500/18 to-white/[0.03] p-4">
                 <p className="text-xs uppercase tracking-[0.2em] text-blue-200">Monthly Profit</p>
                 <p className="mt-2 text-3xl font-bold">${monthlyProfit.toLocaleString()}</p>
-                <div className="mt-2 inline-flex items-center gap-1 text-xs text-blue-100">
-                  <TrendingUp className="size-4" /> est. after 30% costs
-                </div>
+                <p className="mt-3 text-sm font-medium leading-snug text-blue-50/95 lg:text-base">
+                  Estimated after ~30% costs on this month&apos;s closed revenue (${Math.round(monthCompletedRevenue).toLocaleString()}).
+                </p>
               </article>
               <article className="rounded-2xl border border-white/10 bg-gradient-to-br from-emerald-500/18 to-white/[0.03] p-4">
                 <p className="text-xs uppercase tracking-[0.2em] text-emerald-200">Conversion Rate</p>
@@ -397,6 +416,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
               rescheduleAction={rescheduleJobAction}
               cancelAction={cancelJobAction}
               actorName={actorLabel}
+              showArchived={showArchived}
             />
             <ScriptSidebar
               customerName={jobs[0]?.name || "Customer"}
@@ -443,159 +463,48 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                 const jobLogs = logsByJob.get(job.id) || [];
                 const sysLogs = systemLogsByJob.get(job.id) || [];
                 const thumbs = jobImagesByJob.get(job.id) ?? [];
-                const mapQuery = encodeURIComponent([job.address, job.city, job.state, job.zip].filter(Boolean).join(", "));
+                const mapHref = `https://maps.google.com/?q=${encodeURIComponent(
+                  [job.address, job.city, job.state, job.zip].filter(Boolean).join(", ") || "Canton, MI"
+                )}`;
                 return (
-                  <article key={job.id} className="rounded-xl border border-white/10 bg-black/25 p-4">
-                    <div className="flex gap-3">
-                      <JobRowSelectCheckbox jobId={job.id} />
-                      <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div>
-                        <p className="text-sm font-semibold">{job.name || "Unknown Customer"}</p>
-                        <p className="text-xs text-slate-400">{formatPhoneUs(job.phone)} · {normalizeEmail(job.email) || "no email"}</p>
-                        <p className="text-xs text-slate-400">{job.car_make_model || "Vehicle TBD"} · {(job.service_package || "package").toUpperCase()}</p>
-                        {job.referred_by_code ? (
-                          <p className="mt-1 text-[10px] text-amber-200/90">
-                            Referral <span className="font-mono">{job.referred_by_code}</span> · −$
-                            {Number(job.referral_discount_amount ?? 10)} quote discount
-                          </p>
-                        ) : null}
-                      </div>
-                      <span className={`inline-flex rounded-md border px-2 py-1 text-xs ${pipelineStatusClass(job.status)}`}>
-                        {pipelineStatusLabel(job.status)}
-                      </span>
-                    </div>
-
-                    <div className="mt-3 grid gap-2 text-xs text-slate-300 md:grid-cols-2">
-                      <p>Date: {job.preferred_date || "TBD"} · {job.preferred_time || "TBD"}</p>
-                      <p>Assigned: {job.assigned_rep || job.claimed_by || "Unassigned"}</p>
-                    </div>
-
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <a
-                        href={`https://maps.google.com/?q=${mapQuery || encodeURIComponent("Canton, MI")}`}
-                        target="_blank"
-                        className="rounded-lg border border-white/15 px-3 py-1.5 text-xs"
-                        rel="noreferrer"
-                      >
-                        Navigate
-                      </a>
-                      <a href={`tel:${job.phone || ""}`} className="rounded-lg border border-white/15 px-3 py-1.5 text-xs">
-                        Call
-                      </a>
-                      <a href={`sms:${job.phone || ""}`} className="rounded-lg border border-white/15 px-3 py-1.5 text-xs">
-                        SMS
-                      </a>
-
-                      <form action={uploadJobImageAction} className="flex items-center gap-1 rounded-lg border border-white/15 px-2 py-1">
-                        <input type="hidden" name="job_id" value={job.id} />
-                        <input type="hidden" name="type" value="before" />
-                        <input name="image" type="file" accept="image/*" capture="environment" className="w-[130px] text-[10px]" />
-                        <button className="text-[10px] font-semibold uppercase tracking-[0.12em]">Photos</button>
-                      </form>
-
-                      <form action={claimJobAction} className="flex items-center gap-1 rounded-lg border border-white/15 px-2 py-1">
-                        <input type="hidden" name="id" value={job.id} />
-                        <input type="hidden" name="phone" value={job.phone || ""} />
-                        <input type="hidden" name="actor_name" value={actorLabel} />
-                        <select name="rep" className="rounded bg-black px-2 py-1 text-[10px]">
-                          <option value="">Assign rep</option>
-                          {sortedReps.map((r) => (
-                            <option key={r.id} value={r.full_name || r.email}>{r.full_name || r.email}</option>
-                          ))}
-                        </select>
-                        <button className="text-[10px] font-semibold uppercase">Save</button>
-                      </form>
-                    </div>
-
-                    <JobPhotoGallery items={thumbs} />
-
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                      <form action={updateJobStatusAction} className="inline-flex items-center gap-2">
-                        <input type="hidden" name="id" value={job.id} />
-                        <input type="hidden" name="actor_name" value={actorLabel} />
-                        <select name="status" defaultValue={statusSelectValue(job.status)} className="rounded-md border border-white/15 bg-black/60 px-2 py-1 text-xs">
-                          <option value="Pending">Pending</option>
-                          <option value="Confirmed">Confirmed</option>
-                          <option value="Completed">Completed</option>
-                          <option value="Cancelled">Cancelled</option>
-                          <option value="Archived">Archived</option>
-                        </select>
-                        <button type="submit" className="rounded-md border border-amber-400/30 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold uppercase">
-                          Update
-                        </button>
-                      </form>
-
-                      <form action={addCommunicationLogAction} className="inline-flex flex-wrap items-center gap-2">
-                        <input type="hidden" name="job_id" value={job.id} />
-                        <input type="hidden" name="created_by" value={profile.full_name || profile.email} />
-                        <select name="channel" className="rounded border border-white/15 bg-black px-2 py-1 text-[10px]">
-                          <option value="sms">sms</option>
-                          <option value="call">call</option>
-                          <option value="email">email</option>
-                          <option value="internal">internal</option>
-                        </select>
-                        <input
-                          name="note"
-                          required
-                          placeholder="Communication note"
-                          className="rounded border border-white/15 bg-black px-2 py-1 text-[10px]"
-                        />
-                        <button className="rounded border border-blue-400/40 bg-blue-500/10 px-2 py-1 text-[10px] uppercase">Log</button>
-                      </form>
-                      <form action={deleteJobAction}>
-                        <input type="hidden" name="id" value={job.id} />
-                        <button
-                          type="submit"
-                          className="rounded-md border border-rose-400/35 bg-rose-500/10 px-2 py-1 text-[10px] font-semibold uppercase text-rose-100"
-                        >
-                          Delete
-                        </button>
-                      </form>
-                      <form action={showArchived ? restoreArchivedJobAction : archiveJobAction}>
-                        <input type="hidden" name="id" value={job.id} />
-                        <input type="hidden" name="actor_name" value={actorLabel} />
-                        <button
-                          type="submit"
-                          className="rounded-md border border-violet-400/35 bg-violet-500/10 px-2 py-1 text-[10px] font-semibold uppercase text-violet-100"
-                        >
-                          {showArchived ? "Unarchive" : "Archive"}
-                        </button>
-                      </form>
-                    </div>
-
-                    <div className="mt-3 rounded-md border border-cyan-500/15 bg-cyan-950/20 p-2 text-[11px] text-slate-400">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-cyan-500/80">System log</p>
-                      {sysLogs.length ? (
-                        sysLogs.slice(0, 4).map((sl) => (
-                          <p key={sl.id} className="mt-1 border-t border-white/5 pt-1 first:mt-0 first:border-t-0 first:pt-0">
-                            <span className="text-slate-500">{new Date(sl.created_at).toLocaleString()}</span>
-                            {" · "}
-                            <span className="text-cyan-200/90">{sl.actor_name || "—"}</span>
-                            {": "}
-                            {sl.message}
-                          </p>
-                        ))
-                      ) : (
-                        <p className="mt-1 text-slate-600">No status or assignment events logged yet.</p>
-                      )}
-                    </div>
-
-                    <div className="mt-3 rounded-md border border-white/10 bg-black/35 p-2 text-[11px] text-slate-400">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Communication log</p>
-                      {jobLogs.length ? (
-                        jobLogs.slice(0, 3).map((log) => (
-                          <p key={log.id} className="mt-1">
-                            <span className="uppercase text-slate-500">{log.channel}</span>: {log.note}
-                          </p>
-                        ))
-                      ) : (
-                        <p>No communication logs yet.</p>
-                      )}
-                    </div>
-                      </div>
-                    </div>
-                  </article>
+                  <PipelineLeadCard
+                    key={job.id}
+                    job={{
+                      id: job.id,
+                      name: job.name,
+                      phone: job.phone,
+                      email: job.email,
+                      car_make_model: job.car_make_model,
+                      service_package: job.service_package,
+                      status: job.status,
+                      preferred_date: job.preferred_date,
+                      preferred_time: job.preferred_time,
+                      assigned_rep: job.assigned_rep,
+                      claimed_by: job.claimed_by,
+                      address: job.address,
+                      city: job.city,
+                      state: job.state,
+                      zip: job.zip,
+                      referred_by_code: job.referred_by_code ?? null,
+                      referral_discount_amount: job.referral_discount_amount ?? null
+                    }}
+                    mapHref={mapHref}
+                    thumbs={thumbs}
+                    jobLogs={jobLogs.slice(0, 8).map((l) => ({ id: l.id, channel: l.channel, note: l.note }))}
+                    sysLogs={sysLogs.slice(0, 8).map((s) => ({
+                      id: s.id,
+                      created_at: s.created_at,
+                      actor_name: s.actor_name,
+                      message: s.message
+                    }))}
+                    sortedReps={sortedReps.map((r) => ({ id: r.id, label: String(r.full_name || r.email) }))}
+                    actorLabel={actorLabel}
+                    profileCreatedBy={profile.full_name || profile.email}
+                    showArchived={showArchived}
+                    statusLabel={pipelineStatusLabel(job.status)}
+                    statusClassName={pipelineStatusClass(job.status)}
+                    statusSelectDefault={statusSelectValue(job.status)}
+                  />
                 );
               })}
               {!jobs.length ? (
@@ -740,10 +649,11 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           </section>
 
           <section className="rounded-xl border border-white/10 bg-black/30 p-3 text-xs text-slate-400">
-            Mobile Action Center active: Navigate, Call/SMS, and Photos upload to Supabase `job-images` bucket.
+            Tap <span className="font-semibold text-amber-200/90">+</span> (bottom-right on mobile) for a quick phone lead. Pipeline cards collapse on small screens — tap the row to expand actions.
           </section>
         </section>
       </div>
+      <AdminQuickFab initialPreferredDate={quickBookParam} />
     </main>
   );
 }

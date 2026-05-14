@@ -67,7 +67,7 @@ export function BatchJobsToolbar({
   const idsStr = [...selected].sort((a, b) => a - b).join(",");
 
   return (
-    <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-[11px] text-slate-400">
+    <div className="mb-3 flex flex-col gap-3 rounded-lg border border-white/10 bg-black/30 p-3 text-[11px] text-slate-400 max-lg:gap-3 lg:flex-row lg:flex-wrap lg:items-center">
       <span className="font-semibold uppercase tracking-wide text-slate-500">Batch</span>
       <span className="tabular-nums text-slate-300">{selected.size} selected</span>
       <button type="button" onClick={clear} className="rounded border border-white/15 px-2 py-1 text-[10px] uppercase text-slate-300 hover:bg-white/[0.06]">
